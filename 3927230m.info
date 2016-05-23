@@ -1,0 +1,15 @@
+Source: record mimic2wdb/39/3927230/3927230  Start: [15:48:35.272]
+val has 7 rows (signals) and 7500 columns (samples/signal)
+Duration:     1:00
+Sampling frequency: 125 Hz  Sampling interval: 0.008 sec
+Row	Signal	Gain	Base	Units
+1	I	510	256	mV
+2	II	512	255	mV
+3	III	1022	0	mV
+4	AVR	1023	0	mV
+5	V	510	256	mV
+6	RESP	409	307	pm
+7	PLETH	1023	0	NU
+
+To convert from raw units to the physical units shown
+above, subtract 'base' and divide by 'gain'.

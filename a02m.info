@@ -1,0 +1,9 @@
+Source: record challenge/2010/set-a/a02  Start: [00:01:40.000]
+val has 1 row (signal) and 62500 columns (samples/signal)
+Duration:     8:20
+Sampling frequency: 125 Hz  Sampling interval: 0.008 sec
+Row	Signal	Gain	Base	Units
+1	PLETH	1023	0	?
+
+To convert from raw units to the physical units shown
+above, subtract 'base' and divide by 'gain'.

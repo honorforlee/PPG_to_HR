@@ -1,0 +1,17 @@
+http://physionet.org/cgi-bin/atm/ATM
+
+http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6736782&isnumber=6736764
+http://esatjournals.org/Volumes/IJRET/2012V01/I02/IJRET20120102016.pdf
+https://www.cs.tau.ac.il/~nin/Courses/Workshop12a/PPG%20Sensor%20System.pdf
+http://edoc.ypu.edu.tw:8080/paper/bme/Other/%E5%82%85%E8%A2%93%E5%8B%B3Heart%20Rate%20Extraction%20from%20the%20Photoplethysmogram.pdf
+file:///C:/Users/psgossel/Downloads/2013JanPPGpaper26.pdf
+file:///C:/Users/psgossel/Downloads/ELK-1310-177_manuscript_2.pdf
+http://www.ijetae.com/files/Volume2Issue9/IJETAE_0912_71.pdf
+file:///C:/Users/psgossel/Downloads/IJCAS_v5_n6_pp.701-706.pdf
+
+
+
+http://www.roithner-laser.com/datasheets/pd/epd-525-0-2_5.pdf
+http://www.intorfilters.com/index.php?p=catalog&mode=catalog&parent=22&mid=0&search_in=all&search_str=&pg=2
+http://www.roithner-laser.com/pricelist.pdf
+http://www.vishay.com/docs/81293/temd5510.pdf
