@@ -8,9 +8,10 @@ Name = 'a07m';
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
-fgetl(fid); fgetl(fid); fgetl(fid);
+fgetl(fid); fgetl(fid); fgetl(fid); 
 [interval] = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
-interval = interval(2);
+interval = interval(2); 
+
 % fgetl(fid);
 % for i = 1:size(val, 1)
 %   [row(i), signal(i), gain(i), base(i), units(i)]=strread(fgetl(fid),'%d%s%f%f%s','delimiter','\t');
