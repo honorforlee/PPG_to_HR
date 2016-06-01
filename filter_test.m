@@ -485,7 +485,7 @@ function edit13_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of edit13 as text
 %        str2double(get(hObject,'String')) returns contents of edit13 as a double
 
-
+    
 % --- Executes during object creation, after setting all properties.
 function edit13_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to edit13 (see GCBO)

@@ -1,4 +1,4 @@
-% Ivan Ny Hanitra - Master thesis
+%% Ivan Ny Hanitra - Master thesis
 % Algorithm to discriminate PPG/ECG signal peaks and recover HR
 
 %% Requirements 
@@ -9,14 +9,16 @@
 %       selected peaks have the same frequency (HR)
         
 
-%% Test
-% --- Init. - DO NOT EDIT -
+% Algorithm test
+
+%--- Init. - DO NOT EDIT -
+
 function varargout = discrimination(varargin)
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
     'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @filter_test_OpeningFcn, ...
-    'gui_OutputFcn',  @filter_test_OutputFcn, ...
+    'gui_OpeningFcn', @discrimination_OpeningFcn, ...
+    'gui_OutputFcn',  @discrimination_OutputFcn, ...
     'gui_LayoutFcn',  [] , ...
     'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -28,8 +30,7 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 
-
-% --- Executes just before discrimination is made visible.
+% --- Executes just before discrimination window is made visible.
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
 fl_ecg   = {}; ppg_ecg   = {}; ecg_ecg   = {}; dt0_ecg   = {};
 fl_noecg = {}; ppg_noecg = {}; ecg_noecg = {}; dt0_noecg = {};
@@ -79,7 +80,7 @@ guidata(hObject, h);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = filter_test_OutputFcn(~, ~, handles)
+function varargout = discrimination_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
 
 
@@ -344,9 +345,7 @@ for k = 1:length(kx)
     i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
     i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
 end
-
-
-
+end
 
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
@@ -377,7 +376,6 @@ function callback_ECG(h) %#ok<DEFNU>
 if update_filelist(h)
     h = update_infile(h);
     guidata(h.output, h);
-end
 
 
 function detect_points(h) %#ok<DEFNU>
@@ -438,6 +436,8 @@ plot( h.axes ...
 legend({'Signal','Sampled','D1','D2'});
 
 
+
+
 function ECG_analysis(h)
 %     if sum(h.ecg .^ 3) < 0; h.ecg = -h.ecg; end
 %     [tx,sx, dhi, dlo] = signal_picks(h.t0,h.ecg);
@@ -489,9 +489,6 @@ plot( h.axes ...
 
 
 
-
-
-
 function edit13_Callback(hObject, eventdata, handles)
 % hObject    handle to edit13 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -521,4 +518,3 @@ function checkbox5_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox5
-
