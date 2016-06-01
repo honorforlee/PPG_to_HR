@@ -1,13 +1,22 @@
-%  http://physionet.org/cgi-bin/atm/ATM
+% Ivan Ny Hanitra - Master thesis
+% Algorithm to discriminate PPG/ECG signal peaks and recover HR
 
+%% Requirements 
+%   - discriminate peaks in function of notes
+%       note 1(pentagram): peak amplitude of sampled signal (smax)
+%       note 2 (triangles): local maxima/minima around smax
+%   - discriminate peaks in function of timing
+%       selected peaks have the same frequency (HR)
+        
 
+%% Test
 % --- Init. - DO NOT EDIT -
-function varargout = filter_test(varargin)
+function varargout = discrimination(varargin)
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
     'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @filter_test_OpeningFcn, ...
-    'gui_OutputFcn',  @filter_test_OutputFcn, ...
+    'gui_OpeningFcn', @discrimination_OpeningFcn, ...
+    'gui_OutputFcn',  @discrimination_OutputFcn, ...
     'gui_LayoutFcn',  [] , ...
     'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -20,8 +29,8 @@ else
 end
 
 
-% --- Executes just before filter_test is made visible.
-function filter_test_OpeningFcn(hObject, ~, h, varargin)
+% --- Executes just before discrimination is made visible.
+function discrimination_OpeningFcn(hObject, ~, h, varargin)
 fl_ecg   = {}; ppg_ecg   = {}; ecg_ecg   = {}; dt0_ecg   = {};
 fl_noecg = {}; ppg_noecg = {}; ecg_noecg = {}; dt0_noecg = {};
 fl = what;
@@ -70,7 +79,7 @@ guidata(hObject, h);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = filter_test_OutputFcn(~, ~, handles)
+function varargout = discrimination_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
 
 
@@ -477,6 +486,12 @@ plot( h.axes ...
 %         , h.t0(k+1:end-k) , ecg_hf, '-r' ...
 %         )
 
+
+
+
+
+
+
 function edit13_Callback(hObject, eventdata, handles)
 % hObject    handle to edit13 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -506,3 +521,4 @@ function checkbox5_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox5
+
