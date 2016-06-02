@@ -165,30 +165,13 @@ end
 %         end
 %     end
 
-function [ft,fs] = apply_filter_(t,s,f)         %? values entered
+function [ft,fs] = apply_filter_(t,s,f)        
 f = str2num(f); %#ok<ST2NM>
 if length(f) > 0
     fs = conv( s , fliplr(f)     , 'valid' ) ;
     ft = conv( t , ones(size(f)) , 'valid' ) / length(f) ;
 else
     fs = []; ft = [];
-end
-
-
-function h = process_sig(h) %#ok<DEFNU>
-[h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
-if isempty(h.ft)
-    %         h.ft  = [nan nan]; h.fs  = [nan nan];
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.t  ,h.s  );
-else
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.ft ,h.fs );           % filter applied before derivative
-end
-[h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
-if isempty(h.ft_)
-    %         h.ft_ = [nan nan]; h.fs_ = [nan nan];
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.td ,h.d  );
-else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.ft_,h.fs_);
 end
 
 function [tx,sx,dhi,dlo,td,d] = signal_peaks(t,s)
@@ -274,6 +257,22 @@ dlo = d(kx+1);
 for k = 1:length(kx)
     i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
     i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
+end
+
+function h = process_sig(h) %#ok<DEFNU>
+[h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
+if isempty(h.ft)
+    %         h.ft  = [nan nan]; h.fs  = [nan nan];
+    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.t  ,h.s  );
+else
+    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.ft ,h.fs );           % filter applied before derivative
+end
+[h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
+if isempty(h.ft_)
+    %         h.ft_ = [nan nan]; h.fs_ = [nan nan];
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.td ,h.d  );
+else
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.ft_,h.fs_);
 end
 
 

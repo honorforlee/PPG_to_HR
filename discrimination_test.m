@@ -12,26 +12,24 @@ interval = interval(2);
 fclose(fid);
 
 t = (1:500) * interval;          %timeline
-s = val(1:500);                 %non zero val
-
+s = val(1:500);                    
 s  = (s  - mean(s ))/sqrt(var(s ));
 
-%Quantisize
-
+% Quantisize
 dt = 8e-2;                            %t_sample
 quant = 0.1;                          %vertical step
 subels = 1:round(dt/interval):length(t);
 subt = t(subels); subval = s(subels); %sample timeline
 subval = quant*floor(subval/quant);  %sampled value
 
-% Derivative
+% Derivative, local maxima s_max, maximum slope around s_max
 d = s(2:end) -  s(1:end-1);
-td = (  t(2:end) +  t(1:end-1) ) / 2; 
+td = (  t(2:end) +  t(1:end-1) ) / 2;
 
-kx = d > 0;                                 
+kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_x:index where d>0 and k_x+1<=0
 
-sx = s(kx+1);                               
+sx = s(kx+1);
 tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));
 
 dhi = d(kx);
@@ -39,9 +37,25 @@ dlo = d(kx+1);
 
 for k = 1:length(kx)
     i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end 
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
 end
 
-plot(t, s, subt, subval, 'ro--',td,d,'gx--',tx,sx,'cx');
+% Filter
+f = [-0.5 0.5];
+ft = conv( t , ones(size(f)) , 'valid' ) / length(f) ;
+fs = conv( s , fliplr(f)     , 'valid' ) ;
+
+
+% Plot
+plot(t, s,'b-'...               % siganl s
+    ,subt, subval,'ro--'...     % sampled signal s_n
+    ,td,d,'gx--'...             % d(s)
+    ,tx,sx,'cp' ...             % s_max
+    ,tx,dhi,'c^' ...            % d_max_l
+    ,tx,dlo,'cv' ...            % d_max_r
+    ,kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , 'c-' ...                              % link note_1
+    ,kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-' ...       % link note_2
+    ,ft,fs,'m+'...              % filter
+);
 xlabel('Time (sec)');
 
