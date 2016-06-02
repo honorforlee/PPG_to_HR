@@ -1,4 +1,4 @@
-%%
+%% Discrimination
 Name = 'a07m';
 
 load(strcat(Name, '.mat'));
@@ -12,7 +12,7 @@ interval = interval(2);
 fclose(fid);
 
 t = (1:500) * interval;          %timeline
-s = val(1:500);                    
+s = val(1:500);
 s  = (s  - mean(s ))/sqrt(var(s ));
 
 % Quantisize
@@ -45,10 +45,30 @@ f = [-0.5 0.5];
 ft = conv( t , ones(size(f)) , 'valid' ) / length(f) ;
 fs = conv( s , fliplr(f)     , 'valid' ) ;
 
+% Discrimination
+dhi_max = max(dhi);
+dlo_min = min(dlo);
+kd = zeros(1,length(kx));
+
+for j = 1:length(kx)
+    if (dhi(j) >= dhi_max/2) && (dlo(j) <= dlo_min/2)
+        kd(j)=kx(j);
+    end
+end
+
+kd_index = find(kd(1:end));
+kd = kd(kd_index);
+
+t_d=tx(kd_index);
+
+for l = 1:length(kd_index)
+   s_d(l) = s(kd(l)); 
+end
+
 
 % Plot
-plot(t, s,'b-'...               % siganl s
-    ,subt, subval,'ro--'...     % sampled signal s_n
+plot(t, s,'k-'...               % siganl s
+    ,subt, subval,'bo--'...     % sampled signal s_n
     ,td,d,'gx--'...             % d(s)
     ,tx,sx,'cp' ...             % s_max
     ,tx,dhi,'c^' ...            % d_max_l
@@ -56,6 +76,8 @@ plot(t, s,'b-'...               % siganl s
     ,kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , 'c-' ...                              % link note_1
     ,kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-' ...       % link note_2
     ,ft,fs,'m+'...              % filter
-);
+    ,t_d,s_d,'rd' ...
+    );
 xlabel('Time (sec)');
+
 
