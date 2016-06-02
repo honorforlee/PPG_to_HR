@@ -12,43 +12,36 @@ interval = interval(2);
 fclose(fid);
 
 t = (1:500) * interval;          %timeline
-s0 = val(1:500);                 %non zero val
+s = val(1:500);                 %non zero val
 
-s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));
+s  = (s  - mean(s ))/sqrt(var(s ));
 
 %Quantisize
 
 dt = 8e-2;                            %t_sample
 quant = 0.1;                          %vertical step
-subels = 1:round(dt/interval):length(s0);
-subt = t(subels); subval = s0(subels); %sample timeline
+subels = 1:round(dt/interval):length(t);
+subt = t(subels); subval = s(subels); %sample timeline
 subval = quant*floor(subval/quant);  %sampled value
 
-plot(t', s0', subt', subval', 'o--');
-xlabel('Time (sec)');
-
-
-
-
-
-%%
-s = [2 0 1 -5 2 3 -8 0 3 2 5 1 -5 1 3];
+% Derivative
 d = s(2:end) -  s(1:end-1);
-
-t = (1:length(s)) * 1/(125);    %timeline 
-td = (  t(2:end) +  t(1:end-1) ) / 2;       
+td = (  t(2:end) +  t(1:end-1) ) / 2; 
 
 kx = d > 0;                                 
-kx = find(kx(1:end-1) & ~kx(2:end));
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_x:index where d>0 and k_x+1<=0
 
-sx = s(kx+1);                               % asign s_max to next index
+sx = s(kx+1);                               
 tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));
-% test = (s(kx+1) .*td(kx+1) - s(kx) .*td(kx+1)+s(kx+1) .*td(kx)-s(kx+2) .*td(kx))./(2 .*s(kx+1)-s(kx)-s(kx+2));
-
 
 dhi = d(kx);
 dlo = d(kx+1);
+
 for k = 1:length(kx)
     i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end 
 end
+
+plot(t, s, subt, subval, 'ro--',td,d,'gx--',tx,sx,'cx');
+xlabel('Time (sec)');
+
