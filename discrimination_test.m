@@ -11,8 +11,8 @@ interval = interval(2);
 
 fclose(fid);
 
-t = (1:500) * interval;          %timeline
-s = val(1:500);
+t = (1:5000) * interval;          %timeline
+s = val(1:5000);
 s  = (s  - mean(s ))/sqrt(var(s ));
 
 % Quantisize
@@ -51,7 +51,7 @@ dlo_min = min(dlo);
 kd = zeros(1,length(kx));
 
 for j = 1:length(kx)
-    if (dhi(j) >= dhi_max/2) && (dlo(j) <= dlo_min/2)
+    if (dhi(j) >= dhi_max/4) && (dlo(j) <= dlo_min/4)
         kd(j)=kx(j);
     end
 end
@@ -70,13 +70,13 @@ end
 plot(t, s,'k-'...               % siganl s
     ,subt, subval,'bo--'...     % sampled signal s_n
     ,td,d,'gx--'...             % d(s)
-    ,tx,sx,'cp' ...             % s_max
+    ,tx,sx,'cd' ...             % s_max
     ,tx,dhi,'c^' ...            % d_max_l
     ,tx,dlo,'cv' ...            % d_max_r
     ,kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , 'c-' ...                              % link note_1
     ,kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-' ...       % link note_2
     ,ft,fs,'m+'...              % filter
-    ,t_d,s_d,'rd' ...
+    ,t_d,s_d,'rp' ...
     );
 xlabel('Time (sec)');
 
