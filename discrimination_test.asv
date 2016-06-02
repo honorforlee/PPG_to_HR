@@ -11,24 +11,25 @@ interval = interval(2);
 
 fclose(fid);
 
-t = (1:500) * interval;          %timeline
-s0 = val(1:500);                 %non zero val
+t = (1:5000) * interval;          %timeline
+s0 = val(1:5000);                 %non zero val
 
 s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));
 
-%Quantisize
+% % % Quantisize
+% % % 
+% % % dt = .05;                            %t_sample
+% % % quant = 10;                          %vertical step
+% % % subels = 1:round(dt/interval):length(s0);
+% % % subt = t(subels); subval = s0(subels); %sample timeline
+% % % subval = quant*floor(subval/quant);  %sampled value
+% % % 
+% % % plot(t', s0', subt', subval', 'o--');
 
-dt = 8e-2;                            %t_sample
-quant = 0.1;                          %vertical step
-subels = 1:round(dt/interval):length(s0);
-subt = t(subels); subval = s0(subels); %sample timeline
-subval = quant*floor(subval/quant);  %sampled value
+plot(t,s0);
 
-plot(t', s0', subt', subval', 'o--');
+
 xlabel('Time (sec)');
-
-
-
 
 
 %%
