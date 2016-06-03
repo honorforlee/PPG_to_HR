@@ -13,8 +13,8 @@ interval = interval(2);
 
 fclose(fid);
 
-t = (1:7500) * interval;          %timeline
-s = val(5,1:7500);
+t = (1:5000) * interval;          %timeline
+s = val(5,1:5000);
 s  = (s  - mean(s ))/sqrt(var(s ));
 
 % Quantisize
@@ -75,7 +75,10 @@ for l = 1:length(kd_index)
    s_d(l) = s(kd(l));     % value of discriminated peaks
 end
 
-% measure heart rate
+
+
+
+
 
 
 % Plot
