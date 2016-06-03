@@ -97,7 +97,7 @@ xlabel('Time (sec)');
 %% Discrimination with sampled signal
 
 %Name = 'a07m';
-Name = '3916979m';
+Name = '3987834m';
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -147,6 +147,7 @@ ft = conv( t_spl , ones(size(f)) , 'valid' ) / length(f) ;
 fs = conv( s_spl , fliplr(f)     , 'valid' ) ;
 
 % Discrimination of peaks
+
 dhi_max = max(dhi);
 dlo_min = min(dlo);
 delta_note2 = mean(dhi) - mean(dlo);
@@ -174,8 +175,10 @@ for l = 1:length(kd_index)
    s_d(l) = s_spl(kd(l));     % value of discriminated peaks
 end
 
-% measure heart rate
-
+% Measure HR
+HR = (60*length(kd))/t(end);
+result = sprintf('Average heart Rate: %d bpm', HR);
+disp(result);
 
 % Plot
 plot(t, s,'k-'...               % siganl s
@@ -184,10 +187,22 @@ plot(t, s,'k-'...               % siganl s
     ,tx,sx,'cd' ...             % s_max
     ,tx,dhi,'c^' ...            % d_max_l
     ,tx,dlo,'cv' ...            % d_max_r
-    ,kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , 'c-' ...                              % link note_1
-    ,kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-' ...       % link note_2
     ,ft,fs,'m+'...              % filter
     ,t_d,s_d,'rp' ...
+    ,kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , 'c-' ...                              % link note_1
+    ,kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-' ...       % link note_2
     );
-xlabel('Time (sec)');
+
+title('Heart rate measurement');
+xlabel('Time, s');
+legend('s: original signal'...
+      ,'s_n: sampled signal'...
+      ,'derivative of s_n'...
+      ,'s_{max}'...
+      ,'maximum positive slope around s_{max}'...
+      ,'maximum negative slope around s_{max}'...
+      ,'filtering of s'...
+      ,'detected peaks'...
+      ,'Location','northeastoutside');
+
 
