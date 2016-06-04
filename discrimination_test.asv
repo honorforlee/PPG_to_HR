@@ -30,11 +30,12 @@ d_spl = s_spl(2:end) -  s_spl(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
 
 kx = d > 0;
-kx = find(kx(1:end-1) & ~kx(2:end));       % k_x:index where d>0 and k_x+1<=0
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_x: index where d>0 and k_{x} +1<=0
+kx_d = zeros(1,length(kx));                % kx_d: index of major peak
 
 sx = s(kx+1);
 tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));
-sx_d = sx;
+sx_d = sx;                                 % major peak
 
 dhi = d(kx);
 dlo = d(kx+1);
@@ -45,26 +46,29 @@ dlo = d(kx+1);
 % end
 
 for k = 1:length(kx)
- 
+    
     for i = 1:floor(0.25/dt)         % search for maximum slope 0.5 s around s_max
-           if d(kx(k)-i) >= d(kx(k))
-               dhi(k) = d(kx(k)- i) ;
-           end
-           if d(kx(k) +i) <= d(kx(k))
-               dlo(k) = d(kx(k)+i);
-           end
-         i = i+1;
+        if d(kx(k)-i) >= d(kx(k))
+            dhi(k) = d(kx(k)- i) ;
+        end
+        if d(kx(k) +i) <= d(kx(k))
+            dlo(k) = d(kx(k)+i);
+        end
+        i = i+1;
     end
-       
-       for i_ = 1:floor(0.5/dt)       % search for maxima 1 s around s_max
-           if s(kx(k)-i_) >= s(kx(k))
-               sx_d(k) = s(kx(k)- i_) ;
-           end
-           if s(kx(k) +i_) <= d(kx(k))
-               sx_d(k) = s(kx(k)+ i_);
-           end
-         i_ = i_+1;
-       end
+    
+    for i_ = 1:floor(0.5/dt)       % search for maxima 1 s around s_max
+        if s(kx(k)-i_) >= s(kx(k))
+            sx_d(k) = s(kx(k)- i_) ;
+        else   kx_d(k) = 1;
+            
+        end
+        if s(kx(k) +i_) >= s(kx(k))
+            sx_d(k) = s(kx(k)+ i_);
+        else kx_d(k) = 1;
+        end
+        i_ = i_+1;
+    end
 end
 
 % Filter
@@ -92,12 +96,12 @@ for j = 1:length(kx)
 end
 
 kd_index = find(kd(1:end));
-kd = kd(kd_index);        % indices of discriminated peaks 
+kd = kd(kd_index);        % indices of discriminated peaks
 
-t_d=tx(kd_index);                      
+t_d=tx(kd_index);
 
 for l = 1:length(kd_index)
-   s_d(l) = s(kd(l));     % value of discriminated peaks
+    s_d(l) = s(kd(l));     % value of discriminated peaks
 end
 
 % measure heart rate
@@ -144,7 +148,7 @@ subels = 1:round(dt/interval):length(t);
 t_spl = t(subels); s_spl = s(subels); %sample timeline
 s_spl = quant*floor(s_spl/quant);  %sampled value
 
-% Derivative, local maxima s_max, maximum slope around s_max
+% Derivative, local maxima s_max, maximum slope around s_max, major maxima
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
 
@@ -155,34 +159,44 @@ kx = d_spl > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d>0 and k_{x} +1<=0
 
 sx = s_spl(kx+1);           % local maxima
-sx_d = sx;                  % major local maxima 
+sx_d = sx;                  % major local maxima
+
 tx = td_spl(kx) + (td_spl(kx+1)-td_spl(kx)) .* d_spl(kx)./(d_spl(kx)-d_spl(kx+1));
 
 dhi = d_spl(kx);
 dlo = d_spl(kx+1);
 
 for k = 1:length(kx)
- 
+    
     for i = 1:floor(0.25/dt)         % search for maximum slope 0.5 s around s_max
-           if d_spl(kx(k)-i) >= d_spl(kx(k))
-               dhi(k) = d_spl(kx(k)- i) ;
-           end
-           if d_spl(kx(k) +i) <= d_spl(kx(k))
-               dlo(k) = d_spl(kx(k)+i);
-           end
-         i = i+1;
+        if d_spl(kx(k)+1 - i) >= d_spl(kx(k)+1)
+            dhi(k) = d_spl(kx(k)+1 - i) ;
+        end
+        if d_spl(kx(k)+1 + i) <= d_spl(kx(k)+1)
+            dlo(k) = d_spl(kx(k)+1 + i);
+        end
+        i = i+1;
     end
-       
-       for i_ = 1:floor(0.5/dt)       % search for maxima 1 s around s_max
-           if s_spl(kx(k)-i_) >= s_spl(kx(k))
-               sx_d(k) = s_spl(kx(k)- i_) ;
-           end
-           if s(kx(k) +i_) <= d(kx(k))
-               sx_d(k) = s_spl(kx(k)+ i_);
-           end
-         i_ = i_+1;
-       end
+    
 end
+
+% search major peaks with a frequency 1 Hz <= f <= 3.5 Hz (BPM=[60;210])
+
+for k = 1:length(kx)-1
+    if (floor((60/120)/dt) <= (kx(k+1)-kx(k))) && ((kx(k+1)-kx(k)) <= floor(1/dt))
+        
+        if kx(k) < kx(k+1)
+            kx(k) = 0;
+            elsei
+            kx(k+1) = 0;
+        end
+    end
+    
+end
+
+kx_major= find(kx(1:end));
+sx_major = s_spl(kx_major+1);
+tx_major = tx(kx_major);
 
 % Filter
 f = [-0.5 0.5];
@@ -194,24 +208,24 @@ fs = conv( s_spl , fliplr(f)     , 'valid' ) ;
 dhi_max = max(dhi);
 dlo_min = min(dlo);
 
-delta_note2 = dhi - dlo;                        
-normalisation = normlist(delta_note2);      % standard score of delta_note2 
+delta_note2 = dhi - dlo;
+normalisation = normlist(delta_note2);      % standard score of delta_note2
 
 kd = zeros(1,length(kx));
 
-for j = 1:length(kx)
-    if (abs(normalisation(j)) <= 1)
-    kd(j)=kx(j);
+for k = 1:length(kx)
+    if (abs(normalisation(k)) <= 1)
+        kd(k)=kx(k);
     end
 end
 
 kd_index = find(kd(1:end));
-kd = kd(kd_index);        % indices of discriminated peaks 
+kd = kd(kd_index);               % indices of discriminated peaks
 
-t_d=tx(kd_index);                      
+t_d=tx(kd_index);
 
-for l = 1:length(kd_index)
-   s_d(l) = s_spl(kd(l));     % value of discriminated peaks
+for k = 1:length(kd_index)
+    s_d(k) = s_spl(kd(k));     % value of discriminated peaks
 end
 
 % Measure HR
@@ -224,7 +238,7 @@ plot(t, s,'k-'...               % siganl s
     ,t_spl, s_spl,'bo--'...     % sampled signal s_n
     ,td_spl,d_spl,'gx--'...     % derivative of s_n
     ,ft,fs,'m+'...              % filter s
-    ,tx,sx,'cd' ...             % s_max
+    ,tx_major,sx_major,'gd' ...         % Major peaks
     ,tx,dhi,'c^' ...            % d_max_l
     ,tx,dlo,'cv' ...            % d_max_r
     ,t_d,s_d,'rp' ...           % detected peaks
@@ -236,13 +250,16 @@ title('Peaks discrimination for heart rate monitoring');
 xlabel('Time, s');
 ylabel('Arbitrary units');
 legend('s: original signal'...
-      ,'s_n: sampled signal'...
-      ,'derivative of s_n'...
-      ,'filtering of s'...
-      ,'s_{max}'...
-      ,'maximum positive slope around s_{max}'...
-      ,'maximum negative slope around s_{max}'...
-      ,'detected peaks'...
-      ,'Location','northeastoutside');
+    ,'s_n: sampled signal'...
+    ,'derivative of s_n'...
+    ,'filtering of s'...
+    ,'Major peaks'...
+    ,'maximum positive slope around s_{max}'...
+    ,'maximum negative slope around s_{max}'...
+    ,'detected peaks'...
+    ,'Location','northeastoutside');
+
+
+
 
 
