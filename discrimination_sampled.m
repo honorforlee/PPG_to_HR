@@ -1,4 +1,4 @@
-%% Discrimination with sampled signal
+%Discrimination with sampled signal
 
 %Name = 'a07m';
 Name = '3987834m';
@@ -56,11 +56,11 @@ for k = 1:length(kx)
     
 end
 
-% search major peaks with a frequency 1 Hz <= f <= 3.5 Hz (BPM=[60;210])
+% search major peaks with a frequency 0.5 Hz <= f <= 3.5 Hz (BPM=[30;210])
 kx_ = kx;       % auxiliary array
 
 for k = 1:length(kx)-1
-    if (kx(k+1)-kx(k)) <= floor(.5/dt)
+    if (kx(k+1)-kx(k)) <= floor((30/60)/dt)
         
         if s_spl(kx(k)) > s_spl(kx(k+1))
             kx_(k+1) = 0;
@@ -70,7 +70,7 @@ for k = 1:length(kx)-1
 end
 
 kx_major_index= find(kx_(1:end));
-kx_major = kx(kx_major_index);
+kx_major = kx_(kx_major_index);
 
 sx_major = s_spl(kx_major + 1);
 tx_major = tx(kx_major_index);
@@ -88,18 +88,18 @@ dlo_min = min(dlo);
 delta_note2 = dhi - dlo;
 normalisation = normlist(delta_note2);      % standard score of delta_note2
 
-kd = zeros(1,length(kx));
+kd = zeros(1,length(kx_major));
 
-for k = 1:length(kx)
+for k = 1:length(kx_major)
     if (abs(normalisation(k)) <= 1)
-        kd(k)=kx(k);
+        kd(k)=kx_major(k);
     end
 end
 
 kd_index = find(kd(1:end));
 kd = kd(kd_index);               % indices of discriminated peaks
 
-t_d=tx(kd_index);
+t_d=tx_major(kd_index);
 
 for k = 1:length(kd_index)
     s_d(k) = s_spl(kd(k));     % value of discriminated peaks
@@ -115,7 +115,7 @@ plot(t, s,'k-'...               % siganl s
     ,t_spl, s_spl,'bo--'...     % sampled signal s_n
     ,td_spl,d_spl,'gx--'...     % derivative of s_n
     ,ft,fs,'m+'...              % filter s
-    ,tx_major,sx_major,'bd' ...         % Major peaks
+    ,tx_major,sx_major,'cd' ... % Major peaks
     ,tx,dhi,'c^' ...            % d_max_l
     ,tx,dlo,'cv' ...            % d_max_r
     ,t_d,s_d,'rp' ...           % detected peaks
