@@ -1,4 +1,12 @@
-%  http://physionet.org/cgi-bin/atm/ATM
+% Ivan Ny Hanitra - Master thesis
+% Algorithm to discriminate PPG/ECG signal peaks and recover HR
+
+% Requirements 
+%   - discriminate peaks in function of notes
+%       note 1(pentagram): peak amplitude of sampled signal (smax)
+%       note 2 (triangles): local maxima/minima around smax
+%   - discriminate peaks in function of timing
+%       selected peaks have the same frequency (HR)
 
 
 % --- Init. - DO NOT EDIT -
@@ -117,7 +125,7 @@ h = quantisize_input(h);
 
 
 function h = quantisize_input(h)        
-h.dt   = 1/str2double(h.edit_f_mes.String);                     % apply t_samp
+h.dt   = 1/str2double(h.edit_f_sample.String);                     % apply t_samp
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
 h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
 h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );        % signal value sampled at f_samp
@@ -130,7 +138,7 @@ function h = grids(h)
 h.xgrid = [ h.t0(1) h.t0(end) ];
 h.ygrid = [ 0       0         ];
 
-if h.checkbox_f_mes.Value                                       % ?
+if h.checkbox_f_sample.Value                                       % ?
     h.xgrid = [ h.xgrid  nan  kron(h.t,[1 1 1]) ];
     h.ygrid = [ h.ygrid  nan  repmat(10*[h.axes.YLim nan],1,length(h.t)) ];
 end
@@ -157,7 +165,7 @@ end
 %         end
 %     end
 
-function [ft,fs] = apply_filter_(t,s,f)         %? values entered
+function [ft,fs] = apply_filter_(t,s,f)        
 f = str2num(f); %#ok<ST2NM>
 if length(f) > 0
     fs = conv( s , fliplr(f)     , 'valid' ) ;
@@ -166,22 +174,156 @@ else
     fs = []; ft = [];
 end
 
+function [tx,sx,dhi,dlo,td,d] = signal_peaks(t,s)
+d  =  s(2:end) -  s(1:end-1);               % derivative
+td = (  t(2:end) +  t(1:end-1) ) / 2;       % shift timeline of half t_sample
+kx = d > 0;                                 % look at maxima
+kx = find(kx(1:end-1) & ~kx(2:end));        % find derivative zero crossing: indices i where d(i+1)=0 and d(i)~=0
+sx = s(kx+1);                               % asign s_max to next index
+tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % tx = td(kx) - d(kx)/D(kx) where D is the rate of increase with respect to td
+dhi = d(kx);
+dlo = d(kx+1);
+for k = 1:length(kx)
+    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
+end
+
+function detect_points(h) %#ok<DEFNU>
+%     ECG_analysis(h); return  %TODO
+%
+%     if h.ecg
+%         d  = h.ecg(2:end) - h.ecg(1:end-1);  td  = ( h.t0(2:end) + h.t0(1:end-1) ) / 2;
+%         d2 =     d(2:end) -     d(1:end-1);  td2 = (   td(2:end) +   td(1:end-1) ) / 2;
+%         [tx,sx, dhi, dlo] = signal_peaks(h.t0,h.ecg);
+%         [ty,sy,d2hi,d2lo] = signal_peaks(  td,    d);
+%         xl = h.axes.XLim;
+%         yl = h.axes.YLim;
+%         hold off
+%         plot( h.axes ...
+%             , h.t0 , h.ecg, '-k' ...
+%             , td , d , 'x:' ...
+%             , td2, d2, 'x:' ...
+%             , [h.t0(1) h.t0(end)] , [0 0] , ':k' ...
+%             , tx , sx   , 'pr' ...
+%             , tx , dhi  , '^r' ...
+%             , tx , dlo  , 'vr' ...
+%             , kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , '--r' ...
+%             , kron(tx,[1 1 1]) , kron( dlo,[1 0 nan]) + kron( dhi,[0 1 nan]) , '-r' ...
+%             , ty , sy   , 'pb' ...
+%             , ty , d2hi , '^b' ...
+%             , ty , d2lo , 'vb' ...
+%             , kron(ty,[1 1 1]) , kron(sy,[0 1 nan]) , '--b' ...
+%             , kron(ty,[1 1 1]) , kron(d2lo,[1 0 nan]) + kron(d2hi,[0 1 nan]) , '-b' ...
+%             )
+%     else
+d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;       % first derivative
+d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;       % second derivative
+[tx,sx, dhi, dlo] = signal_peaks(h.t,h.s);                                      % detect peaks of signal
+[ty,sy,d2hi,d2lo] = signal_peaks( td,  d);                                      % detect peaks of first derivative
+xl = h.axes.XLim;
+yl = h.axes.YLim;
+hold off
+plot( h.axes ...
+    , h.t0 , h.s0 , '-k' ...  %TODO  %
+    , h.t  , h.s  , 'ok'  ...
+    , td , d , 'x:' ...
+    , td2, d2, 'x:' ...
+    , [h.t0(1) h.t0(end)] , [0 0] , ':k' ...
+    , tx , sx   , 'pb' ...
+    , tx , dhi  , '^b' ...
+    , tx , dlo  , 'vb' ...
+    , kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , '--b' ...
+    , kron(tx,[1 1 1]) , kron( dlo,[1 0 nan]) + kron( dhi,[0 1 nan]) , '-b' ...
+    , ty , sy   , 'pr' ...
+    , ty , d2hi , '^r' ...
+    , ty , d2lo , 'vr' ...
+    , kron(ty,[1 1 1]) , kron(sy,[0 1 nan]) , '--r' ...
+    , kron(ty,[1 1 1]) , kron(d2lo,[1 0 nan]) + kron(d2hi,[0 1 nan]) , '-r' ...
+    )
+%     end
+%     h.axes.XLim = xl;
+%     h.axes.YLim = yl;
+legend({'Signal','Sampled','D1','D2'});
+
+function [tx,sx,dhi,dlo,td,d] = discrimination_peaks(t,s)
+d  =  s(2:end) -  s(1:end-1);               % derivative
+td = (  t(2:end) +  t(1:end-1) ) / 2;       % shift timeline of t_sample/2
+kx = d > 0;                                 % look at maxima
+kx = find(kx(1:end-1) & ~kx(2:end));        % find derivative zero crossing: indices i where d(i+1)=0 and d(i)~=0
+sx = s(kx+1);                               % asign s_max to next index
+tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % tx = td(kx) - d(kx)/D(kx) where D is rate of increase with respect to td
+dhi = d(kx);
+dlo = d(kx+1);
+for k = 1:length(kx)
+    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
+end
 
 function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
     %         h.ft  = [nan nan]; h.fs  = [nan nan];
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_picks(h.t  ,h.s  );
+    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.t  ,h.s  );
 else
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_picks(h.ft ,h.fs );           % filter applied before derivative
+    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.ft ,h.fs );           % filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
     %         h.ft_ = [nan nan]; h.fs_ = [nan nan];
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_picks(h.td ,h.d  );
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.td ,h.d  );
 else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_picks(h.ft_,h.fs_);
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.ft_,h.fs_);
 end
+
+
+function ECG_analysis(h)
+%     if sum(h.ecg .^ 3) < 0; h.ecg = -h.ecg; end
+%     [tx,sx, dhi, dlo] = signal_peaks(h.t0,h.ecg);
+%     l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
+%     k = find(sx > l);
+%     hold off
+%     plot( h.axes ...
+%         , h.t0 , h.ecg , 'x-k' ...
+%         , tx(k), sx(k), 'or' ...
+%         , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
+%         )
+if h.edit_F1.String; s = str2double(h.edit_F1.String); else s = 1; end
+s = h.dt0/s;
+f = s:s:sqrt(-2*log(.01));
+k = length(f);
+f = exp(-.5*f.^2); sum(f)
+f = [ fliplr(f) 1 f ];
+if h.edit_G1.String
+    s = str2double(h.edit_G1.String);
+    s = h.dt0/s;
+    g = s*(1:length(f)); g = g-mean(g);
+    g = exp(-.5*g.^2);
+    %         g = g/(1+2*sum(g));
+    f = f - g;
+end
+f = f/sum(f);
+f = [zeros(1,k) 1 zeros(1,k)] - f;
+ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
+if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
+[tx,sx, dhi, dlo] = signal_peaks(thf,ecg_hf);
+l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
+k = find(sx > l);
+hold off
+%     plot( sort(sx) ,'x'); return
+
+plot( h.axes ...
+    , h.t0 , secg*h.ecg , 'x-k' ...
+    , thf , ecg_hf, '-r' ...
+    , tx(k), sx(k), 'or' ...
+    , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
+    , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
+    )
+%     hold off
+%     plot( h.axes ...
+%         , h.t0 , h.ecg , 'x-k' ...
+%         , h.t0(k+1:end-k) , ecg_hf, '-r' ...
+%         )
+
 
 function plot_(h)
 xl = h.axes.XLim; yl = h.axes.YLim;
@@ -321,24 +463,6 @@ h.axes.XLim = xl; h.axes.YLim = yl;
 %     legend(lgnd);
 
 
-
-function [tx,sx,dhi,dlo,td,d] = signal_picks(t,s)
-d  =  s(2:end) -  s(1:end-1);               % derivative
-td = (  t(2:end) +  t(1:end-1) ) / 2;       % shift timeline
-kx = d > 0;                                 % look at maxima
-kx = find(kx(1:end-1) & ~kx(2:end));        % find derivative zero crossing: indices i where d(i+1)=0 and d(i)~=0
-sx = s(kx+1);                               % asign s_max to next index
-tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % tx = td(kx) - d(kx)/D(kx) where D is derivative with respect to td
-dhi = d(kx);
-dlo = d(kx+1);
-for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
-end
-
-
-
-
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
 guidata(h.output, h);
@@ -371,111 +495,7 @@ if update_filelist(h)
 end
 
 
-function detect_points(h) %#ok<DEFNU>
-%     ECG_analysis(h); return  %TODO
-%
-%     if h.ecg
-%         d  = h.ecg(2:end) - h.ecg(1:end-1);  td  = ( h.t0(2:end) + h.t0(1:end-1) ) / 2;
-%         d2 =     d(2:end) -     d(1:end-1);  td2 = (   td(2:end) +   td(1:end-1) ) / 2;
-%         [tx,sx, dhi, dlo] = signal_picks(h.t0,h.ecg);
-%         [ty,sy,d2hi,d2lo] = signal_picks(  td,    d);
-%         xl = h.axes.XLim;
-%         yl = h.axes.YLim;
-%         hold off
-%         plot( h.axes ...
-%             , h.t0 , h.ecg, '-k' ...
-%             , td , d , 'x:' ...
-%             , td2, d2, 'x:' ...
-%             , [h.t0(1) h.t0(end)] , [0 0] , ':k' ...
-%             , tx , sx   , 'pr' ...
-%             , tx , dhi  , '^r' ...
-%             , tx , dlo  , 'vr' ...
-%             , kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , '--r' ...
-%             , kron(tx,[1 1 1]) , kron( dlo,[1 0 nan]) + kron( dhi,[0 1 nan]) , '-r' ...
-%             , ty , sy   , 'pb' ...
-%             , ty , d2hi , '^b' ...
-%             , ty , d2lo , 'vb' ...
-%             , kron(ty,[1 1 1]) , kron(sy,[0 1 nan]) , '--b' ...
-%             , kron(ty,[1 1 1]) , kron(d2lo,[1 0 nan]) + kron(d2hi,[0 1 nan]) , '-b' ...
-%             )
-%     else
-d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;       % first derivative
-d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;       % second derivative
-[tx,sx, dhi, dlo] = signal_picks(h.t,h.s);                                      % detect picks of signal
-[ty,sy,d2hi,d2lo] = signal_picks( td,  d);                                      % detect picks of first derivative
-xl = h.axes.XLim;
-yl = h.axes.YLim;
-hold off
-plot( h.axes ...
-    , h.t0 , h.s0 , '-k' ...  %TODO  %
-    , h.t  , h.s  , 'ok'  ...
-    , td , d , 'x:' ...
-    , td2, d2, 'x:' ...
-    , [h.t0(1) h.t0(end)] , [0 0] , ':k' ...
-    , tx , sx   , 'pb' ...
-    , tx , dhi  , '^b' ...
-    , tx , dlo  , 'vb' ...
-    , kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , '--b' ...
-    , kron(tx,[1 1 1]) , kron( dlo,[1 0 nan]) + kron( dhi,[0 1 nan]) , '-b' ...
-    , ty , sy   , 'pr' ...
-    , ty , d2hi , '^r' ...
-    , ty , d2lo , 'vr' ...
-    , kron(ty,[1 1 1]) , kron(sy,[0 1 nan]) , '--r' ...
-    , kron(ty,[1 1 1]) , kron(d2lo,[1 0 nan]) + kron(d2hi,[0 1 nan]) , '-r' ...
-    )
-%     end
-%     h.axes.XLim = xl;
-%     h.axes.YLim = yl;
-legend({'Signal','Sampled','D1','D2'});
 
-
-function ECG_analysis(h)
-%     if sum(h.ecg .^ 3) < 0; h.ecg = -h.ecg; end
-%     [tx,sx, dhi, dlo] = signal_picks(h.t0,h.ecg);
-%     l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
-%     k = find(sx > l);
-%     hold off
-%     plot( h.axes ...
-%         , h.t0 , h.ecg , 'x-k' ...
-%         , tx(k), sx(k), 'or' ...
-%         , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
-%         )
-if h.edit_F1.String; s = str2double(h.edit_F1.String); else s = 1; end
-s = h.dt0/s;
-f = s:s:sqrt(-2*log(.01));
-k = length(f);
-f = exp(-.5*f.^2); sum(f)
-f = [ fliplr(f) 1 f ];
-if h.edit_G1.String
-    s = str2double(h.edit_G1.String);
-    s = h.dt0/s;
-    g = s*(1:length(f)); g = g-mean(g);
-    g = exp(-.5*g.^2);
-    %         g = g/(1+2*sum(g));
-    f = f - g;
-end
-f = f/sum(f);
-f = [zeros(1,k) 1 zeros(1,k)] - f;
-ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
-if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[tx,sx, dhi, dlo] = signal_picks(thf,ecg_hf);
-l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
-k = find(sx > l);
-hold off
-%     plot( sort(sx) ,'x'); return
-
-plot( h.axes ...
-    , h.t0 , secg*h.ecg , 'x-k' ...
-    , thf , ecg_hf, '-r' ...
-    , tx(k), sx(k), 'or' ...
-    , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
-    , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
-    )
-%     hold off
-%     plot( h.axes ...
-%         , h.t0 , h.ecg , 'x-k' ...
-%         , h.t0(k+1:end-k) , ecg_hf, '-r' ...
-%         )
 
 function edit13_Callback(hObject, eventdata, handles)
 % hObject    handle to edit13 (see GCBO)
@@ -485,7 +505,7 @@ function edit13_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of edit13 as text
 %        str2double(get(hObject,'String')) returns contents of edit13 as a double
 
-    
+
 % --- Executes during object creation, after setting all properties.
 function edit13_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to edit13 (see GCBO)

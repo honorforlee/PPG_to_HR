@@ -8,9 +8,11 @@ Name = 'a07m';
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
-fgetl(fid); fgetl(fid); fgetl(fid); 
+fgetl(fid);
+fgetl(fid);
+fgetl(fid);
 [interval] = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
-interval = interval(2); 
+interval = interval(2);
 
 % fgetl(fid);
 % for i = 1:size(val, 1)
@@ -20,25 +22,25 @@ fclose(fid);
 
 % val(val==-32768) = NaN;
 t = find(val~=val(end));
-val = val(1:t(end));
+val = val(1:t(end));                 %non zero val
 
-t = (1:length(val)) * interval;
+t = (1:length(val)) * interval;    %timeline
 
 
 % Quantisize
 
-dt = .05; quant = 10;
+dt = .05;                            %t_sample
+quant = 10;                          %vertical step
 subels = 1:round(dt/interval):length(val);
-subt = t(subels); subval = val(subels);
-subval = quant*floor(subval/quant);
+subt = t(subels); subval = val(subels); %sample timeline
+subval = quant*floor(subval/quant);  %sampled value
 
 plot(t', val', subt', subval', 'o--');
-
 xlabel('Time (sec)');
-% grid on
-
 
 %%
+
+
 
 DT = 1;  Ds = round(DT/interval);
 
@@ -182,21 +184,21 @@ plot(t, normlist(val), 'x-', subt, normlist(subval), 'o', hft, normlist(hf), 'x-
 
 %%
 plot(t, normlist(val), 'x-', subt, normlist(subval), 'o', subhft, normlist(subhf), 'x-', ...
-     conv(subhft,[1 1 1]/3,'valid'), normlist(conv(subhf,[-1 2 -1],'valid')), 'x-');
+    conv(subhft,[1 1 1]/3,'valid'), normlist(conv(subhf,[-1 2 -1],'valid')), 'x-');
 
- %%
+%%
 
 subd   = conv(subval,[ 1 -1],'valid');
 subdd  = conv(subd  ,[ 1 -1],'valid');
 subdt  = conv(subt  ,[.5 .5],'valid');
 subddt = conv(subdt ,[.5 .5],'valid');
- 
+
 plot( t, normlist(val), 'x-', subt, normlist(subval), 'o' ...
     , subdt,  normlist(subd ), 'x-' ...
     , subddt, normlist(subdd), 'x-' ...
     );
 
- legend({'Signal','Sampled','D','DD'})
+legend({'Signal','Sampled','D','DD'})
 
 %%
 
@@ -234,7 +236,7 @@ dt = 1/20; dNds = .05;
 t = t0(1):dt:t0(end);
 s = dNds * floor( interp1(t0,s0,t) / dNds );
 
-%%  
+%%
 
 %%
 
@@ -287,7 +289,7 @@ for i = 1:size(val, 1)
     [~,signal,~,~,~] = strread(fgetl(fid),'%d%s%f%f%s','delimiter','\t');
     if signal == 'II'; ecg = i; end
     
-        
-%   [row(i), signal(i), gain(i), base(i), units(i)]=strread(fgetl(fid),'%d%s%f%f%s','delimiter','\t')
+    
+    %   [row(i), signal(i), gain(i), base(i), units(i)]=strread(fgetl(fid),'%d%s%f%f%s','delimiter','\t')
 end
 fclose(fid);
