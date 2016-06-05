@@ -14,7 +14,7 @@ interval = interval(2);
 fclose(fid);
 
 t = (1:7500) * interval;          %timeline
-s = val(1,1:7500);
+s = val(1:7500);
 s  = (s  - mean(s ))/sqrt(var(s ));
 
 % Quantisize
@@ -47,18 +47,18 @@ for k = 1:length(kx)
     for i = 1:floor(0.25/dt)         % search for maximum slope 0.5 s around s_max
         if (kx(k)+1 - i) > 0
             if d_spl(kx(k)+1 - i) >= d_spl(kx(k)+1)
-                dhi(k) = d_spl(kx(k)+1 - i) ;
+            dhi(k) = d_spl(kx(k)+1 - i) ;
             end
         end
         if (kx(k)+1 + i) < length(d_spl)
             if d_spl(kx(k)+1 + i) <= d_spl(kx(k)+1)
-                dlo(k) = d_spl(kx(k)+1 + i);
+            dlo(k) = d_spl(kx(k)+1 + i);
             end
         end
         i = i+1;
+        end
     end
-end
-
+    
 
 % Filter
 f = [-0.5 0.5];
@@ -105,7 +105,7 @@ normalisation = normlist(delta_note2);      % standard score of delta_note2
 kd = zeros(1,length(kx_major));
 
 for k = 1:length(kx_major)
-    if (normalisation(k) >= -1)             % discard peaks with low steepness slope
+    if (normalisation(k) >= -1)             % discard peaks with low steepness slope 
         kd(k)=kx_major(k);
     end
 end
