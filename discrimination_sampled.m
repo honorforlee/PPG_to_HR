@@ -9,25 +9,32 @@ fgetl(fid);
 fgetl(fid);
 fgetl(fid);
 [interval] = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
-interval = interval(2);
+interval = interval(2);              % data acquisition rate (1/f_spl_u = 0.5903 ms in practice)
 
 fclose(fid);
 
-t = (1:7500) * interval;             % timeline
-s = val(1,1:7500);
-s  = (s  - mean(s ))/sqrt(var(s ));  % rescale s on 0 (standard score of signal)
+t = (1:length(val)) * interval;              % timeline
+s = val(1,1:length(val));
+s  = (s  - mean(s ))/sqrt(var(s ));   % rescale s on 0 (standard score of signal)
 
 % Quantisize
-dt = 8e-3;                            %t_sample
-quant = 1e-4;                         %vertical step
+dt = 0.5;                            % t_sample >> interval
+t_int = 0.1;                         % integration time > interval
+quant = 1e-4;                        % LSB: vertical step
 
-subels = 1:round(dt/interval):length(t);
-t_spl = t(subels); %sample timeline
-s_spl = s(subels); 
+subels = (1:round(dt/interval):length(t));
+t_spl = t(subels);                    % sample timeline
+%s_spl = s(subels);
 
-s_spl = quant*floor(s_spl/quant);  %sampled value
+frameInteg = (0:round(t_int/interval))';
+frameInteg = bsxfun(@minus, subels, frameInteg);
+frameInteg_zero = find (frameInteg <= 0);
+frameInteg(frameInteg_zero) = 1;        % dt enough big to get negative index only in the first column 
 
-% Derivative, local maxima s_max, maximum slope around s_max, major maxima
+s_spl = mean( s(frameInteg) );          % average of s @ elements of subels on tinteg last seconds
+s_spl = quant*floor(s_spl/quant);       % quantisation
+
+% Derivative, local maxima sx, maximum slope around sx
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
 
@@ -37,31 +44,33 @@ td_spl = (  t_spl(2:end) +  t_spl(1:end-1) ) / 2;
 kx = d_spl > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d>0 and k_{x} +1<=0
 
-sx = s_spl(kx+1);           % local maxima
-sx_d = sx;                  % major local maxima
-
-tx = td_spl(kx) + (td_spl(kx+1)-td_spl(kx)) .* d_spl(kx)./(d_spl(kx)-d_spl(kx+1));
+sx = s_spl(kx+1);                          % local maxima
+tx = td_spl(kx) + (td_spl(kx+1)-td_spl(kx)) .* d_spl(kx)./(d_spl(kx)-d_spl(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 
 dhi = d_spl(kx);
 dlo = d_spl(kx+1);
 
-for k = 1:length(kx)
-    
-    for i = 1:floor(0.25/dt)         % search for maximum slope 0.5 s around s_max
-        if (kx(k)+1 - i) > 0
-            if d_spl(kx(k)+1 - i) >= d_spl(kx(k)+1)
-                dhi(k) = d_spl(kx(k)+1 - i) ;
-            end
-        end
-        if (kx(k)+1 + i) < length(d_spl)
-            if d_spl(kx(k)+1 + i) <= d_spl(kx(k)+1)
-                dlo(k) = d_spl(kx(k)+1 + i);
-            end
-        end
-        i = i+1;
-    end
-end
+% for k = 1:length(kx)
+%     
+%     for i = 1:floor(0.25/dt)         % search for maximum slope 0.5 s around s_max
+%         if (kx(k)+1 - i) > 0
+%             if d_spl(kx(k)+1 - i) >= d_spl(kx(k)+1)
+%                 dhi(k) = d_spl(kx(k)+1 - i) ;
+%             end
+%         end
+%         if (kx(k)+1 + i) < length(d_spl)
+%             if d_spl(kx(k)+1 + i) <= d_spl(kx(k)+1)
+%                 dlo(k) = d_spl(kx(k)+1 + i);
+%             end
+%         end
+%         i = i+1;
+%     end
+% end
 
+for k = 1:length(kx)
+    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
+end
 
 % Filter
 f = [-0.5 0.5];
@@ -112,8 +121,8 @@ normalisation = normlist(delta_note2);      % standard score of delta_note2
 
 kd = zeros(1,length(kx_major));
 
-for k = 1:length(kx_major)           
-    if (normalisation(k) >= -1)   % discard peaks wich delta_note2 is 1 standard deviation below the mean delta_note2      
+for k = 1:length(kx_major)
+    if (normalisation(k) >= -1)   % discard peaks wich delta_note2 is 1 standard deviation below the mean delta_note2
         kd(k)=kx_major(k);
     end
 end
