@@ -17,34 +17,25 @@ t = (1:7500) * interval;             % timeline
 s = val(1,1:7500);
 s  = (s  - mean(s ))/sqrt(var(s ));  % rescale s on 0 (standard score of signal)
 
-% Quantisize and integration
-dt = 8e-3;                            % t_sample
-quant = 1e-4;                         % vertical step
+% Quantisize
+dt = 8e-3;                            %t_sample
+quant = 1e-4;                         %vertical step
 
 subels = 1:round(dt/interval):length(t);
-
-t_spl = t(subels);      % timeline
-s_spl = s(subels); 
 
 t_int = 1e-3;
 
 for k = 1:length(subels)-1
     
     subels_int(k) = subels(k) + (subels(k+1)-subels(k))/(dt/t_int);
-    
+        
 end
 
 subels_tot = horzcat(subels,subels_int);
 subels_tot = sort(subels_tot);
 
-
-
-for k = 1:length(subels)-1
-    
-    s_int;
-    
-end
-
+t_spl = t(subels); % timeline
+s_spl = s(subels); 
 
 noise = poisspdf(subels,5);
 s_spl = quant*floor((s_spl + noise)/quant);  % sampled value

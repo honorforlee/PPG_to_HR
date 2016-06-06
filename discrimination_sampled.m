@@ -13,15 +13,18 @@ interval = interval(2);
 
 fclose(fid);
 
-t = (1:7500) * interval;          %timeline
+t = (1:7500) * interval;             % timeline
 s = val(1,1:7500);
-s  = (s  - mean(s ))/sqrt(var(s ));
+s  = (s  - mean(s ))/sqrt(var(s ));  % rescale s on 0 (standard score of signal)
 
 % Quantisize
 dt = 8e-3;                            %t_sample
-quant = 1e-4;                          %vertical step
+quant = 1e-4;                         %vertical step
+
 subels = 1:round(dt/interval):length(t);
-t_spl = t(subels); s_spl = s(subels); %sample timeline
+t_spl = t(subels); %sample timeline
+s_spl = s(subels); 
+
 s_spl = quant*floor(s_spl/quant);  %sampled value
 
 % Derivative, local maxima s_max, maximum slope around s_max, major maxima
@@ -70,12 +73,17 @@ fs = conv( s_spl , fliplr(f)     , 'valid' ) ;
 
 kx_ = kx;       % auxiliary array
 
+if sx(1) < 0.5 * sx(2)
+    kx_(1) = 0;
+end
+
 for k = 1:length(kx) - 1
     if (kx(k+1)-kx(k)) <= floor((1/3.5)/dt)
-        if sx(k) > sx(k+1)                  % discard minor peaks with a frequency f > 3.5 Hz (BPM_max = 210)
+        if sx(k+1) < sx(k)                  % discard minor peaks with a frequency f > 3.5 Hz (BPM_max = 210)
             kx_(k+1) = 0;
         end
     end
+    
     if (kx(k+1)-kx(k)) <= floor((1/dt))     % discard minor amplitude peaks
         if sx(k+1) < 0.5 * sx(k)
             kx_(k+1) = 0;
@@ -104,8 +112,8 @@ normalisation = normlist(delta_note2);      % standard score of delta_note2
 
 kd = zeros(1,length(kx_major));
 
-for k = 1:length(kx_major)
-    if (normalisation(k) >= -1)             % discard peaks with low steepness slope
+for k = 1:length(kx_major)           
+    if (normalisation(k) >= -1)   % discard peaks wich delta_note2 is 1 standard deviation below the mean delta_note2      
         kd(k)=kx_major(k);
     end
 end
