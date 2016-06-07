@@ -1,6 +1,8 @@
-%Discrimination with sampled signal
+% Ivan NY HANITRA - Master thesis
+%       -- Discrimination with sampled signal --
 
-%Name = '3987834m';
+%   - Load file and data -
+%Name = '3987834m';     % BPM = 78
 Name = '3801060_0007m'; % BPM = 95
 
 load(strcat(Name, '.mat'));
@@ -17,24 +19,34 @@ t = (1:length(val)) * interval;              % timeline
 s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
-% Quantisize
-dt = 0.1;                       % sampling time: dt >> interval
+%   - Timeline, noise, integration, quantisization -
+dt = 0.1;                            % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
 quant = 1e-4;                        % LSB: vertical step
 
 subels = (1:round(dt/interval):length(t));
-t_spl = t(subels);                    % sample timeline
+t_spl = t(subels);                           % sample timeline
 %s_spl = s(subels);
 
+% Noise
+frameNoise = (0:round(dt/interval))';
+frameNoise = bsxfun(@minus, subels, frameNoise);
+frameNoise_zero = find (frameNoise <= 0);
+frameNoise(frameNoise_zero) = 1;
+
+noise = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));   % Noise with normal distribution
+
+% Integration
 frameInteg = (0:round(t_int/interval))';
 frameInteg = bsxfun(@minus, subels, frameInteg);
 frameInteg_zero = find (frameInteg <= 0);
-frameInteg(frameInteg_zero) = 1;        % t_int < dt  
+frameInteg(frameInteg_zero) = 1;                       % t_int < dt
 
-s_spl = mean( s(frameInteg) );          % average of s @ elements of subels on t_int last seconds
-s_spl = quant*floor(s_spl/quant);       % quantisation
+s_spl = mean( vertcat(s(frameInteg),noise) );          % average of s @ elements of subels on t_int last seconds + noise
 
-% Derivative, local maxima sx, maximum slope around sx
+s_spl = quant*floor(s_spl/quant);                      % quantisization
+
+%   - Derivative, local maxima sx, maximum slope around sx -
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
 
@@ -51,8 +63,8 @@ dhi = d_spl(kx);
 dlo = d_spl(kx+1);
 
 % for k = 1:length(kx)                % search for maximum slope 0.5 s around s_max
-%     
-%     for i = 1:floor(0.25/dt)         
+%
+%     for i = 1:floor(0.25/dt)
 %         if (kx(k)+1 - i) > 0
 %             if d_spl(kx(k)+1 - i) >= dhi(k)
 %                 dhi(k) = d_spl(kx(k)+1 - i) ;
@@ -68,18 +80,18 @@ dlo = d_spl(kx+1);
 % end
 
 for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx- 
+    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx-
     i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
 end
 
-% Filter
+%   - Filter -
 f = [-0.5 0.5];
 ft = conv( t_spl , ones(size(f)) , 'valid' ) / length(f) ;
 fs = conv( s_spl , fliplr(f)     , 'valid' ) ;
 
-% Discrimination of peaks
-% - note 1
+%   - Discrimination of peaks -
 
+% - note 1
 kx_ = kx;       % auxiliary array
 
 if sx(1) < 0.5 * sx(2)
