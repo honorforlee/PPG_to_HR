@@ -1,7 +1,7 @@
 %Discrimination with sampled signal
 
-%Name = '3987834m';
-Name = '3801060_0007m'; % BPM = 95
+Name = '3987834m';           % BPM = 78
+%Name = '3801060_0007m';     % BPM = 95
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -14,24 +14,17 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 fclose(fid);
 
 t = (1:length(val)) * interval;              % timeline
-s = val(1,1:length(val));
+s = val(5,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 % Quantisize
-dt = 0.1;                       % sampling time: dt >> interval
-t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
+dt = interval;                       % sampling time: dt >> interval
+%t_int = dt * (1/3);                 % integration time: interval <= t_int < dt
 quant = 1e-4;                        % LSB: vertical step
 
 subels = (1:round(dt/interval):length(t));
 t_spl = t(subels);                    % sample timeline
-%s_spl = s(subels);
-
-frameInteg = (0:round(t_int/interval))';
-frameInteg = bsxfun(@minus, subels, frameInteg);
-frameInteg_zero = find (frameInteg <= 0);
-frameInteg(frameInteg_zero) = 1;        % t_int < dt  
-
-s_spl = mean( s(frameInteg) );          % average of s @ elements of subels on t_int last seconds
+s_spl = s(subels);
 s_spl = quant*floor(s_spl/quant);       % quantisation
 
 % Derivative, local maxima sx, maximum slope around sx
@@ -47,9 +40,9 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d>0 and k_{x} +1<
 sx = s_spl(kx+1);                          % local maxima
 tx = td_spl(kx) + (td_spl(kx+1)-td_spl(kx)) .* d_spl(kx)./(d_spl(kx)-d_spl(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 
-dhi = d_spl(kx);
-dlo = d_spl(kx+1);
-
+% dhi = d_spl(kx);
+% dlo = d_spl(kx+1);
+% 
 % for k = 1:length(kx)                % search for maximum slope 0.5 s around s_max
 %     
 %     for i = 1:floor(0.25/dt)         
@@ -67,9 +60,12 @@ dlo = d_spl(kx+1);
 %     end
 % end
 
+dhi_ = d_spl(kx);
+dlo_ = d_spl(kx+1);
+
 for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx- 
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
+    i = kx(k)-1;   while i > 0         && d(i) >= dhi_(k); dhi_(k) = d(i); i = i-1; end    % search for local maxima at left
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo_(k); dlo_(k) = d(i); i = i+1; end    % search for local minima at right
 end
 
 % Filter
@@ -108,15 +104,7 @@ tx_major = tx(kx_major_index);
 
 % - note 2
 
-% dhi_= d_spl(kx_major);
-% dlo_ =d_spl(kx_major + 1);
-%
-% for k = 1:length(kx_major)
-%     i = kx_major(k)-1;   while i > 0         && d_spl(i) >= dhi_(k); dhi_(k) = d_spl(i); i = i-1; end    % search for local maxima at left
-%     i = kx_major(k)+2;   while i < length(d) && d_spl(i) <= dlo_(k); dlo_(k) = d_spl(i); i = i+1; end    % search for local minima at right
-% end
-
-delta_note2 = dhi - dlo;
+delta_note2 = dhi_ - dlo_;
 normalisation = normlist(delta_note2);      % standard score of delta_note2
 
 kd = zeros(1,length(kx_major));
