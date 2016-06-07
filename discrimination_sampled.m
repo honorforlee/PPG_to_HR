@@ -42,19 +42,16 @@ frameInteg = bsxfun(@minus, subels, frameInteg);
 frameInteg_zero = find (frameInteg <= 0);
 frameInteg(frameInteg_zero) = 1;                       % t_int < dt
 
-s_spl = mean( vertcat(s(frameInteg),noise) );          % average of s @ elements of subels on t_int last seconds + noise
+s_spl = mean( vertcat(s(frameInteg),noise) );          % average of s + noise @ elements of subels on t_int last seconds 
 
 s_spl = quant*floor(s_spl/quant);                      % quantisization
 
 %   - Derivative, local maxima sx, maximum slope around sx -
-d = s(2:end) -  s(1:end-1);
-td = (  t(2:end) +  t(1:end-1) ) / 2;
-
 d_spl = s_spl(2:end) -  s_spl(1:end-1);
 td_spl = (  t_spl(2:end) +  t_spl(1:end-1) ) / 2;
 
 kx = d_spl > 0;
-kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d>0 and k_{x} +1<=0
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d_spl > 0; d_spl( k_{x} + 1 ) <= 0
 
 sx = s_spl(kx+1);                          % local maxima
 tx = td_spl(kx) + (td_spl(kx+1)-td_spl(kx)) .* d_spl(kx)./(d_spl(kx)-d_spl(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
@@ -80,8 +77,8 @@ dlo = d_spl(kx+1);
 % end
 
 for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx-
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
+    i = kx(k)-1;   while i > 0             && d_spl(i) >= dhi(k); dhi(k) = d_spl(i); i = i-1; end    % search for maximum positive slope at kx-
+    i = kx(k)+2;   while i < length(d_spl) && d_spl(i) <= dlo(k); dlo(k) = d_spl(i); i = i+1; end    % search for maximmum negative slope at kx+
 end
 
 %   - Filter -
@@ -89,7 +86,7 @@ f = [-0.5 0.5];
 ft = conv( t_spl , ones(size(f)) , 'valid' ) / length(f) ;
 fs = conv( s_spl , fliplr(f)     , 'valid' ) ;
 
-%   - Discrimination of peaks -
+%   - Peaks discrimination -
 
 % - note 1
 kx_ = kx;       % auxiliary array
@@ -120,14 +117,6 @@ tx_major = tx(kx_major_index);
 
 % - note 2
 
-% dhi_= d_spl(kx_major);
-% dlo_ =d_spl(kx_major + 1);
-%
-% for k = 1:length(kx_major)
-%     i = kx_major(k)-1;   while i > 0         && d_spl(i) >= dhi_(k); dhi_(k) = d_spl(i); i = i-1; end    % search for local maxima at left
-%     i = kx_major(k)+2;   while i < length(d) && d_spl(i) <= dlo_(k); dlo_(k) = d_spl(i); i = i+1; end    % search for local minima at right
-% end
-
 delta_note2 = dhi - dlo;
 normalisation = normlist(delta_note2);      % standard score of delta_note2
 
@@ -154,17 +143,22 @@ result = sprintf('Average heart Rate: %d bpm', HR);
 disp(result);
 
 % Plot
+
 plot(t, s,'k-'...               % siganl s
-    ,t_spl, s_spl,'bo--'...     % sampled signal s_n
-    ,td_spl,d_spl,'gx--'...     % derivative of s_n
-    ,ft,fs,'m+'...              % filter s
-    ,tx_major,sx_major,'bp' ... % Major peaks
+    ,t_spl, s_spl,'ko--'...     % sampled signal s_n
+    ,td_spl,d_spl,'bx--'...     % derivative of s_n
+    ,ft,fs,'g+'...              % filter s_n
+    ,tx_major,sx_major,'rp' ... % Major peaks
     ,tx,dhi,'c^' ...            % d_max_l
     ,tx,dlo,'cv' ...            % d_max_r
-    ,t_d,s_d,'rp' ...           % detected peaks
     ,kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-' ...       % link note_2
     );
+
 %,kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , 'c-' ...                                 % link note_1
+
+hold on
+
+plot(t_d,s_d,'rp','MarkerSize',15,'LineWidth',3);
 
 title('Peaks discrimination for heart rate monitoring');
 xlabel('Time, s');
@@ -172,10 +166,11 @@ ylabel('Arbitrary units');
 legend('s: original signal'...
     ,'s_n: sampled signal'...
     ,'derivative of s_n'...
-    ,'filtering of s'...
+    ,'filtering of s_n'...
     ,'Major peaks'...
     ,'maximum positive slope around s_{max}'...
     ,'maximum negative slope around s_{max}'...
-    ,'detected peaks'...
     ,'Location','northeastoutside');
+
+hold off
 
