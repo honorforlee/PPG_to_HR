@@ -56,7 +56,7 @@ noise_therm = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(su
 
 for k = 1 : length(frameNoise)
  
-noise_shot (k) = sum(  poisspdf( fliplr(frameNoise(:,k)') , mean( abs( s( fliplr(frameNoise(:,k)')) )) ) ); % Poisson statistics (model shot noise of Photodiode)
+noise_shot (k) = sum(  poisspdf( fliplr(frameNoise(:,k)') , mean( abs( s( fliplr(frameNoise(:,k)')) )) ) ); % Poisson statistics to model shot noise of Photodiode
 
 end
 
@@ -66,10 +66,11 @@ frameInteg = bsxfun(@minus, subels, frameInteg);
 frameInteg_zero = find (frameInteg <= 0);
 frameInteg(frameInteg_zero) = 1;                       % t_int < dt
 
-s_spl = mean( vertcat(s(frameInteg),bsxfun(@plus, noise_therm , noise_shot) )   );          % sampled signal = average of Nint last values + noise during dt
+s_spl = mean( vertcat(s(frameInteg),bsxfun(@plusnoise_therm + noise_shot) );          % average of s + noise @ elements of subels on t_int last seconds 
 
 s_spl = quant*floor(s_spl/quant);                      % quantisization
 
+%%
 %   - Derivative, local maxima sx, maximum slope around sx -
 d_spl = s_spl(2:end) -  s_spl(1:end-1);
 td_spl = (  t_spl(2:end) +  t_spl(1:end-1) ) / 2;
