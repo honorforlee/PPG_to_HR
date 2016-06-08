@@ -26,7 +26,7 @@ quant = 1e-4;                        % LSB: vertical step
 
 subels = (1:round(dt/interval):length(t));
 t_spl = t(subels);                           % sample timeline
-%s_spl = s(subels);
+s_spl = s(subels);
 
 % Noise
 frameNoise = (0:round(dt/interval))';
@@ -34,7 +34,13 @@ frameNoise = bsxfun(@minus, subels, frameNoise);
 frameNoise_zero = find (frameNoise <= 0);
 frameNoise(frameNoise_zero) = 1;
 
-noise = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));   % Noise with normal distribution
+noise_therm = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));                     % Gaussian distribution (model thermal noise of finite BW)
+
+for k = 1 : length(frameNoise)
+ 
+noise_shot (k) = sum(  poisspdf( fliplr(frameNoise(:,k)') , mean( abs( s( fliplr(frameNoise(:,k)')) )) ) ); % Poisson statistics (model shot noise of Photodiode)
+
+end
 
 % Integration
 frameInteg = (0:round(t_int/interval))';
@@ -42,7 +48,7 @@ frameInteg = bsxfun(@minus, subels, frameInteg);
 frameInteg_zero = find (frameInteg <= 0);
 frameInteg(frameInteg_zero) = 1;                       % t_int < dt
 
-s_spl = mean( vertcat(s(frameInteg),noise) );          % average of s + noise @ elements of subels on t_int last seconds 
+s_spl = mean( vertcat(s(frameInteg),bsxfun(@plus, noise_therm , noise_shot) )   );          % sampled signal = average of Nint last values + noise during dt
 
 s_spl = quant*floor(s_spl/quant);                      % quantisization
 
@@ -80,6 +86,29 @@ for k = 1:length(kx)
     i = kx(k)-1;   while i > 0             && d_spl(i) >= dhi(k); dhi(k) = d_spl(i); i = i-1; end    % search for maximum positive slope at kx-
     i = kx(k)+2;   while i < length(d_spl) && d_spl(i) <= dlo(k); dlo(k) = d_spl(i); i = i+1; end    % search for maximmum negative slope at kx+
 end
+
+delta_note2 = dhi - dlo;
+
+X = [ sx(:),delta_note2(:)];
+
+opts = statset('Display','final');
+[idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
+    'Replicates',5,'Options',opts);                 % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
+
+plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12)  % cluster 1 correspoding sx,delta_note2 (minor)
+hold on
+plot(X(idx==2,1),X(idx==2,2),'b.','MarkerSize',12)  % cluster 2 correspoding sx,delta_note2 (major)
+plot(C(:,1),C(:,2),'kx',...                         % plot centroids
+     'MarkerSize',15,'LineWidth',3)
+ 
+title 'Cluster Assignments and Centroids'
+legend('Minor peaks','Major peaks','Centroids',...
+       'Location','NW')
+xlabel ('sx');
+ylabel ('delta_{note2}');
+hold off
+
+
 
 %   - Filter -
 f = [-0.5 0.5];
