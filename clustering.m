@@ -124,6 +124,7 @@ ppg_freq = 1./ (mean(freq_) * mean(dtx)) ;               % PPG frequency
 
 
 
+
 %   - Plots -
 figure (1);
 plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12)  % cluster 1 correspoding sx,delta_note2 (minor)
