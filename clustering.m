@@ -117,88 +117,30 @@ else
     major_index = cluster2; 
 end
 
-for k = 1:length(major_index)-1
+tx_major_c = tx(major_index);                       
+sx_major_c = sx(major_index);
+
+for k = 1:length(major_index) - 1
     
-   freq = mean( major_index(k+1) - major_index
+   freq_(k) = major_index(k+1) - major_index(k);    % major peak every freq_ peak
+ 
+end
+
+for k = 1 : length(tx) - 1
+    
+    dtx(k)= tx(k+1) - tx(k);                        % time interval between peaks
     
 end
-%%
-%   - Filter -
-f = [-0.5 0.5];
-ft = conv( t_spl , ones(size(f)) , 'valid' ) / length(f) ;
-fs = conv( s_spl , fliplr(f)     , 'valid' ) ;
 
-%   - Peaks discrimination -
-
-% - note 1
-kx_ = kx;       % auxiliary array
-
-if sx(1) < 0.5 * sx(2)
-    kx_(1) = 0;
-end
-
-for k = 1:length(kx) - 1
-    if (kx(k+1)-kx(k)) <= floor((1/3.5)/dt)
-        if sx(k+1) < sx(k)                  % discard minor peaks with a frequency f > 3.5 Hz (BPM_max = 210)
-            kx_(k+1) = 0;
-        end
-    end
-    
-    if (kx(k+1)-kx(k)) <= floor((1/dt))     % discard minor amplitude peaks
-        if sx(k+1) < 0.5 * sx(k)
-            kx_(k+1) = 0;
-        end
-    end
-end
-
-kx_major_index= find(kx_(1:end));
-kx_major = kx_(kx_major_index);
-
-sx_major = s_spl(kx_major + 1);
-tx_major = tx(kx_major_index);
-
-% - note 2
-normalisation = normlist(delta_note2);      % standard score of delta_note2
-
-kd = zeros(1,length(kx_major));
-
-for k = 1:length(kx_major)
-    if (normalisation(k) >= -2)   % discard peaks wich delta_note2 is 1 standard deviation below the mean delta_note2
-        kd(k)=kx_major(k);
-    end
-end
-
-kd_index = find(kd(1:end));
-kd = kd(kd_index);               % indices of discriminated peaks
-
-t_d=tx_major(kd_index);
-
-for k = 1:length(kd_index)
-    s_d(k) = s_spl(kd(k)+1);     % value of discriminated peaks
-end
-
-% Measure HR
-HR = (60*length(kd))/t(end);
-result = sprintf('Average heart Rate: %d bpm', HR);
-disp(result);
-
-% Plot
+freq =1./ (mean(freq_) * mean(dtx)) ;               % PPG frequency
 
 plot(t, s,'k-'...               % siganl s
     ,t_spl, s_spl,'ko--'...     % sampled signal s_n
-    ,td_spl,d_spl,'bx--'...     % derivative of s_n
-    ,ft,fs,'g+'...              % filter s_n
-    ,tx_major,sx_major,'rp' ... % Major peaks
-    ,tx,dhi,'c^' ...            % d_max_l
-    ,tx,dlo,'cv' ...            % d_max_r
-    ,kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-' ...       % link note_2
+    ,td_spl, d_spl,'g--'...     % derivative of s_n 
     );
-
-%,kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , 'c-' ...                                 % link note_1
-
 hold on
 
-plot(t_d,s_d,'rp','MarkerSize',15,'LineWidth',3);
+plot(tx_major_c,sx_major_c,'rp','MarkerSize',15,'LineWidth',3);
 
 title('Peaks discrimination for heart rate monitoring');
 xlabel('Time, s');
@@ -206,11 +148,5 @@ ylabel('Arbitrary units');
 legend('s: original signal'...
     ,'s_n: sampled signal'...
     ,'derivative of s_n'...
-    ,'filtering of s_n'...
-    ,'Major peaks'...
-    ,'maximum positive slope around s_{max}'...
-    ,'maximum negative slope around s_{max}'...
     ,'Location','northeastoutside');
-
 hold off
-
