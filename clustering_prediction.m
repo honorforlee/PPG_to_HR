@@ -1,5 +1,5 @@
 % Ivan NY HANITRA - Master thesis
-%       -- Discrimination with sampled signal --
+%       -- Peaks clustering and frequency prediction --
 
 %   - Load file and data -
 %Name = '3987834m';     % BPM = 78
@@ -15,20 +15,21 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 
 fclose(fid);
 
-%   - Create subdata -
+%   - Create subdata of 5s -
+range = (1 : (5/interval)) * interval;      
 
-range = (1 : (5/interval)) * interval;
-L = length(range);
-
-%val_div = zeros(12,length(range));
-
-val_div(1,:) = val(1:length(range));
-
-
-for k = 1 : length(val) / length(range) - 1   
+for k = 0 : length(val) / length(range) - 1   
     val_div(k+1,:)= val(  k*(length(range)) + 1 : (k+1)*(length(range)) ) ;
-    
 end
+
+%   - Predicion and note for next data subset -
+freq_1 = clustering_function(val_div(1,:), 8e-3, 0.1, 0.1/3, 1e-4);
+
+for k = 2:length(val) / length(range)
+    clustering_function(val_div(k,:), 8e-3, 0.1, 0.1/3, 1e-4);
+        
+end
+
 
 
 %%

@@ -1,4 +1,6 @@
-%Discrimination with sampled signal
+% Ivan NY HANITRA - Master thesis
+%       -- Compute signal BPM with dt=interval  --
+
 
 Name = '3987834m';           % BPM = 78
 %Name = '3801060_0007m';     % BPM = 95

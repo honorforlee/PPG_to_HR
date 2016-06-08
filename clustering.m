@@ -1,5 +1,5 @@
 % Ivan NY HANITRA - Master thesis
-%       -- Discrimination with sampled signal --
+%       -- Clustering peaks, discrimination, compute PPG frequency --
 
 %   - Load file and data -
 %Name = '3987834m';     % BPM = 78

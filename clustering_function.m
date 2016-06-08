@@ -1,17 +1,16 @@
-function ppg_freq = clustering_function(val,interval) 
+function ppg_freq = clustering_function(val, interval, dt, t_int, quant) 
 
 t = (1:length(val)) * interval;              % timeline
 s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantisization -
-dt = 0.1;                            % sampling time: dt >> interval
-t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
-quant = 1e-4;                        % LSB: vertical step
+%dt = 0.1;                            % sampling time: dt >> interval
+%t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
+%quant = 1e-4;                        % LSB: vertical step
 
 subels = (1:round(dt/interval):length(t));
 t_spl = t(subels);                           % sample timeline
-%s_spl = s(subels);
 
 % Noise
 frameNoise = (0:round(dt/interval))';
