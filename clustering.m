@@ -38,7 +38,7 @@ noise_therm = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(su
 
 for k = 1 : length(frameNoise)
  
-noise_shot (k) = sum(  poisspdf( fliplr(frameNoise(:,k)') , mean( abs( s( fliplr(frameNoise(:,k)')) )) ) ); % Poisson statistics (model shot noise of Photodiode)
+noise_shot (k) = sum(  poisspdf( fliplr(frameNoise(:,k)') , mean( abs( s( fliplr(frameNoise(:,k)')) )) ) ); % Poisson statistics (model shot noise of Photodiode: independant random events)
 
 end
 
@@ -95,6 +95,37 @@ X = [ sx(:),delta_note2(:) ];                        % data
 [idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
     'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
 
+cluster1 = find(idx==1)';
+cluster2 = find(idx==2)';
+
+if sx(cluster1(1)) > sx(cluster2(1))                % assign major peak cluster
+    major_index = cluster1;
+else
+    major_index = cluster2; 
+end
+
+tx_major_c = tx(major_index);                       
+sx_major_c = sx(major_index);
+
+%   - Note for major peaks frequency -
+for k = 1:length(major_index) - 1
+    
+   freq_(k) = major_index(k+1) - major_index(k);    % major peak every freq_ peak
+ 
+end
+
+for k = 1 : length(tx) - 1
+    
+    dtx(k)= tx(k+1) - tx(k);                        % time interval between peaks
+    
+end
+
+ppg_freq = 1./ (mean(freq_) * mean(dtx)) ;               % PPG frequency
+
+
+
+%   - Plots -
+figure (1);
 plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12)  % cluster 1 correspoding sx,delta_note2 (minor)
 hold on
 plot(X(idx==2,1),X(idx==2,2),'b.','MarkerSize',12)  % cluster 2 correspoding sx,delta_note2 (major)
@@ -108,32 +139,7 @@ xlabel ('sx')
 ylabel ('delta_{note2}');
 hold off
 
-cluster1 = find(idx==1)';
-cluster2 = find(idx==2)';
-
-if sx(cluster1(1)) > sx(cluster2(1))                % assign major peak cluster
-    major_index = cluster1;
-else
-    major_index = cluster2; 
-end
-
-tx_major_c = tx(major_index);                       
-sx_major_c = sx(major_index);
-
-for k = 1:length(major_index) - 1
-    
-   freq_(k) = major_index(k+1) - major_index(k);    % major peak every freq_ peak
- 
-end
-
-for k = 1 : length(tx) - 1
-    
-    dtx(k)= tx(k+1) - tx(k);                        % time interval between peaks
-    
-end
-
-freq =1./ (mean(freq_) * mean(dtx)) ;               % PPG frequency
-
+figure(2);
 plot(t, s,'k-'...               % siganl s
     ,t_spl, s_spl,'ko--'...     % sampled signal s_n
     ,td_spl, d_spl,'g--'...     % derivative of s_n 
