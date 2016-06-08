@@ -26,7 +26,7 @@ quant = 1e-4;                        % LSB: vertical step
 
 subels = (1:round(dt/interval):length(t));
 t_spl = t(subels);                           % sample timeline
-s_spl = s(subels);
+%s_spl = s(subels);
 
 % Noise
 frameNoise = (0:round(dt/interval))';
@@ -89,11 +89,11 @@ end
 
 delta_note2 = dhi - dlo;
 
-X = [ sx(:),delta_note2(:)];
+X = [ sx(:),delta_note2(:)];                        % data
+C = [0.19385,1.79635;1.94580,4.560];                % centroïds
 
-opts = statset('Display','final');
 [idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
-    'Replicates',5,'Options',opts);                 % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
+    'Replicates',1,'Start',C,'Options',statset('Display','final'));                 % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
 
 plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12)  % cluster 1 correspoding sx,delta_note2 (minor)
 hold on
@@ -104,12 +104,15 @@ plot(C(:,1),C(:,2),'kx',...                         % plot centroids
 title 'Cluster Assignments and Centroids'
 legend('Minor peaks','Major peaks','Centroids',...
        'Location','NW')
-xlabel ('sx');
+xlabel ('sx')
 ylabel ('delta_{note2}');
 hold off
 
+major_index = find (idx==2)';
 
 
+
+%%
 %   - Filter -
 f = [-0.5 0.5];
 ft = conv( t_spl , ones(size(f)) , 'valid' ) / length(f) ;
@@ -145,8 +148,6 @@ sx_major = s_spl(kx_major + 1);
 tx_major = tx(kx_major_index);
 
 % - note 2
-
-delta_note2 = dhi - dlo;
 normalisation = normlist(delta_note2);      % standard score of delta_note2
 
 kd = zeros(1,length(kx_major));
