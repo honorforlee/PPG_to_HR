@@ -24,10 +24,15 @@ dt = 0.1;                            % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
 quant = 1e-4;                        % LSB: vertical step
 
-subels = (1:round(dt/interval):length(t));
-t_spl = t(subels);                           % sample timeline
-%s_spl = s(subels);
+for k = 1:12
 
+t_div(k) = (k: round(5/interval)) * interval;   
+subels_div(k) = (1:round(dt/interval):length(t_div(k)));
+t_spl_div(k) = t(subels_div(k));                           % sample timeline
+
+end
+
+%
 % Noise
 frameNoise = (0:round(dt/interval))';
 frameNoise = bsxfun(@minus, subels, frameNoise);
