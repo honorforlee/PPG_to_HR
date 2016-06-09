@@ -3,7 +3,7 @@
 
 
 Name = '3987834m';           % BPM = 78
-%Name = '3801060_0007m';     % BPM = 95
+Name = '3801060_0007m';     % BPM = 95
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -16,7 +16,7 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 fclose(fid);
 
 t = (1:length(val)) * interval;              % timeline
-s = val(5,1:length(val));
+s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 % Quantisize
@@ -137,10 +137,10 @@ plot(t, s,'k-'...               % siganl s
     ,td_spl,d_spl,'gx--'...     % derivative of s_n
     ,ft,fs,'m+'...              % filter s
     ,tx_major,sx_major,'bp' ... % Major peaks
-    ,tx,dhi,'c^' ...            % d_max_l
-    ,tx,dlo,'cv' ...            % d_max_r
+    ,tx,dhi_,'c^' ...            % d_max_l
+    ,tx,dlo_,'cv' ...            % d_max_r
     ,t_d,s_d,'rp' ...           % detected peaks
-    ,kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-' ...       % link note_2
+    ,kron(tx,[1 1 1]) , kron(dlo_,[1 0 nan]) + kron(dhi_,[0 1 nan]) , 'c-' ...       % link note_2
     );
 %,kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , 'c-' ...                                 % link note_1
 
