@@ -26,7 +26,6 @@ quant = 1e-4;                        % LSB: vertical step
 
 subels = (1:round(dt/interval):length(t));
 t_spl = t(subels);                           % sample timeline
-%s_spl = s(subels);
 
 % Noise
 frameNoise = (0:round(dt/interval))';
@@ -65,23 +64,6 @@ tx = td_spl(kx) + (td_spl(kx+1)-td_spl(kx)) .* d_spl(kx)./(d_spl(kx)-d_spl(kx+1)
 dhi = d_spl(kx);
 dlo = d_spl(kx+1);
 
-% for k = 1:length(kx)                % search for maximum slope 0.5 s around s_max
-%
-%     for i = 1:floor(0.25/dt)
-%         if (kx(k)+1 - i) > 0
-%             if d_spl(kx(k)+1 - i) >= dhi(k)
-%                 dhi(k) = d_spl(kx(k)+1 - i) ;
-%             end
-%         end
-%         if (kx(k)+1 + i) < length(d_spl)
-%             if d_spl(kx(k)+1 + i) <= dlo(k)
-%                 dlo(k) = d_spl(kx(k)+1 + i);
-%             end
-%         end
-%         i = i+1;
-%     end
-% end
-
 for k = 1:length(kx)
     i = kx(k)-1;   while i > 0             && d_spl(i) >= dhi(k); dhi(k) = d_spl(i); i = i-1; end    % search for maximum positive slope at kx-
     i = kx(k)+2;   while i < length(d_spl) && d_spl(i) <= dlo(k); dlo(k) = d_spl(i); i = i+1; end    % search for maximmum negative slope at kx+
@@ -104,26 +86,34 @@ else
     major_index = cluster2; 
 end
 
-tx_major_c = tx(major_index);                       
-sx_major_c = sx(major_index);
+%   - Compute PPG frequency -
+tx_major = tx(major_index);                       
+sx_major = sx(major_index);
 
-%   - Note for major peaks frequency -
-for k = 1:length(major_index) - 1
+for k = 1 : length(tx_major) - 1
     
-   freq_(k) = major_index(k+1) - major_index(k);    % major peak every freq_ peak
- 
-end
-
-for k = 1 : length(tx) - 1
-    
-    dtx(k)= tx(k+1) - tx(k);                        % time interval between peaks
+    dtx_major(k)= tx_major(k+1) - tx_major(k);        % time interval between major peaks
     
 end
 
-ppg_freq = 1./ (mean(freq_) * mean(dtx)) ;               % PPG frequency
+freq_ppg = 1 ./ (mean(dtx_major));
+BPM = round(60 * freq_ppg)
 
-
-
+% %   - Note for major peaks frequency -
+% for k = 1:length(major_index) - 1
+%     
+%    freq_(k) = major_index(k+1) - major_index(k);    % number of peaks betweeen 2 major peaks 
+%  
+% end
+% 
+% for k = 1 : length(tx) - 1
+%     
+%     dtx(k)= tx(k+1) - tx(k);                        % time interval between peaks
+%     
+% end
+% 
+% freq_ppg = 1./ (mean(freq_) * mean(dtx)) ;          % PPG frequency
+% BPM = round(60 * freq_ppg)
 
 %   - Plots -
 figure (1);
@@ -136,24 +126,19 @@ plot(C(:,1),C(:,2),'kx',...                         % plot centroids
 title 'Cluster Assignments and Centroids'
 legend('Cluster1','Cluster2','Centroids',...
        'Location','NW')
-xlabel ('sx')
-ylabel ('delta_{note2}');
+xlabel ('Peak amplitude, a.u')
+ylabel ('delta_{note2}, a.u');
 hold off
 
 figure(2);
-plot(t, s,'k-'...               % siganl s
-    ,t_spl, s_spl,'ko--'...     % sampled signal s_n
-    ,td_spl, d_spl,'g--'...     % derivative of s_n 
-    );
+plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
 hold on
-
-plot(tx_major_c,sx_major_c,'rp','MarkerSize',15,'LineWidth',3);
+plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+plot(td_spl, d_spl,'g--','MarkerSize',12,'LineWidth',1);     % derivative of s_n 
+plot(tx_major,sx_major,'rp','MarkerSize',15,'LineWidth',3);  % major peaks
 
 title('Peaks discrimination for heart rate monitoring');
 xlabel('Time, s');
 ylabel('Arbitrary units');
-legend('s: original signal'...
-    ,'s_n: sampled signal'...
-    ,'derivative of s_n'...
-    ,'Location','northeastoutside');
+legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Major peaks','Location','northeastoutside');
 hold off
