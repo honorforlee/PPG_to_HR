@@ -1,4 +1,4 @@
-function [freq_ppg, BPM, kx, major_index, tx_major, sx_major] = clustering_function(val, interval, dt, t_int, quant) 
+function [freq_ppg, BPM, kx, major_index, tx_major, sx_major,note_P] = clustering_function(val, interval, dt, t_int, quant) 
 
 t = (1:length(val)) * interval;              % timeline
 s = val(1,1:length(val));
@@ -71,9 +71,6 @@ else
     major_index = cluster2; 
 end
 
-tx_major = tx(major_index);
-sx_major = sx(major_index);
-
 %   - Compute PPG frequency -
 tx_major = tx(major_index);                       
 sx_major = sx(major_index);
@@ -85,4 +82,5 @@ for k = 1 : length(tx_major) - 1
 end
 
 freq_ppg = 1 ./ (mean(dtx_major));
-BPM = round(60 * freq_ppg)
+BPM = round(60 * freq_ppg);
+note_P = var(1./dtx_major);

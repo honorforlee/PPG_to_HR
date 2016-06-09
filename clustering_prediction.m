@@ -30,16 +30,21 @@ val_predict = val( length(range)+1 : end);      % remaining data
 %   - Predicion and note for next data subset -
 freq_init = clustering_function(val_init, 8e-3, 0.1, 0.1/3, 1e-4);
 
-[~,~,~, kx, tx, sx] = clustering_function(val_predict, 8e-3, 0.1, 0.1/3, 1e-4);
+[~,~, kx, kx_major, tx_major, sx_major, note_P] = clustering_function(val_predict, 8e-3, 0.1, 0.1/3, 1e-4);
 
-1./((kx(2) - kx(1)) * (tx(2) - tx(1))) 
+freq_ = zeros(1,length(tx_major)-1);
+freq_(1)=freq_init;
+
+for k = 1 : length(tx_major) - 1
+
+freq_(k+1) = 1./(tx_major(k+1) - tx_major(k));
+
+% if abs(freq_(k+1)) <= 0.15 * freq_(k)
     
 
-% for k = 2:length(val) / length(range)
-%     clustering_function(val_div(k,:), 8e-3, 0.1, 0.1/3, 1e-4);
-%         
-% end
 
+
+end
 
 
 %%

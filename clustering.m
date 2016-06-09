@@ -98,22 +98,7 @@ end
 
 freq_ppg = 1 ./ (mean(dtx_major));
 BPM = round(60 * freq_ppg)
-
-% %   - Note for major peaks frequency -
-% for k = 1:length(major_index) - 1
-%     
-%    freq_(k) = major_index(k+1) - major_index(k);    % number of peaks betweeen 2 major peaks 
-%  
-% end
-% 
-% for k = 1 : length(tx) - 1
-%     
-%     dtx(k)= tx(k+1) - tx(k);                        % time interval between peaks
-%     
-% end
-% 
-% freq_ppg = 1./ (mean(freq_) * mean(dtx)) ;          % PPG frequency
-% BPM = round(60 * freq_ppg)
+note_P = var(1./dtx_major);
 
 %   - Plots -
 figure (1);

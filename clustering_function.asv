@@ -1,28 +1,13 @@
-% Ivan NY HANITRA - Master thesis
-%       -- Clustering peaks, discrimination, compute PPG frequency --
-
-%   - Load file and data -
-%Name = '3987834m';     % BPM = 78
-Name = '3801060_0007m'; % BPM = 95
-
-load(strcat(Name, '.mat'));
-fid = fopen(strcat(Name, '.info'), 'rt');
-fgetl(fid);
-fgetl(fid);
-fgetl(fid);
-[interval] = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
-interval = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 0.5903 ms in practice)
-
-fclose(fid);
+function [freq_ppg, BPM, kx, major_index, tx_major, sx_major] = clustering_function(val, interval, dt, t_int, quant) 
 
 t = (1:length(val)) * interval;              % timeline
 s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantisization -
-dt = 0.1;                            % sampling time: dt >> interval
-t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
-quant = 1e-4;                        % LSB: vertical step
+%dt = 0.1;                            % sampling time: dt >> interval
+%t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
+%quant = 1e-4;                        % LSB: vertical step
 
 subels = (1:round(dt/interval):length(t));
 t_spl = t(subels);                           % sample timeline
@@ -97,34 +82,5 @@ for k = 1 : length(tx_major) - 1
 end
 
 freq_ppg = 1 ./ (mean(dtx_major));
-BPM = round(60 * freq_ppg)
-
-
-
-%   - Plots -
-figure (1);
-plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12)  % cluster 1 correspoding sx,delta_note2 (minor)
-hold on
-plot(X(idx==2,1),X(idx==2,2),'b.','MarkerSize',12)  % cluster 2 correspoding sx,delta_note2 (major)
-plot(C(:,1),C(:,2),'kx',...                         % plot centroids
-     'MarkerSize',15,'LineWidth',3)
- 
-title 'Cluster Assignments and Centroids'
-legend('Cluster1','Cluster2','Centroids',...
-       'Location','NW')
-xlabel ('Peak amplitude, a.u')
-ylabel ('delta_{note2}, a.u');
-hold off
-
-figure(2);
-plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
-hold on
-plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-plot(td_spl, d_spl,'g--','MarkerSize',12,'LineWidth',1);     % derivative of s_n 
-plot(tx_major,sx_major,'rp','MarkerSize',15,'LineWidth',3);  % major peaks
-
-title('Peaks discrimination for heart rate monitoring');
-xlabel('Time, s');
-ylabel('Arbitrary units');
-legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Major peaks','Location','northeastoutside');
-hold off
+BPM = round(60 * freq_ppg);
+note_P = var(freq
