@@ -33,7 +33,7 @@ frameNoise = bsxfun(@minus, subels, frameNoise);
 frameNoise_zero = find (frameNoise <= 0);
 frameNoise(frameNoise_zero) = 1;
 
-noise = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));                     % Gaussian distribution (model thermal noise of finite BW)
+noise= random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));                     % Gaussian distribution (model thermal noise of finite BW)
 
 % for k = 1 : length(frameNoise)
 %  
