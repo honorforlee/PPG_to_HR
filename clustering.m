@@ -69,10 +69,25 @@ for k = 1:length(kx)
     i = kx(k)+2;   while i < length(d_spl) && d_spl(i) <= dlo(k); dlo(k) = d_spl(i); i = i+1; end    % search for maximmum negative slope at kx+
 end
 
-delta_note2 = dhi - dlo;
+%   - Peaks notation
+note_1 = sx;
+for k = 2:length(kx)-1
+    note_1(k) = 2*sx(k) - sx(k+1) - sx(k-1);  % average peak value (doubled)
+end
 
+note_2 = dhi - dlo;                           % maximum slope difference around peak
+
+t_(1)= tx(1);
+for k = 2:length(kx)
+    t_(k) = k * tx(k);
+end
+t_sum = t_(length(kx)) / length(kx);
+
+T = (12*t_sum - 6* (length(kx)+1) * mean(tx)) / (length(kx)*length(kx) - 1);    % linear regression of peaks period (T-periodic)
+
+%%
 %   - k-means clustering of peaks according to sx and delta_note2 -
-X = [ sx(:),delta_note2(:) ];                        % data
+X = [ sx(:),note2(:) ];                        % data
 
 [idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
     'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
