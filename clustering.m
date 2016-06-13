@@ -81,8 +81,6 @@ note_2 = dhi - dlo;                           % maximum slope difference around 
 [T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
 plot_reg;
 
-
-%%
 %   - k-means clustering of peaks according to sx and note_2 -
 X = [ note_1(:),note_2(:) ];                        % data
 
