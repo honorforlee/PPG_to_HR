@@ -20,7 +20,7 @@ s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
-dt = 1/20;                           % sampling time: dt >> interval
+dt = 1/10;                           % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
 quant = 1e-4;                        % LSB: vertical step
 
@@ -48,7 +48,7 @@ frameInteg_zero = find (frameInteg <= 0);
 frameInteg(frameInteg_zero) = 1;                       % t_int < dt
 
 %s_spl = mean( vertcat(s(frameInteg),noise) );          % sampled signal = average of Nint last values + noise during dt
-s_spl = mean( s(frameInteg) );                          % no noise
+s_spl = mean( s(frameInteg) );                          % signal with no noise
 
 s_spl = quant*floor(s_spl/quant);                      % quantization
 
@@ -78,8 +78,11 @@ end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-[T,R_2] = periodicity(tx);                    % peaks periodicity                          
-                        
+[T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
+plot_reg;
+
+
+%%
 %   - k-means clustering of peaks according to sx and note_2 -
 X = [ note_1(:),note_2(:) ];                        % data
 
