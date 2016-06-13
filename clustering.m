@@ -20,7 +20,7 @@ s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
-dt = 0.1;                            % sampling time: dt >> interval
+dt = 1/20;                           % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
 quant = 1e-4;                        % LSB: vertical step
 
@@ -47,7 +47,8 @@ frameInteg = bsxfun(@minus, subels, frameInteg);
 frameInteg_zero = find (frameInteg <= 0);
 frameInteg(frameInteg_zero) = 1;                       % t_int < dt
 
-s_spl = mean( vertcat(s(frameInteg),noise) );          % sampled signal = average of Nint last values + noise during dt
+%s_spl = mean( vertcat(s(frameInteg),noise) );          % sampled signal = average of Nint last values + noise during dt
+s_spl = mean( s(frameInteg) );                          % no noise
 
 s_spl = quant*floor(s_spl/quant);                      % quantization
 
@@ -77,17 +78,10 @@ end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-t_(1)= tx(1);
-for k = 2:length(kx)
-    t_(k) = k * tx(k);
-end
-t_sum = t_(length(kx)) / length(kx);
-
-T = (12*t_sum - 6* (length(kx)+1) * mean(tx)) / (length(kx)*length(kx) - 1);    % linear regression of peaks period (T-periodic)
-
-%%
-%   - k-means clustering of peaks according to sx and delta_note2 -
-X = [ sx(:),note2(:) ];                        % data
+[T,R_2] = periodicity(tx);                    % peaks periodicity                          
+                        
+%   - k-means clustering of peaks according to sx and note_2 -
+X = [ note_1(:),note_2(:) ];                        % data
 
 [idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
     'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
