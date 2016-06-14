@@ -1,4 +1,4 @@
-tx = [1.286 2.23091 3.00448 4.26824 4.74249 6.08068 6.83541 7.75297 8.96053 10.168];
+function [T,eps,R_sq,plot_reg] = periodicity(tx)
 
 %   - with covariance matrix - 
 j = [1:length(tx)];
@@ -36,5 +36,7 @@ hold on
 title('Linear regression of t_{x,k}');
 xlabel('k');
 ylabel('t_{x,k},s');
-legend('sampled t_{x,k}','linear regression of t_{x,k}');
+legend('sampled t_{x,k}','linear regression of t_{x,k}','Location','northwest');
 hold off
+
+end
