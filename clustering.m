@@ -3,7 +3,7 @@
 
 %   - Load file and data -
 %Name = '3987834m';     % BPM = 78
-Name = '3801060_0007m'; % BPM = 95
+Name = '3900497m'; % BPM = 95
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -15,8 +15,8 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 
 fclose(fid);
 
-t = (1:length(val)) * interval;              % timeline
-s = val(1,1:length(val));
+t = (0:length(val)-1) * interval;            % timeline
+s = val(6,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -24,7 +24,7 @@ dt = 1/10;                           % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
 quant = 1e-4;                        % LSB: vertical step
 
-subels = (1:round(dt/interval):length(t));
+subels = (1:floor(dt/interval):length(t));
 t_spl = t(subels);                           % sample timeline
 
 % Noise

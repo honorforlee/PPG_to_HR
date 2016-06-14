@@ -124,22 +124,34 @@ h = quantisize_input(h);
 
 
 function h = quantisize_input(h)        
-h.t_int = str2double(h.edit_t_int.String);                      % integration time
-h.dt   = 1/str2double(h.edit_f_sample.String);                  % apply t_samp
+h.dt   = 1/str2double(h.edit_f_sample.String);                  % t_samp
+h.t_int = str2double(h.edit_t_int.String)*h.dt;                 % integration time
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
-h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
-subels = (1:round(h.dt/h.dt0):length(h.t));                     % timeline subdivision in terms of samples
+%h.t = (h.t0(1):length(h.t0)) * h.dt0; 
+subels = 
+
+subels = (1:floor(h.dt/h.dt0):length(h.t0));                    % timeline subdivision in terms of samples
+h.t = h.t0(subels);                                             % timeline with new sampling frequency
 
 % Noise
-frameNoise = (0:round(h.dt)';
+frameNoise = (0:round(h.dt/h.dt0))';
 frameNoise = bsxfun(@minus, subels, frameNoise);
 frameNoise_zero = find (frameNoise <= 0);
 frameNoise(frameNoise_zero) = 1;
 
-noise= random('Normal',mean(h.s(frameNoise)),std(h.s(frameNoise)),1,length(subels));                     % Gaussian distribution (model thermal noise of finite BW)
+noise= random('Normal',mean(h.s0(frameNoise)),std(h.s0(frameNoise)),1,length(subels));         % Gaussian distribution (model thermal noise of finite BW)
 
+% Integration
+frameInteg = (0:round(h.t_int/h.dt0))';
+frameInteg = bsxfun(@minus, subels, frameInteg);
+frameInteg_zero = find (frameInteg <= 0);
+frameInteg(frameInteg_zero) = 1;                            % t_int < dt
 
-h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );        % signal value sampled at f_samp
+%h.s = mean( vertcat(h.s0(frameInteg),noise) );             % sampled signal = average of Nint last values + noise during dt
+h.s = mean( h.s0(frameInteg) );                             % sampled signal = average of Nint last values
+
+h.s = h.dNds * floor( h.s / h.dNds );                       % quantization
+
 h = grids(h);
 h = process_sig(h);
 plot_(h);
@@ -189,16 +201,16 @@ function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
     %         h.ft  = [nan nan]; h.fs  = [nan nan];
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_picks(h.t  ,h.s  );
+    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.t  ,h.s  );
 else
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_picks(h.ft ,h.fs );         % filter applied before derivative
+    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.ft ,h.fs );         % filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
     %         h.ft_ = [nan nan]; h.fs_ = [nan nan];
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_picks(h.td ,h.d  );
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.td ,h.d  );
 else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_picks(h.ft_,h.fs_);
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.ft_,h.fs_);
 end
 
 function plot_(h)
@@ -291,7 +303,7 @@ else
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
-function [tx,sx,dhi,dlo,td,d] = signal_picks(t,s)
+function [tx,sx,dhi,dlo,td,d] = signal_peaks(t,s)
 d  =  s(2:end) -  s(1:end-1);               % derivative
 td = (  t(2:end) +  t(1:end-1) ) / 2;       % shift timeline
 kx = d > 0;                                 % look at maxima
@@ -311,8 +323,8 @@ function detect_points(h) %#ok<DEFNU>
 %     if h.ecg
 %         d  = h.ecg(2:end) - h.ecg(1:end-1);  td  = ( h.t0(2:end) + h.t0(1:end-1) ) / 2;
 %         d2 =     d(2:end) -     d(1:end-1);  td2 = (   td(2:end) +   td(1:end-1) ) / 2;
-%         [tx,sx, dhi, dlo] = signal_picks(h.t0,h.ecg);
-%         [ty,sy,d2hi,d2lo] = signal_picks(  td,    d);
+%         [tx,sx, dhi, dlo] = signal_peaks(h.t0,h.ecg);
+%         [ty,sy,d2hi,d2lo] = signal_peaks(  td,    d);
 %         xl = h.axes.XLim;
 %         yl = h.axes.YLim;
 %         hold off
@@ -365,7 +377,7 @@ legend({'Signal','Sampled','D1','D2'});
 
 function ECG_analysis(h)
 %     if sum(h.ecg .^ 3) < 0; h.ecg = -h.ecg; end
-%     [tx,sx, dhi, dlo] = signal_picks(h.t0,h.ecg);
+%     [tx,sx, dhi, dlo] = signal_peaks(h.t0,h.ecg);
 %     l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 %     k = find(sx > l);
 %     hold off
@@ -392,7 +404,7 @@ f = f/sum(f);
 f = [zeros(1,k) 1 zeros(1,k)] - f;
 ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
 if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[tx,sx, dhi, dlo] = signal_picks(thf,ecg_hf);
+[tx,sx, dhi, dlo] = signal_peaks(thf,ecg_hf);
 l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off
@@ -446,17 +458,17 @@ end
 
 
 function edit13_Callback(hObject, eventdata, handles)
-% hObject    handle to edit13 (see GCBO)
+% hObject    handle to edit_t_int (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit13 as text
-%        str2double(get(hObject,'String')) returns contents of edit13 as a double
+% Hints: get(hObject,'String') returns contents of edit_t_int as text
+%        str2double(get(hObject,'String')) returns contents of edit_t_int as a double
 
     
 % --- Executes during object creation, after setting all properties.
-function edit13_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit13 (see GCBO)
+function edit_t_int_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_t_int (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -513,16 +525,16 @@ function edit_t_int_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_f_sample as text
-%        str2double(get(hObject,'String')) returns contents of edit_f_sample as a double
+% Hints: get(hObject,'String') returns contents of edit_t_int as text
+%        str2double(get(hObject,'String')) returns contents of edit_t_int as a double
 
 function edit_f_sample_Callback(hObject, eventdata, handles)
 % hObject    handle to edit_f_sample (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_t_int as text
-%        str2double(get(hObject,'String')) returns contents of edit_t_int as a double
+% Hints: get(hObject,'String') returns contents of edit_f_sample as text
+%        str2double(get(hObject,'String')) returns contents of edit_f_sample as a double
 
 
 % --- Executes on button press in checkbox_dNdS.
