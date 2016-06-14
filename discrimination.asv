@@ -128,27 +128,18 @@ h.t_int = str2double(h.edit_t_int.String);                      % integration ti
 h.dt   = 1/str2double(h.edit_f_sample.String);                  % apply t_samp
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
 h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
-subels = (1:round(h.dt/h.dt0):length(h.t0));                    % timeline subdivision in terms of samples
+subels = (1:round(h.dt/h.dt0):length(h.t));                     % timeline subdivision in terms of samples
 
 % Noise
-frameNoise = (0:round(h.dt/h.dt0))';
+frameNoise = (0:round(h.dt)';
 frameNoise = bsxfun(@minus, subels, frameNoise);
 frameNoise_zero = find (frameNoise <= 0);
 frameNoise(frameNoise_zero) = 1;
 
-noise= random('Normal',mean(h.s0(frameNoise)),std(h.s0(frameNoise)),1,length(subels));         % Gaussian distribution (model thermal noise of finite BW)
+noise= random('Normal',mean(h.s(frameNoise)),std(h.s(frameNoise)),1,length(subels));                     % Gaussian distribution (model thermal noise of finite BW)
 
-% Integration
-frameInteg = (0:round(h.t_int/h.dt0))';
-frameInteg = bsxfun(@minus, subels, frameInteg);
-frameInteg_zero = find (frameInteg <= 0);
-frameInteg(frameInteg_zero) = 1;                        % t_int < dt
 
-%h.s = mean( vertcat(h.s(frameInteg),noise) );          % sampled signal = average of Nint last values + noise during dt
-h.s = mean( h.s0(frameInteg) );                         % sampled signal = average of Nint last values
-
-h.s = h.dNds * floor( h.s / h.dNds );                   % quantization
-
+h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );        % signal value sampled at f_samp
 h = grids(h);
 h = process_sig(h);
 plot_(h);
@@ -455,17 +446,17 @@ end
 
 
 function edit13_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_t_int (see GCBO)
+% hObject    handle to edit13 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_t_int as text
-%        str2double(get(hObject,'String')) returns contents of edit_t_int as a double
+% Hints: get(hObject,'String') returns contents of edit13 as text
+%        str2double(get(hObject,'String')) returns contents of edit13 as a double
 
     
 % --- Executes during object creation, after setting all properties.
-function edit_t_int_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_t_int (see GCBO)
+function edit13_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit13 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -522,16 +513,16 @@ function edit_t_int_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_t_int as text
-%        str2double(get(hObject,'String')) returns contents of edit_t_int as a double
+% Hints: get(hObject,'String') returns contents of edit_f_sample as text
+%        str2double(get(hObject,'String')) returns contents of edit_f_sample as a double
 
 function edit_f_sample_Callback(hObject, eventdata, handles)
 % hObject    handle to edit_f_sample (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_f_sample as text
-%        str2double(get(hObject,'String')) returns contents of edit_f_sample as a double
+% Hints: get(hObject,'String') returns contents of edit_t_int as text
+%        str2double(get(hObject,'String')) returns contents of edit_t_int as a double
 
 
 % --- Executes on button press in checkbox_dNdS.
