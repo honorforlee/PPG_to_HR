@@ -15,7 +15,7 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 
 fclose(fid);
 
-t = (0:length(val)-1) * interval;            % timeline
+t = (1:length(val)) * interval;            % timeline
 s = val(6,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 

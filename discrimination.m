@@ -1,7 +1,7 @@
 % Ivan Ny Hanitra - Master thesis
 % Algorithm to discriminate PPG/ECG signal peaks and recover HR
 
-% Requirements 
+% Requirements
 %   - discriminate peaks in function of notes
 %       note 1(pentagram): peak amplitude of sampled signal (smax)
 %       note 2 (triangles): local maxima/minima around smax
@@ -112,7 +112,7 @@ else
 end
 
 % Define timeline
-h.t0 = (0:length(h.s0)-1) * h.dt0;
+h.t0 = (1:length(h.s0)) * h.dt0;
 h.axes.XLim = [h.t0(1) h.t0(end)];
 
 %Define y-axis
@@ -121,35 +121,46 @@ guidata(h.output, h);
 h = quantisize_input(h);
 
 function h = quantisize_input(h)        
-h.dt = 1/str2double(h.edit_f_sample.String);                    % t_samp
-h.t_int = str2double(h.edit_t_int.String)*h.dt;                 % integration time
+h.dt   = 1/str2double(h.edit_f_sample.String);                  % apply t_samp
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
-
-subels = (1:floor(h.dt/h.dt0):length(h.t0));                    % timeline subdivision in terms of samples   
-h.t = h.t0(subels);                                             % timeline with new sampling frequency                                   
-
-% Noise
-frameNoise = (0:round(h.dt/h.dt0))';
-frameNoise = bsxfun(@minus, subels, frameNoise);
-frameNoise_zero = find (frameNoise <= 0);
-frameNoise(frameNoise_zero) = 1;
-
-noise= random('Normal',mean(h.s0(frameNoise)),std(h.s0(frameNoise)),1,length(subels));         % Gaussian distribution (model thermal noise of finite BW)
-
-% Integration
-frameInteg = (0:floor(h.t_int/h.dt0))';
-frameInteg = bsxfun(@minus, subels, frameInteg);
-frameInteg_zero = find (frameInteg <= 0);
-frameInteg(frameInteg_zero) = 1;                            % t_int < dt
-
-%h.s = mean( vertcat(h.s0(frameInteg),noise) );             % sampled signal = average of Nint last values + noise during dt
-h.s = mean( h.s0(frameInteg) );                             % sampled signal = average of Nint last values
-
-h.s = h.dNds * floor( h.s / h.dNds );                       % quantization
-
+h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
+h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );        % signal value sampled at f_samp
 h = grids(h);
 h = process_sig(h);
 plot_(h);
+
+
+% function h = quantisize_input(h)
+% h.dt = 1/str2double(h.edit_f_sample.String);                    % t_samp
+% %h.t_int = str2double(h.edit_t_int.String)*h.dt;                 % integration time
+% h.t_int = h.dt/3;
+% h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
+% 
+% subels = (1:floor(h.dt/h.dt0):length(h.t0));                    % timeline subdivision in terms of samples
+% h.t = h.t0(subels);                                             % timeline with new sampling frequency
+% 
+% % Noise
+% frameNoise = (0:round(h.dt/h.dt0))';
+% frameNoise = bsxfun(@minus, subels, frameNoise);
+% frameNoise_zero = find (frameNoise <= 0);
+% frameNoise(frameNoise_zero) = 1;
+% 
+% noise= random('Normal',mean(h.s0(frameNoise)),std(h.s0(frameNoise)),1,length(subels));         % Gaussian distribution (model thermal noise of finite BW)
+% 
+% % Integration
+% frameInteg = (0:floor(h.t_int/h.dt0))';
+% frameInteg = bsxfun(@minus, subels, frameInteg);
+% frameInteg_zero = find (frameInteg <= 0);
+% frameInteg(frameInteg_zero) = 1;                            % t_int < dt
+% 
+% %h.s = mean( vertcat(h.s0(frameInteg),noise) );             % sampled signal = average of Nint last values + noise during dt
+% h.s = mean( h.s0(frameInteg) );                             % sampled signal = average of Nint last values
+% 
+% h.s = h.dNds * floor( h.s / h.dNds );                       % quantization
+% 
+% h = grids(h);
+% h = process_sig(h);
+% plot_(h);
 
 
 function h = grids(h)
@@ -160,7 +171,7 @@ if h.checkbox_f_sample.Value                                       % ?
     h.xgrid = [ h.xgrid  nan  kron(h.t,[1 1 1]) ];
     h.ygrid = [ h.ygrid  nan  repmat(10*[h.axes.YLim nan],1,length(h.t)) ];
 end
-if h.checkbox_dNdS.Value                                        % ?                    
+if h.checkbox_dNdS.Value                                        % ?
     y = min(h.s)-h.dNds : h.dNds : max(h.s)+h.dNds;
     h.xgrid = [ h.xgrid  nan  repmat([min(h.t) max(h.t) nan],1,length(y)) ];
     h.ygrid = [ h.ygrid  nan  kron(y,[1 1 1]) ];
@@ -450,20 +461,18 @@ if update_filelist(h)
     guidata(h.output, h);
 end
 
-
-
 function edit13_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_t_int (see GCBO)
+% hObject    handle to edit13 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_t_int as text
-%        str2double(get(hObject,'String')) returns contents of edit_t_int as a double
+% Hints: get(hObject,'String') returns contents of edit13 as text
+%        str2double(get(hObject,'String')) returns contents of edit13 as a double
 
     
 % --- Executes during object creation, after setting all properties.
-function edit_t_int_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_t_int (see GCBO)
+function edit13_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit13 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -484,130 +493,4 @@ function checkbox5_Callback(hObject, eventdata, handles)
 
 
 
-function edit14_Callback(hObject, eventdata, handles)
-% hObject    handle to edit14 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit14 as text
-%        str2double(get(hObject,'String')) returns contents of edit14 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit14_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit14 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in checkbox6.
-function checkbox6_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox6 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of checkbox6
-
-
-function edit_t_int_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_t_int (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_t_int as text
-%        str2double(get(hObject,'String')) returns contents of edit_t_int as a double
-
-function edit_f_sample_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_f_sample (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_f_sample as text
-%        str2double(get(hObject,'String')) returns contents of edit_f_sample as a double
-
-
-% --- Executes on button press in checkbox_dNdS.
-function checkbox_dNdS_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox_dNdS (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of checkbox_dNdS
-
-
-
-function edit_dNdS_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_dNdS (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_dNdS as text
-%        str2double(get(hObject,'String')) returns contents of edit_dNdS as a double
-
-
-% --- Executes on selection change in popupmenu_files.
-function popupmenu_files_Callback(hObject, eventdata, handles)
-% hObject    handle to popupmenu_files (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_files contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from popupmenu_files
-
-
-% --- Executes on button press in checkbox_ecg.
-function checkbox_ecg_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox_ecg (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of checkbox_ecg
-
-
-% --- Executes on button press in checkbox_detect.
-function checkbox_detect_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox_detect (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of checkbox_detect
-
-
-% --- Executes on button press in pushbutton2.
-function pushbutton2_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-
-function edit_F1_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_F1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_F1 as text
-%        str2double(get(hObject,'String')) returns contents of edit_F1 as a double
-
-
-
-function edit_F2_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_F2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_F2 as text
-%        str2double(get(hObject,'String')) returns contents of edit_F2 as a double
-
-
-% --- Executes on button press in pushbutton1.
-function pushbutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)

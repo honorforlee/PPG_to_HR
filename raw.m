@@ -1,40 +1,63 @@
-tx = [1.286 2.23091 3.00448 4.26824 4.74249 6.08068 6.83541 7.75297 8.96053 10.168];
+% --- Executes on slider movement. 
+function slider_t_int_Callback(hObject, eventdata, handles) 
+% hObject handle to slider_t_int (see GCBO) 
+% eventdata reserved - to be defined in a future version of MATLAB 
+% handles structure with handles and user data (see GUIDATA)
 
-%   - with covariance matrix - 
-j = [1:length(tx)];
-A_matrix = cov(j,tx,1);                                          % output is normalized by the number of observations length(tx)
-T_matrix = A_matrix(3)/A_matrix(1);                              % peaks eriodicity
-T_0_matrix = mean(tx) - T_matrix * mean(j); 
+%obtains the slider value from the slider component
 
-R_2_matrix  = ( A_matrix(3) / sqrt(A_matrix(1)*A_matrix(4)))^2;  % coefficient of determination
+sliderValue = get(handles.slider_t_int,'Value');
 
-%   - with loops -
-for k = 1:length(tx)
-   A(k) = k * tx(k);
-end   
-sum_A = cumsum(A);
+%puts the slider value into the edit text component 
+set(handles.sliderValue_editText,'String', num2str(sliderValue)); 
 
-cov_xy = (sum_A(length(tx)) / length(tx)) - mean([1:length(tx)])*mean(tx);
-cov_xx = (length(tx)^2 -1)/12;
+% Update handles structure 
+guidata(hObject, handles);
 
-T = cov_xy/cov_xx;                                              % peaks eriodicity
-t_reg = mean(tx) - T*mean(j) + j*T;
+% Hints: get(hObject,'Value') returns position of slider 
+% get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
-for k = 1:length(tx)
-   B(k) = ( tx(k) - mean(tx) + ( mean([1:length(tx)]) - k )*T )^2;
-   C(k) = (mean(tx)-T*mean(j) + k*T  - mean(tx))^2;
-   D(k) = (tx(k) - mean(tx))^2;
+% --- Executes during object creation, after setting all properties. 
+function slider_t_int_CreateFcn(hObject, eventdata, handles) 
+% hObject handle to slider1 (see GCBO) 
+% eventdata reserved - to be defined in a future version of MATLAB 
+% handles empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background. 
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor')) 
+set(hObject,'BackgroundColor',[.9 .9 .9]); 
 end
-sum_B = cumsum(B);                                              % Mean Squared Error
-sum_C = cumsum(C); sum_D = cumsum(D);                                             
-    
-eps = sum_B(length(tx)) / (length(tx)*T^2);                     % MSE normalized with respect to #samples and period
-R_sq = sum_C(length(tx)) / sum_D(length(tx));                   % coefficient of determination R^2
 
-plot_reg=plot(j,tx,'r.', j,t_reg,'b-');
-hold on 
-title('Linear regression of t_{x,k}');
-xlabel('k');
-ylabel('t_{x,k},s');
-legend('sampled t_{x,k}','linear regression of t_{x,k}');
-hold off
+function sliderValue_editText_Callback(hObject, eventdata, handles) 
+% hObject handle to sliderValue_editText (see GCBO) 
+% eventdata reserved - to be defined in a future version of MATLAB 
+% handles structure with handles and user data (see GUIDATA) 
+%get the string for the editText component 
+sliderValue = get(handles.sliderValue_editText,'String'); 
+
+%convert from string to number if possible, otherwise returns empty 
+sliderValue = str2num(sliderValue); 
+
+%if user inputs something is not a number, or if the input is less than 0 
+%or greater than 100, then the slider value defaults to 0 
+if (isempty(sliderValue) || sliderValue < 920 || sliderValue > 1000) 
+set(handles.slider_t_int,'Value',940); 
+set(handles.sliderValue_editText,'String','940'); 
+else 
+set(handles.slider_t_int,'Value',sliderValue); 
+end
+
+% Hints: get(hObject,'String') returns contents of sliderValue_editText as text 
+% str2double(get(hObject,'String')) returns contents of sliderValue_editText as a double
+
+% --- Executes during object creation, after setting all properties. 
+function sliderValue_editText_CreateFcn(hObject, eventdata, handles) 
+% hObject handle to sliderValue_editText (see GCBO) 
+% eventdata reserved - to be defined in a future version of MATLAB 
+% handles empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows. 
+% See ISPC and COMPUTER. 
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor')) 
+set(hObject,'BackgroundColor','white'); 
+end 
