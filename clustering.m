@@ -42,13 +42,24 @@ noise= random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));
 % end
 
 % Integration
-frameInteg = (0:round(t_int/interval))';
-frameInteg = bsxfun(@minus, subels, frameInteg);
-frameInteg_zero = find (frameInteg <= 0);
-frameInteg(frameInteg_zero) = 1;                       % t_int < dt
+% frameInteg = (0:round(t_int/interval))';
+% frameInteg = bsxfun(@minus, subels, frameInteg);
+% frameInteg_zero = find (frameInteg <= 0);
+% frameInteg(frameInteg_zero) = 1;                       % t_int < dt
+% 
+% %s_spl = mean( vertcat(s(frameInteg),noise) );          % sampled signal = average of Nint last values + noise during dt
+% s_spl = mean( s(frameInteg) );                          % signal with no noise
 
-%s_spl = mean( vertcat(s(frameInteg),noise) );          % sampled signal = average of Nint last values + noise during dt
-s_spl = mean( s(frameInteg) );                          % signal with no noise
+s_spl(1) = s(1);
+for k = 2:length(t_spl)
+index = min (length(    [floor( (t_spl(k-1)+ dt-t_int)/interval ): floor( t_spl(k)/ interval ) ]    ));
+end
+index = index-1;
+
+for k = 2:length(t_spl)
+frameInteg(:,k-1) = [ floor( t_spl(k)/ interval ) - index : floor( t_spl(k)/ interval ) ];
+s_spl(k) = mean( s(frameInteg(:,k-1)));
+end
 
 s_spl = quant*floor(s_spl/quant);                      % quantization
 

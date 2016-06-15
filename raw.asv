@@ -46,24 +46,19 @@ t_spl = t(1):dt:t(end);
 %     s_spl(k) = mean ( [s(floor( (t_spl(k-1)+ dt-t_int)/interval ): s(floor( (t_spl(k-1)+ dt-t_int)/interval ) :s(floor(dt/interval))) ] );
 %             
 % end 
+s_spl = interp1(t,s,t_spl); 
+s_spl = quant*floor(s_spl/quant);                      % quantization
 
-%s_spl = interp1(t,s,t_spl); 
-%s_spl = quant*floor(s_spl/quant);                      % quantization
-
-% plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
-% hold on
-% plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-% hold off
+plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
+hold on
+plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+hold off
 %%
-s_spl(1) = s(1);
 for k = 2:length(t_spl)
 index = min (length(    [floor( (t_spl(k-1)+ dt-t_int)/interval ): floor( t_spl(k)/ interval ) ]    ));
-end
-index = index-1;
+array = 
 
-for k = 2:length(t_spl)
-frameInteg(:,k-1) = [ floor( t_spl(k)/ interval ) - index : floor( t_spl(k)/ interval ) ];
-s_spl(k) = mean( s(frameInteg(:,k-1)));
+
 end
 %%
 k=5;

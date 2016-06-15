@@ -122,7 +122,7 @@ h = quantisize_input(h);
 
 function h = quantisize_input(h)        
 h.dt   = 1/str2double(h.edit_f_sample.String);                  % apply t_samp
-h.t_int = h.dt;
+h.t_
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
 h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
 %h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );        % signal value sampled at f_samp
