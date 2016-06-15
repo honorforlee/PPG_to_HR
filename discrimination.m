@@ -118,57 +118,48 @@ h.axes.XLim = [h.t0(1) h.t0(end)];
 %Define y-axis
 h.axes.YLim = [min(h.s0) max(h.s0)];
 guidata(h.output, h);
-h = quantisize_input(h);
+h = quantize_input(h);
 
-function h = quantisize_input(h)        
-h.dt   = 1/str2double(h.edit_f_sample.String);                  % apply t_samp
-h.t_int = h.dt;
+%   - timeline, noise, integration, quantization -
+function h = quantize_input(h)     
+h.dt   = 1/str2double(h.edit_f_sample.String);                    % apply t_sample
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
-h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
+h.t_int = h.dt * str2double(h.edit_t_int.String);
 
+%h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
+%h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );
 
-
-
-h.s = h.dNds * floor( h.s / h.dNds );                       % quantization
+[h.t,h.s] = integration(h.t0,h.s0,h.dt0,h.dt,h.t_int,h.dNds);
 
 h = grids(h);
 h = process_sig(h);
-
 plot_(h);
 
+function [t,s] = integration(t0,s0,dt0,dt,t_int,quant)
+t = t0(1):dt:t0(end);                                   % timeline with new sampling frequency
 
-% function h = quantisize_input(h)
-% h.dt = 1/str2double(h.edit_f_sample.String);                    % t_samp
-% %h.t_int = str2double(h.edit_t_int.String)*h.dt;                 % integration time
-% h.t_int = h.dt/3;
-% h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
-% 
-% subels = (1:floor(h.dt/h.dt0):length(h.t0));                    % timeline subdivision in terms of samples
-% h.t = h.t0(subels);                                             % timeline with new sampling frequency
-% 
-% % Noise
-% frameNoise = (0:round(h.dt/h.dt0))';
-% frameNoise = bsxfun(@minus, subels, frameNoise);
-% frameNoise_zero = find (frameNoise <= 0);
-% frameNoise(frameNoise_zero) = 1;
-% 
-% noise= random('Normal',mean(h.s0(frameNoise)),std(h.s0(frameNoise)),1,length(subels));         % Gaussian distribution (model thermal noise of finite BW)
-% 
-% % Integration
-% frameInteg = (0:floor(h.t_int/h.dt0))';
-% frameInteg = bsxfun(@minus, subels, frameInteg);
-% frameInteg_zero = find (frameInteg <= 0);
-% frameInteg(frameInteg_zero) = 1;                            % t_int < dt
-% 
-% %h.s = mean( vertcat(h.s0(frameInteg),noise) );             % sampled signal = average of Nint last values + noise during dt
-% h.s = mean( h.s0(frameInteg) );                             % sampled signal = average of Nint last values
-% 
-% h.s = h.dNds * floor( h.s / h.dNds );                       % quantization
-% 
-% h = grids(h);
-% h = process_sig(h);
-% plot_(h);
+% Noise
+for k = 1:length(t)-1
+frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ]; 
+end
+noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
 
+% Integration
+for k = 2:length(t)
+    index = min (length(    [floor( (t(k-1)+ dt - t_int)/dt0 ): floor( t(k)/ dt0 ) ]    ));
+end
+index = index-1;
+for k = 2:length(t)
+    frameInteg(:,k-1) = [ floor( t(k)/ dt0 ) - index : floor( t(k)/ dt0 ) ];
+    frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
+end
+frameInteg_ = vertcat(frameInteg_,noise);
+
+s(1) = s0(1);
+for k = 2:length(t)
+    s(k) = mean(frameInteg_(:,k-1));               % sampled signal = average of Nint last values + noise during dt
+end
+ s = quant * floor( s / quant );                % quantization
 
 function h = grids(h)
 h.xgrid = [ h.t0(1) h.t0(end) ];
@@ -184,23 +175,6 @@ if h.checkbox_dNdS.Value                                        % ?
     h.ygrid = [ h.ygrid  nan  kron(y,[1 1 1]) ];
 end
 
-
-% function h = apply_filters(h)
-%     [h.ft1,h.fs1] = apply_filter_( h.t , h.s , h.edit_F1.String );
-%     if h.ft1
-%         [h.ft2,h.fs2] = apply_filter_( h.ft1 , h.fs1 , h.edit_F2.String );
-%         if h.ft2
-%             [h.ft3,h.fs3] = apply_filter_( h.ft2 , h.fs2 , h.edit_F3.String );
-%         end
-%     end
-%     [h.gt1,h.gs1] = apply_filter_( h.t , h.s , h.edit_G1.String );
-%     if h.gt1
-%         [h.gt2,h.gs2] = apply_filter_( h.gt1 , h.gs1 , h.edit_G2.String );
-%         if h.ft2
-%             [h.gt3,h.gs3] = apply_filter_( h.gt2 , h.gs2 , h.edit_G3.String );
-%         end
-%     end
-
 function [ft,fs] = apply_filter_(t,s,f)         %? values entered
 f = str2num(f); %#ok<ST2NM>
 if length(f) > 0
@@ -209,6 +183,7 @@ if length(f) > 0
 else
     fs = []; ft = [];
 end
+
 
 function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
@@ -225,6 +200,7 @@ if isempty(h.ft_)
 else
     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.ft_,h.fs_);
 end
+
 
 function plot_(h)
 xl = h.axes.XLim; yl = h.axes.YLim;
@@ -330,34 +306,41 @@ for k = 1:length(kx)
     i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
 end
 
+function callback_infile(h)  %#ok<DEFNU>
+h = update_infile(h);
+guidata(h.output, h);
+
+
+function callback_sampling(h) %#ok<DEFNU>
+h = quantize_input(h);
+guidata(h.output, h);
+
+
+function callback_filters(h) %#ok<DEFNU>
+h = process_sig(h);
+plot_(h);
+guidata(h.output, h);
+
+% function callback_detect(h) %#ok<DEFNU>
+%     h = apply_filters(h);
+%     plot_(h);
+%     guidata(h.output, h);
+
+function callback_grids(h) %#ok<DEFNU>
+h = grids(h);
+plot_(h);
+guidata(h.output, h);
+
+function callback_ECG(h) %#ok<DEFNU>
+if update_filelist(h)
+    h = update_infile(h);
+    guidata(h.output, h);
+end
+
+
+
+
 function detect_points(h) %#ok<DEFNU>
-%     ECG_analysis(h); return  %TODO
-%
-%     if h.ecg
-%         d  = h.ecg(2:end) - h.ecg(1:end-1);  td  = ( h.t0(2:end) + h.t0(1:end-1) ) / 2;
-%         d2 =     d(2:end) -     d(1:end-1);  td2 = (   td(2:end) +   td(1:end-1) ) / 2;
-%         [tx,sx, dhi, dlo] = signal_peaks(h.t0,h.ecg);
-%         [ty,sy,d2hi,d2lo] = signal_peaks(  td,    d);
-%         xl = h.axes.XLim;
-%         yl = h.axes.YLim;
-%         hold off
-%         plot( h.axes ...
-%             , h.t0 , h.ecg, '-k' ...
-%             , td , d , 'x:' ...
-%             , td2, d2, 'x:' ...
-%             , [h.t0(1) h.t0(end)] , [0 0] , ':k' ...
-%             , tx , sx   , 'pr' ...
-%             , tx , dhi  , '^r' ...
-%             , tx , dlo  , 'vr' ...
-%             , kron(tx,[1 1 1]) , kron(sx,[0 1 nan]) , '--r' ...
-%             , kron(tx,[1 1 1]) , kron( dlo,[1 0 nan]) + kron( dhi,[0 1 nan]) , '-r' ...
-%             , ty , sy   , 'pb' ...
-%             , ty , d2hi , '^b' ...
-%             , ty , d2lo , 'vb' ...
-%             , kron(ty,[1 1 1]) , kron(sy,[0 1 nan]) , '--b' ...
-%             , kron(ty,[1 1 1]) , kron(d2lo,[1 0 nan]) + kron(d2hi,[0 1 nan]) , '-b' ...
-%             )
-%     else
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;       % first derivative
 d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;       % second derivative
 [tx,sx, dhi, dlo] = signal_peaks(h.t,h.s);                                      % detect peaks of signal
@@ -382,11 +365,7 @@ plot( h.axes ...
     , kron(ty,[1 1 1]) , kron(sy,[0 1 nan]) , '--r' ...
     , kron(ty,[1 1 1]) , kron(d2lo,[1 0 nan]) + kron(d2hi,[0 1 nan]) , '-r' ...
     )
-%     end
-%     h.axes.XLim = xl;
-%     h.axes.YLim = yl;
 legend({'Signal','Sampled','D1','D2'});
-
 
 function ECG_analysis(h)
 %     if sum(h.ecg .^ 3) < 0; h.ecg = -h.ecg; end
@@ -430,43 +409,7 @@ plot( h.axes ...
     , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
     , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
     )
-%     hold off
-%     plot( h.axes ...
-%         , h.t0 , h.ecg , 'x-k' ...
-%         , h.t0(k+1:end-k) , ecg_hf, '-r' ...
-%         )
 
-
-function callback_infile(h)  %#ok<DEFNU>
-h = update_infile(h);
-guidata(h.output, h);
-
-
-function callback_sampling(h) %#ok<DEFNU>
-h = quantisize_input(h);
-guidata(h.output, h);
-
-
-function callback_filters(h) %#ok<DEFNU>
-h = process_sig(h);
-plot_(h);
-guidata(h.output, h);
-
-% function callback_detect(h) %#ok<DEFNU>
-%     h = apply_filters(h);
-%     plot_(h);
-%     guidata(h.output, h);
-
-function callback_grids(h) %#ok<DEFNU>
-h = grids(h);
-plot_(h);
-guidata(h.output, h);
-
-function callback_ECG(h) %#ok<DEFNU>
-if update_filelist(h)
-    h = update_infile(h);
-    guidata(h.output, h);
-end
 
 function edit13_Callback(hObject, eventdata, handles)
 % hObject    handle to edit13 (see GCBO)
@@ -498,6 +441,19 @@ function checkbox5_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox5
 
+% --- Executes on slider movement.
+function edit_t_int_Callback(hObject,eventdata,handles,h)
+% hObject    handle to edit_t_int (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
 
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
+value = get(hObject,'Value');
+display = num2str(value);
+set(handles.value_t_int,'String',display);
 
+h = callback_sampling(h);
+
+guidata(h.output,h);
