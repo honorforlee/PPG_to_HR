@@ -5,30 +5,57 @@ s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
-%dt = 0.1;                            % sampling time: dt >> interval
-%t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
-%quant = 1e-4;                        % LSB: vertical step
-
-subels = (1:round(dt/interval):length(t));
-t_spl = t(subels);                           % sample timeline
+dt = 1/10;                           % sampling time: dt >> interval
+t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
+quant = 1e-4;                        % LSB: vertical step
+t_spl = t(1):dt:t(end); 
 
 % Noise
-frameNoise = (0:round(dt/interval))';
-frameNoise = bsxfun(@minus, subels, frameNoise);
-frameNoise_zero = find (frameNoise <= 0);
-frameNoise(frameNoise_zero) = 1;
-
-noise = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));      % Gaussian distribution (model thermal noise of finite BW)
+for k = 1:length(t_spl)-1
+frameNoise (:,k) = [ floor(t_spl(k)/interval) :  floor(t_spl(k)/interval) + floor(dt/interval) ]; 
+end
+noise= random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
 
 % Integration
-frameInteg = (0:round(t_int/interval))';
-frameInteg = bsxfun(@minus, subels, frameInteg);
-frameInteg_zero = find (frameInteg <= 0);
-frameInteg(frameInteg_zero) = 1;                       % t_int < dt
+for k = 2:length(t_spl)
+index = min (length(    [floor( (t_spl(k-1)+ dt-t_int)/interval ): floor( t_spl(k)/ interval ) ]    ));
+end
+index = index-1;
+for k = 2:length(t_spl)
+frameInteg(:,k-1) = [ floor( t_spl(k)/ interval ) - index : floor( t_spl(k)/ interval ) ];    
+frameInteg_(:,k-1)= s(frameInteg(:,k-1)) ;
+end
+frameInteg_ = vertcat(frameInteg_,noise);
 
-s_spl = mean( vertcat(s(frameInteg), noise) );         % sampled signal = average of Nint last values + noise during dt
+s_spl(1) = s(1);
+for k = 2:length(t_spl)
+    s_spl(k) = mean(frameInteg_(:,k-1));               % sampled signal = average of Nint last values + noise during dt
+end    
 
 s_spl = quant*floor(s_spl/quant);                      % quantization
+
+%   - with time subdivided in indexes -
+% subels = (1:round(dt/interval):length(t));
+% t_spl = t(subels);                           % sample timeline
+% 
+% % Noise
+% frameNoise = (0:round(dt/interval))';
+% frameNoise = bsxfun(@minus, subels, frameNoise);
+% frameNoise_zero = find (frameNoise <= 0);
+% frameNoise(frameNoise_zero) = 1;
+% 
+% noise = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));      % Gaussian distribution (model thermal noise of finite BW)
+% 
+% % Integration
+% frameInteg = (0:round(t_int/interval))';
+% frameInteg = bsxfun(@minus, subels, frameInteg);
+% frameInteg_zero = find (frameInteg <= 0);
+% frameInteg(frameInteg_zero) = 1;                       % t_int < dt
+% 
+% s_spl = mean( vertcat(s(frameInteg), noise) );         % sampled signal = average of Nint last values + noise during dt
+% 
+% s_spl = quant*floor(s_spl/quant);                      % quantization
+
 
 %   - Derivative, local maxima sx, maximum slope around sx -
 d_spl = s_spl(2:end) -  s_spl(1:end-1);

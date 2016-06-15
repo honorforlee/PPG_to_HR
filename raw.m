@@ -55,17 +55,24 @@ t_spl = t(1):dt:t(end);
 % plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
 % hold off
 %%
-s_spl(1) = s(1);
+
+for k = 1:length(t_spl)-1
+frameNoise (:,k) = [ floor(t_spl(k)/interval) :  floor(t_spl(k)/interval) + floor(dt/interval) ]; 
+end
+noise= random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
+
 for k = 2:length(t_spl)
 index = min (length(    [floor( (t_spl(k-1)+ dt-t_int)/interval ): floor( t_spl(k)/ interval ) ]    ));
 end
 index = index-1;
-
 for k = 2:length(t_spl)
-frameInteg(:,k-1) = [ floor( t_spl(k)/ interval ) - index : floor( t_spl(k)/ interval ) ];
-s_spl(k) = mean( s(frameInteg(:,k-1)));
+frameInteg(:,k-1) = [ floor( t_spl(k)/ interval ) - index : floor( t_spl(k)/ interval ) ];    
+frameInteg_(:,k-1)= s(frameInteg(:,k-1)) ;
 end
-%%
-k=5;
-index = min (length(    [floor( (t_spl(k-1)+ dt-t_int)/interval ): floor( t_spl(k)/ interval ) ]    ));
-mean ( s(index(k-1,:)'))
+frameInteg_ = vertcat(frameInteg_,noise);
+
+s_spl(1) = s(1);
+for k = 2:length(t_spl)
+    s_spl(k) = mean(frameInteg_(:,k-1));
+end    
+

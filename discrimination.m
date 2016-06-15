@@ -125,16 +125,9 @@ h.dt   = 1/str2double(h.edit_f_sample.String);                  % apply t_samp
 h.t_int = h.dt;
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
 h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
-%h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );        % signal value sampled at f_samp
 
-% Integration
-frameInteg = (0:h.t_int)';
-frameInteg = bsxfun(@minus, subels, frameInteg);
-frameInteg_zero = find (frameInteg <= 0);
-frameInteg(frameInteg_zero) = 1;                            % t_int < dt
 
-%h.s = mean( vertcat(h.s0(frameInteg),noise) );             % sampled signal = average of Nint last values + noise during dt
-h.s = mean( h.s0(frameInteg) );                             % sampled signal = average of Nint last values
+
 
 h.s = h.dNds * floor( h.s / h.dNds );                       % quantization
 
