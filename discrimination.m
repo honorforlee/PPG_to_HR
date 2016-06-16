@@ -124,7 +124,7 @@ h = quantize_input(h);
 function h = quantize_input(h)     
 h.dt   = 1/str2double(h.edit_f_sample.String);                    % apply t_sample
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
-h.t_int = h.dt * str2double(h.edit_t_int.String);
+h.t_int = h.dt * str2double(h.slider_t_int.Value);
 
 %h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
 %h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );
@@ -315,7 +315,6 @@ function callback_sampling(h) %#ok<DEFNU>
 h = quantize_input(h);
 guidata(h.output, h);
 
-
 function callback_filters(h) %#ok<DEFNU>
 h = process_sig(h);
 plot_(h);
@@ -337,8 +336,10 @@ if update_filelist(h)
     guidata(h.output, h);
 end
 
-
-
+function callback_t_int(h) %#ok<DEFNU>
+h = quantize_input(h);
+h.value_t_int.String = h.slider_t_int.Value;
+guidata(h.output, h);
 
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;       % first derivative
@@ -438,22 +439,7 @@ function checkbox5_Callback(hObject, eventdata, handles)
 % hObject    handle to checkbox5 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+% 
 % Hint: get(hObject,'Value') returns toggle state of checkbox5
 
-% --- Executes on slider movement.
-function edit_t_int_Callback(hObject,eventdata,handles,h)
-% hObject    handle to edit_t_int (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-value = get(hObject,'Value');
-display = num2str(value);
-set(handles.value_t_int,'String',display);
-
-h = callback_sampling(h);
-
-guidata(h.output,h);
