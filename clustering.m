@@ -26,29 +26,12 @@ quant = 1e-4;                        % LSB: vertical step
 
 [t_spl,s_spl] = integration(t,s,interval,dt,t_int,quant);
 
-%%
-%   - with time subdivided in indexes -
-% subels = (1:round(dt/interval):length(t));
-% t_spl = t(subels);                           % sample timeline
-% 
-% % Noise
-% frameNoise = (0:round(dt/interval))';
-% frameNoise = bsxfun(@minus, subels, frameNoise);
-% frameNoise_zero = find (frameNoise <= 0);
-% frameNoise(frameNoise_zero) = 1;
-% 
-% noise = random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));      % Gaussian distribution (model thermal noise of finite BW)
-% 
-% % Integration
-% frameInteg = (0:round(t_int/interval))';
-% frameInteg = bsxfun(@minus, subels, frameInteg);
-% frameInteg_zero = find (frameInteg <= 0);
-% frameInteg(frameInteg_zero) = 1;                       % t_int < dt
-% 
-% s_spl = mean( vertcat(s(frameInteg), noise) );         % sampled signal = average of Nint last values + noise during dt
-% 
-% s_spl = quant*floor(s_spl/quant);                      % quantization
+plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
+hold on
+plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+hold off
 
+%%
 
 %   - Derivative, local maxima sx, maximum slope around sx -
 d_spl = s_spl(2:end) -  s_spl(1:end-1);

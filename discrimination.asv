@@ -153,11 +153,11 @@ for k = 2:length(t)
     frameInteg(:,k-1) = [ floor( t(k)/ dt0 ) - index : floor( t(k)/ dt0 ) ];
     frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
 end
-frameInteg_ = vertcat(frameInteg_,noise);
+%frameInteg_ = vertcat(frameInteg_,noise);      
 
 s(1) = s0(1);
 for k = 2:length(t)
-    s(k) = mean(frameInteg_(:,k-1));               % sampled signal = average of Nint last values + noise during dt
+    s(k) = mean(frameInteg_(:,k-1));            % sampled signal = average of Nint last values + noise during dt
 end
  s = quant * floor( s / quant );                % quantization
 
@@ -336,23 +336,9 @@ if update_filelist(h)
     guidata(h.output, h);
 end
 
-% --- Executes on slider movement.
-function slider_t_int_Callback(hObject, eventdata, handles)
-% hObject    handle to slider_t_int (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-value = get(hObject,'Value');
-display = num2str(value);
-set(handles.value_t_int,'String',display);
-h = quantize_input(h);
-guidata(h.output, h);
-
 function callback_t_int(h) %#ok<DEFNU>
 h = quantize_input(h);
+h.value_t_int.String = h.slider_t_int.Value;
 guidata(h.output, h);
 
 function detect_points(h) %#ok<DEFNU>

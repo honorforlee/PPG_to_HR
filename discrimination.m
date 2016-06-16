@@ -123,8 +123,8 @@ h = quantize_input(h);
 %   - timeline, noise, integration, quantization -
 function h = quantize_input(h)     
 h.dt   = 1/str2double(h.edit_f_sample.String);                    % apply t_sample
+h.t_int = h.dt * h.slider_t_int.Value;
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
-h.t_int = h.dt * str2double(h.slider_t_int.Value);
 
 %h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
 %h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );
@@ -134,32 +134,6 @@ h.t_int = h.dt * str2double(h.slider_t_int.Value);
 h = grids(h);
 h = process_sig(h);
 plot_(h);
-
-function [t,s] = integration(t0,s0,dt0,dt,t_int,quant)
-t = t0(1):dt:t0(end);                                   % timeline with new sampling frequency
-
-% Noise
-for k = 1:length(t)-1
-frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ]; 
-end
-noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
-
-% Integration
-for k = 2:length(t)
-    index = min (length(    [floor( (t(k-1)+ dt - t_int)/dt0 ): floor( t(k)/ dt0 ) ]    ));
-end
-index = index-1;
-for k = 2:length(t)
-    frameInteg(:,k-1) = [ floor( t(k)/ dt0 ) - index : floor( t(k)/ dt0 ) ];
-    frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
-end
-frameInteg_ = vertcat(frameInteg_,noise);
-
-s(1) = s0(1);
-for k = 2:length(t)
-    s(k) = mean(frameInteg_(:,k-1));               % sampled signal = average of Nint last values + noise during dt
-end
- s = quant * floor( s / quant );                % quantization
 
 function h = grids(h)
 h.xgrid = [ h.t0(1) h.t0(end) ];
