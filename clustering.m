@@ -52,14 +52,12 @@ end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-[T,eps,R_sq,plot_reg] = periodicity(tx);
+%[T,eps,R_sq,plot_reg] = periodicity(tx);
 
 tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
-mdl = fitlm(tbl,'tx~k')
-
-% tbl1 = table(note_1',note_2','VariableNames',{'note_1','note_2'});
-% mdl = fitlm(tbl,'note_1~note_2');
-
+mdl = fitlm(tbl,'tx~k');
+F_stat = anova(mdl);                        % analyse of variance
+F = F_stat.F(1);                            % F = MeanSq(xi)/MeanSq(Error) with MeanSq = SumSq/DF) (DF(xi)=1 , DF(error)=length(kx)-2)
 
 
 %%
