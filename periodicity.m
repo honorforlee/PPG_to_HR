@@ -1,4 +1,7 @@
 function [T,eps,R_sq,plot_reg] = periodicity(tx)
+%   - with linear regression function -
+tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
+mdl = fitlm(tbl,'tx~k');
 
 %   - with covariance matrix - 
 j = [1:length(tx)];

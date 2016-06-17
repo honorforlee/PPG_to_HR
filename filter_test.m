@@ -146,7 +146,7 @@ for k = 2:length(t)
     frameInteg(:,k-1) = [ floor( t(k)/ dt0 ) - index : floor( t(k)/ dt0 ) ];
     frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
 end
-frameInteg_ = vertcat(frameInteg_,noise);
+%frameInteg_ = vertcat(frameInteg_,noise);
 
 s(1) = s0(1);
 for k = 2:length(t)
