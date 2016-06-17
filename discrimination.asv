@@ -8,6 +8,7 @@
 %   - discriminate peaks in function of timing
 %       selected peaks have the same frequency (HR)
 
+
 %   - Init. - DO NOT EDIT -
 function varargout = discrimination(varargin)
 gui_Singleton = 1;
@@ -25,6 +26,7 @@ if nargout
 else
     gui_mainfcn(gui_State, varargin{:});
 end
+
 
 %   - Executes just before discrimination is made visible -
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
@@ -74,6 +76,7 @@ h.output = hObject;
 h = update_infile(h);
 guidata(hObject, h);
 
+
 %   - Outputs from this function are returned to the command line -
 function varargout = discrimination_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
@@ -118,13 +121,13 @@ guidata(h.output, h);
 h = quantize_input(h);
 
 %   - timeline, noise, integration, quantization -
-function h = quantize_input(h)
+function h = quantize_input(h)     
 h.dt   = 1/str2double(h.edit_f_sample.String);                    % apply t_sample
-h.t_int = h.dt * h.slider_t_int.Value;
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
-% 
-% h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
-% h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );
+h.t_int = h.dt * str2double(h.slider_t_int.Value);
+
+%h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
+%h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );
 
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0,h.dt,h.t_int,h.dNds);
 
@@ -137,34 +140,26 @@ t = t0(1):dt:t0(end);                                   % timeline with new samp
 
 % Noise
 for k = 1:length(t)-1
-    frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
+frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ]; 
 end
 noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
 
 % Integration
-if t_int ~=0
-    
-    for k = 2:length(t)
-        index = min (length(    [floor( (t(k-1)+ dt - t_int)/dt0 ): floor( t(k)/ dt0 ) ]    ));
-    end
-    index = index-1;
-    for k = 2:length(t)
-        frameInteg(:,k-1) = [ floor( t(k)/ dt0 ) - index : floor( t(k)/ dt0 ) ];
-        frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
-    end
-    
-%    frameInteg_ = vertcat(frameInteg_,noise);      % add Gaussian noise before integration
-    
-    s(1) = s0(1);
-    for k = 2:length(t)
-        s(k) = mean(frameInteg_(:,k-1));            % sampled signal = average of Nint last values + noise during dt
-    end
-    
-else
-    s = zeros(1,length(t));
+for k = 2:length(t)
+    index = min (length(    [floor( (t(k-1)+ dt - t_int)/dt0 ): floor( t(k)/ dt0 ) ]    ));
 end
+index = index-1;
+for k = 2:length(t)
+    frameInteg(:,k-1) = [ floor( t(k)/ dt0 ) - index : floor( t(k)/ dt0 ) ];
+    frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
+end
+%frameInteg_ = vertcat(frameInteg_,noise);      
 
-s = quant * floor( s / quant );                % quantization
+s(1) = s0(1);
+for k = 2:length(t)
+    s(k) = mean(frameInteg_(:,k-1));            % sampled signal = average of Nint last values + noise during dt
+end
+ s = quant * floor( s / quant );                % quantization
 
 function h = grids(h)
 h.xgrid = [ h.t0(1) h.t0(end) ];
@@ -189,6 +184,7 @@ else
     fs = []; ft = [];
 end
 
+
 function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
@@ -204,6 +200,7 @@ if isempty(h.ft_)
 else
     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.ft_,h.fs_);
 end
+
 
 function plot_(h)
 xl = h.axes.XLim; yl = h.axes.YLim;
@@ -312,6 +309,7 @@ end
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
 guidata(h.output, h);
+
 
 function callback_sampling(h) %#ok<DEFNU>
 h = quantize_input(h);
@@ -422,7 +420,7 @@ function edit13_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of edit13 as text
 %        str2double(get(hObject,'String')) returns contents of edit13 as a double
 
-
+    
 % --- Executes during object creation, after setting all properties.
 function edit13_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to edit13 (see GCBO)
@@ -441,7 +439,7 @@ function checkbox5_Callback(hObject, eventdata, handles)
 % hObject    handle to checkbox5 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-%
+% 
 % Hint: get(hObject,'Value') returns toggle state of checkbox5
 
 

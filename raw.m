@@ -1,40 +1,78 @@
-tx = [1.286 2.23091 3.00448 4.26824 4.74249 6.08068 6.83541 7.75297 8.96053 10.168];
+%   - Load file and data -
+%Name = '3987834m';     % BPM = 78
+Name = '3900497m'; % BPM = 95
 
-%   - with covariance matrix - 
-j = [1:length(tx)];
-A_matrix = cov(j,tx,1);                                          % output is normalized by the number of observations length(tx)
-T_matrix = A_matrix(3)/A_matrix(1);                              % peaks eriodicity
-T_0_matrix = mean(tx) - T_matrix * mean(j); 
+load(strcat(Name, '.mat'));
+fid = fopen(strcat(Name, '.info'), 'rt');
+fgetl(fid);
+fgetl(fid);
+fgetl(fid);
+[interval] = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
+interval = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 0.5903 ms in practice)
 
-R_2_matrix  = ( A_matrix(3) / sqrt(A_matrix(1)*A_matrix(4)))^2;  % coefficient of determination
+fclose(fid);
 
-%   - with loops -
-for k = 1:length(tx)
-   A(k) = k * tx(k);
-end   
-sum_A = cumsum(A);
+t = (1:length(val)) * interval;            % timeline
+s = val(6,1:length(val));
+s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
-cov_xy = (sum_A(length(tx)) / length(tx)) - mean([1:length(tx)])*mean(tx);
-cov_xx = (length(tx)^2 -1)/12;
+%   - Timeline, noise, integration, quantization -
+dt = 1/10;                           % sampling time: dt >> interval
+t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
+quant = 1e-4;                        % LSB: vertical step
 
-T = cov_xy/cov_xx;                                              % peaks eriodicity
-t_reg = mean(tx) - T*mean(j) + j*T;
+t_spl = t(1):dt:t(end);    
 
-for k = 1:length(tx)
-   B(k) = ( tx(k) - mean(tx) + ( mean([1:length(tx)]) - k )*T )^2;
-   C(k) = (mean(tx)-T*mean(j) + k*T  - mean(tx))^2;
-   D(k) = (tx(k) - mean(tx))^2;
+% % Noise
+% frameNoise = (0:round(dt/interval))';
+% frameNoise = bsxfun(@minus, subels, frameNoise);
+% frameNoise_zero = find (frameNoise <= 0);
+% frameNoise(frameNoise_zero) = 1;
+% 
+% noise= random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));                     % Gaussian distribution (model thermal noise of finite BW)
+
+% % Integration
+% frameInteg = (0:t_int)';
+% frameInteg = bsxfun(@minus, t_spl, frameInteg);
+% frameInteg_zero = find (frameInteg <= 0);
+% frameInteg(frameInteg_zero) = 1;                       % t_int < dt
+% 
+% %s_spl = mean( vertcat(s(frameInteg),noise) );          % sampled signal = average of Nint last values + noise during dt
+% s_spl = mean( interp1(t,s,frameInteg) );                          % signal with no noise
+
+% s_spl(1) = s(1);
+% for k = 2:length(t_spl) 
+%    
+%     s_spl(k) = mean ( [s(floor( (t_spl(k-1)+ dt-t_int)/interval ): s(floor( (t_spl(k-1)+ dt-t_int)/interval ) :s(floor(dt/interval))) ] );
+%             
+% end 
+
+%s_spl = interp1(t,s,t_spl); 
+%s_spl = quant*floor(s_spl/quant);                      % quantization
+
+% plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
+% hold on
+% plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+% hold off
+%%
+
+for k = 1:length(t_spl)-1
+frameNoise (:,k) = [ floor(t_spl(k)/interval) :  floor(t_spl(k)/interval) + floor(dt/interval) ]; 
 end
-sum_B = cumsum(B);                                              % Mean Squared Error
-sum_C = cumsum(C); sum_D = cumsum(D);                                             
-    
-eps = sum_B(length(tx)) / (length(tx)*T^2);                     % MSE normalized with respect to #samples and period
-R_sq = sum_C(length(tx)) / sum_D(length(tx));                   % coefficient of determination R^2
+noise= random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
 
-plot_reg=plot(j,tx,'r.', j,t_reg,'b-');
-hold on 
-title('Linear regression of t_{x,k}');
-xlabel('k');
-ylabel('t_{x,k},s');
-legend('sampled t_{x,k}','linear regression of t_{x,k}');
-hold off
+for k = 2:length(t_spl)
+index = min (length(    [floor( (t_spl(k-1)+ dt-t_int)/interval ): floor( t_spl(k)/ interval ) ]    ));
+end
+index = index-1;
+for k = 2:length(t_spl)
+frameInteg(:,k-1) = [ floor( t_spl(k)/ interval ) - index : floor( t_spl(k)/ interval ) ];    
+frameInteg_(:,k-1)= s(frameInteg(:,k-1)) ;
+end
+frameInteg_ = vertcat(frameInteg_,noise);
+
+s_spl(1) = s(1);
+for k = 2:length(t_spl)
+    s_spl(k) = mean(frameInteg_(:,k-1));
+end    
+
