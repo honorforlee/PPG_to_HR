@@ -26,13 +26,6 @@ quant = 1e-4;                        % LSB: vertical step
 
 [t_spl,s_spl] = integration(t,s,interval,dt,t_int,quant);
 
-plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
-hold on
-plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-hold off
-
-%%
-
 %   - Derivative, local maxima sx, maximum slope around sx -
 d_spl = s_spl(2:end) -  s_spl(1:end-1);
 td_spl = (  t_spl(2:end) +  t_spl(1:end-1) ) / 2;
@@ -59,14 +52,35 @@ end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-[T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
+[T,eps,R_sq,plot_reg] = periodicity(tx);
+
+tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
+mdl = fitlm(tbl,'tx~k')
+
+% tbl1 = table(note_1',note_2','VariableNames',{'note_1','note_2'});
+% mdl = fitlm(tbl,'note_1~note_2');
+
+
+
+%%
+%[T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
+%plot_reg;
+
+random_kx = randsample(  kx, length(kx)/2   );
+random_kx = sort(random_kx);
+random_tx = td_spl(random_kx) + (td_spl(random_kx+1)-td_spl(random_kx)) .* d_spl(random_kx)./(d_spl(random_kx)-d_spl(random_kx+1)); 
+[T,eps,R_sq,plot_reg] = periodicity(random_tx); 
 plot_reg;
 
+
+
+%%
 %   - k-means clustering of peaks according to sx and note_2 -
 X = [ note_1(:),note_2(:) ];                        % data
 
 [idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
-    'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
+    'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, 
+choose best arrangement and display final output
 
 cluster1 = find(idx==1)';
 cluster2 = find(idx==2)';
@@ -118,3 +132,5 @@ xlabel('Time, s');
 ylabel('Arbitrary units');
 legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Major peaks','Location','northeastoutside');
 hold off
+
+
