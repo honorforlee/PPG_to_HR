@@ -3,10 +3,10 @@
 
 function [T,eps,R_sq,plot_reg] = periodicity(tx)
 %   - with linear regression function -
-tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
-mdl = fitlm(tbl,'tx~k');
-T_est = mdl.Coefficients(2);    % period estimate
-RMSE_est = mdl.RMSE;            % Square root of the mean squared error, which estimates the standard deviation of the error distribution.
+% tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
+% mdl = fitlm(tbl,'tx~k');
+% T_est = mdl.Coefficients(2);    % period estimate
+% RMSE_est = mdl.RMSE;            % Square root of the mean squared error, which estimates the standard deviation of the error distribution.
 
 %   - with covariance matrix - 
 j = [1:length(tx)];

@@ -1,9 +1,10 @@
+%%
 % Ivan NY HANITRA - Master thesis
 %       -- Clustering peaks, discrimination, compute PPG frequency --
 
 %   - Load file and data -
-%Name = '3987834m';     % BPM = 78
-Name = '3900497m';      % BPM = 95
+Name = '3801060_0007m';   % row 1
+%Name = '3900497m';     % row 6 - BPM = 95
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -16,7 +17,7 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 fclose(fid);
 
 t = (1:length(val)) * interval;            % timeline
-s = val(6,1:length(val));
+s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -24,7 +25,7 @@ dt = 1/10;                           % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
 quant = 1e-4;                        % LSB: vertical step
 
-[t_spl,s_spl] = integration(t,s,interval,dt,t_int,quant);
+[t_spl,s_spl] = integration(t,s,interval,dt,t_int,quant,0);
 
 %   - Derivative, local maxima sx, maximum slope around sx -
 d_spl = s_spl(2:end) -  s_spl(1:end-1);
@@ -52,8 +53,22 @@ end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
+note_weighted = note_1 ./ note_2;
+
+major = kx;
+for k = 1 : length(kx)
+    if abs(note_weighted(k)) <= 1
+        major(k)=kx(k);
+    else
+        major(k) = 0;
+    end
+end
+
+major_index = find(major);
+
 %   - k-means clustering of peaks according to sx and note_2 -
-X = [ note_1(:),note_2(:) ];                        % data
+
+X = [ note_weighted(:) ];                        % data
 
 [idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
     'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
@@ -61,11 +76,73 @@ X = [ note_1(:),note_2(:) ];                        % data
 cluster1 = find(idx==1)';
 cluster2 = find(idx==2)';
 
-if sx(cluster1(1)) > sx(cluster2(1))                % assign major peak cluster
-    major_index = cluster1;
-else
-    major_index = cluster2; 
-end
+% if note_weighted(cluster1(1)) > note_weighted(cluster2(1))                % assign major peak cluster
+%     major_index = cluster1;
+% else
+%     major_index = cluster2; 
+% end
+
+tx_major = tx(major_index);                       
+sx_major = sx(major_index);
+
+subplot(2,1,1)
+plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
+hold on
+plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+plot(td_spl, d_spl,'g--','MarkerSize',12,'LineWidth',1);     % derivative of s_n 
+plot(tx,sx,'cp','MarkerSize',12,'LineWidth',1);              % note_1 
+plot(tx,note_weighted,'rd','MarkerSize',13,'LineWidth',1);     % note_weighted
+plot(tx_major,sx_major,'rp','MarkerSize',15,'LineWidth',3);  % major peaks
+
+plot(tx,dhi,'c^' ,'MarkerSize',12,'LineWidth',1);            % d_max_l
+plot(tx,dlo,'cv','MarkerSize',12,'LineWidth',1);             % d_max_r
+plot(kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-','MarkerSize',12,'LineWidth',1);    % note_2
+
+title('Peaks discrimination for heart rate monitoring');
+xlabel('Time, s');
+ylabel('arbitrary units');
+%legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Peaks','Major peaks','Location','southoutside');
+hold off
+
+subplot(2,1,2)
+plot(X(idx==1),'r.','MarkerSize',12);      % cluster 1 correspoding sx,delta_note2 (minor)
+hold on
+plot(X(idx==2),'b.','MarkerSize',12);      % cluster 2 correspoding sx,delta_note2 (major)
+plot(C,'kx','MarkerSize',15,'LineWidth',3);  % plot centroids
+title ('Cluster Assignments and Centroids');
+legend('Cluster1','Cluster2','Centroids','Location','NW');
+xlabel ('note_{1/2}, arbitrary units');
+hold off
+
+
+%%
+%   - plot(2 notes) -
+figure(1);
+plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12);      % cluster 1 correspoding sx,delta_note2 (minor)
+hold on
+plot(X(idx==2,1),X(idx==2,2),'b.','MarkerSize',12);      % cluster 2 correspoding sx,delta_note2 (major)
+plot(C(:,1),C(:,2),'kx','MarkerSize',15,'LineWidth',3);  % plot centroids
+ 
+title ('Cluster Assignments and Centroids');
+legend('Cluster1','Cluster2','Centroids','Location','NW');
+xlabel ('note_1, a.u');
+ylabel ('{note_2}, a.u');
+hold off
+
+figure(2);
+plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
+hold on
+plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+plot(td_spl, d_spl,'g--','MarkerSize',12,'LineWidth',1);     % derivative of s_n 
+plot(tx_major,sx_major,'rp','MarkerSize',15,'LineWidth',3);  % major peaks
+
+title('Peaks discrimination for heart rate monitoring');
+xlabel('Time, s');
+ylabel('Arbitrary units');
+legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Major peaks','Location','northeastoutside');
+hold off
+
+%%
 
 %   - {kx} periodicity -
 %[T,eps,R_sq,plot_reg] = periodicity(tx);
@@ -76,19 +153,14 @@ F_stat = anova(mdl);                        % analyse of variance
 F = F_stat.F(1);                            % F = MeanSq(xi)/MeanSq(Error) with MeanSq = SumSq/DF) (DF(xi)=1 , DF(error)=length(kx)-2)
 
 
-%%
-%[T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
-%plot_reg;
-
-random_kx = randsample(  kx, length(kx)/2   );
-random_kx = sort(random_kx);
-random_tx = td_spl(random_kx) + (td_spl(random_kx+1)-td_spl(random_kx)) .* d_spl(random_kx)./(d_spl(random_kx)-d_spl(random_kx+1)); 
-[T,eps,R_sq,plot_reg] = periodicity(random_tx); 
-plot_reg;
-
-
-
-%%
+% %[T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
+% %plot_reg;
+% 
+% random_kx = randsample(  kx, length(kx)/2   );
+% random_kx = sort(random_kx);
+% random_tx = td_spl(random_kx) + (td_spl(random_kx+1)-td_spl(random_kx)) .* d_spl(random_kx)./(d_spl(random_kx)-d_spl(random_kx+1)); 
+% [T,eps,R_sq,plot_reg] = periodicity(random_tx); 
+% plot_reg;
 
 %   - Compute PPG frequency -
 tx_major = tx(major_index);                       
@@ -104,32 +176,17 @@ freq_ppg = 1 ./ (mean(dtx_major));
 BPM = round(60 * freq_ppg)
 note_P = var(1./dtx_major);
 
-%   - Plots -
-figure (1);
-plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12)  % cluster 1 correspoding sx,delta_note2 (minor)
-hold on
-plot(X(idx==2,1),X(idx==2,2),'b.','MarkerSize',12)  % cluster 2 correspoding sx,delta_note2 (major)
-plot(C(:,1),C(:,2),'kx',...                         % plot centroids
-     'MarkerSize',15,'LineWidth',3)
- 
-title 'Cluster Assignments and Centroids'
-legend('Cluster1','Cluster2','Centroids',...
-       'Location','NW')
-xlabel ('Peak amplitude, a.u')
-ylabel ('delta_{note2}, a.u');
-hold off
 
-figure(2);
-plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
-hold on
-plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-plot(td_spl, d_spl,'g--','MarkerSize',12,'LineWidth',1);     % derivative of s_n 
-plot(tx_major,sx_major,'rp','MarkerSize',15,'LineWidth',3);  % major peaks
+%%
+%X = [ note_1(:),note_2(:),note_P(:) ];  
+rng default;  % For reproducibility
+X = [gallery('uniformdata',[10 3],12);...
+    gallery('uniformdata',[10 3],13)+1.2;...
+    gallery('uniformdata',[10 3],14)+2.5];
 
-title('Peaks discrimination for heart rate monitoring');
-xlabel('Time, s');
-ylabel('Arbitrary units');
-legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Major peaks','Location','northeastoutside');
-hold off
+T = clusterdata(X,'distance','cityblock','maxclust',3);
+find(T==5)
+
+scatter3(X(:,1),X(:,2),X(:,3),100,T,'filled')
 
 
