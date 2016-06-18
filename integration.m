@@ -1,7 +1,7 @@
 % Ivan Ny Hanitra - Master thesis
 %       -- Simulate integrating ADC: add thermal noise, integrate during t_int (share of t_sample), quantize the output --
 
-function [t,s] = integration(t0,s0,dt0,dt,t_int,quant)
+function [t,s] = integration(t0,s0,dt0,dt,t_int,quant,add_noise)
 t = t0(1):dt:t0(end);                                   % timeline with new sampling frequency
 
 % Noise
@@ -22,8 +22,12 @@ if t_int ~=0
         frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
     end
     
-    frameInteg_ = vertcat(frameInteg_,noise);      % add Gaussian noise before integration
-    
+    if add_noise == 'noise'                               % add Gaussian noise before integration
+        frameInteg_ = vertcat(frameInteg_,noise);      
+    elseif add_noise == 0
+        frameInteg_ = frameInteg_;
+    end
+   
     s(1) = s0(1);
     for k = 2:length(t)
         s(k) = mean(frameInteg_(:,k-1));           % sampled signal = average of Nint last values + noise during dt

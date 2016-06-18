@@ -56,8 +56,7 @@ note_2 = dhi - dlo;                           % maximum slope difference around 
 X = [ note_1(:),note_2(:) ];                        % data
 
 [idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
-    'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, 
-choose best arrangement and display final output
+    'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
 
 cluster1 = find(idx==1)';
 cluster2 = find(idx==2)';
