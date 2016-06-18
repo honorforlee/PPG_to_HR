@@ -77,19 +77,6 @@ F_stat = anova(mdl);                        % analyse of variance
 F = F_stat.F(1);                            % F = MeanSq(xi)/MeanSq(Error) with MeanSq = SumSq/DF) (DF(xi)=1 , DF(error)=length(kx)-2)
 
 
-%%
-%[T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
-%plot_reg;
-
-random_kx = randsample(  kx, length(kx)/2   );
-random_kx = sort(random_kx);
-random_tx = td_spl(random_kx) + (td_spl(random_kx+1)-td_spl(random_kx)) .* d_spl(random_kx)./(d_spl(random_kx)-d_spl(random_kx+1)); 
-[T,eps,R_sq,plot_reg] = periodicity(random_tx); 
-plot_reg;
-
-
-
-%%
 
 %   - Compute PPG frequency -
 tx_major = tx(major_index);                       
@@ -133,4 +120,13 @@ ylabel('Arbitrary units');
 legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Major peaks','Location','northeastoutside');
 hold off
 
+%%
+%[T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
+%plot_reg;
+
+random_kx = randsample(  kx, length(kx)/2   );
+random_kx = sort(random_kx);
+random_tx = td_spl(random_kx) + (td_spl(random_kx+1)-td_spl(random_kx)) .* d_spl(random_kx)./(d_spl(random_kx)-d_spl(random_kx+1)); 
+[T,eps,R_sq,plot_reg] = periodicity(random_tx); 
+plot_reg;
 

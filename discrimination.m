@@ -1,5 +1,5 @@
 % Ivan Ny Hanitra - Master thesis
-% Algorithm to discriminate PPG/ECG signal peaks and recover HR
+%       -- Algorithm to discriminate PPG/ECG signal peaks and recover HR --
 
 % Requirements
 %   - discriminate peaks in function of notes
