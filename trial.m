@@ -2,8 +2,8 @@
 %       -- Clustering peaks, discrimination, compute PPG frequency --
 
 %   - Load file and data -
-%Name = '3801060_0007m';   % row 1
-Name = '3900497m';     % row 6 - BPM = 95
+Name = '3801060_0007m';   % row 1
+%Name = '3900497m';     % row 6 - BPM = 95
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -16,7 +16,7 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 fclose(fid);
 
 t = (1:length(val)) * interval;            % timeline
-s = val(6,1:length(val));
+s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
