@@ -245,7 +245,7 @@ plot( h.td , h.d , 'x:b');
 plot( h.tx , h.sx   , 'pr','MarkerSize',15,'LineWidth',2);
 plot( h.tx_n, h.sx_n , 'pm','MarkerSize',15,'LineWidth',2);
 plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
-plot( kron(h.tx(1:min(length(h.tx),length(h.tx_n))),[1 1 1]) , kron(h.sx_n(1:min(length(h.tx),length(h.tx_n))),[1 0 nan]) + kron(h.sx( 1: min(length(h.tx),length(h.tx_n))),[0 1 nan]), '-m');
+plot( kron(h.tx(1:min(length(h.tx),length(h.tx_n))),[1 1 1]) , kron(sx_n(1:min(length(h.tx),length(h.tx_n))),[1 0 nan]) + kron(sx( 1: min(length(h.tx),length(h.tx_n))),[0 1 nan]), '-m');
 
 plot( h.tx , h.dhi  , '^c');
 plot( h.tx , h.dlo  , 'vc');                          
