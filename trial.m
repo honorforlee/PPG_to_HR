@@ -86,227 +86,46 @@ end
 note_3 = delta;
 note_x = (note_1 + note_2 + note_3)/3;
 
-%   - k++ means for centroïd research -
+%   - k-means ++ for centroïd research -
 X = [ note_x(:) ];                        % data
 K = 5;
-
-for k = 1: K
-[idx(:,k),C] = kmeans(X,k,'Distance','cityblock',...     % k clustering 
+  
+for k = 2: K
+[idx(:,k),C] = kmeans(X,k,'Distance','cityblock',...     % k clustering (idx and C varying after loop)
     'Replicates',5,'Options',statset('Display','final'));
 
 uv = unique(idx(:,k));                                    % list of clutsters [1 .. k]
 n  = histc(idx(:,k),uv);                                  % number of elements in each cluster (vector)
+n_max = max(n);
+community_index = nan( n_max, k );
+community = nan( n_max, length(k) );
 
-community(:,k) = find(idx==k)';                           % community partition
-    
-num_F(k) =  distance(community, mean(note_x), 2);  
-
-end
-%%
-
-% tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
-% mdl = fitlm(tbl,'tx~k');
-% F_stat = anova(mdl);                        % analyse of variance
-% F = F_stat.F(1);                            % F = MeanSq(xi)/MeanSq(Error) with MeanSq = SumSq/DF) (DF(xi)=1 , DF(error)=length(kx)-2)
-tbl = table([1:length(kx)]', note_1', note_2', note_3',note_x','VariableNames',{'k','note_1','note_2','note_3','note_x'});
-
-plot(tbl.k,tbl.note_1,'.r'...
-    , tbl.k,tbl.note_2,'.b'...
-    , tbl.k,tbl.note_3,'.g'...
-    , tbl.k,tbl.note_x,'xk','MarkerSize',12 ...
-    );
-legend('note_1','note_2','note_3','note_x');
-
-
-%%
-plot(t, s,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
-hold on
-plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-plot(td_spl, d_spl,'g--','MarkerSize',10,'LineWidth',1);     % derivative of s_n 
-plot(tx,sx,'rd','MarkerSize',12,'LineWidth',2);
-plot(tx_n,sx_n,'bd','MarkerSize',12,'LineWidth',2);
-plot(kron(tx,[1 1 1]),delta_plot , 'r-','LineWidth',3);                     % link delta
-hold off
-
-%%
-% major = kx;
-% for k = 1 : length(kx)
-%     if abs(note_weighted(k)) <= 1
-%         major(k)=kx(k);
-%     else
-%         major(k) = 0;
-%     end
-% end
-% 
-% major_index = find(major);
-
-[T,eps,R_sq,plot_reg] = periodicity(tx);
-%[T_2,eps_2,R_sq_2,plot_reg_2] = periodicity(tx(1:2:end));
-
-kx_ = kx;
-
-for k = 1:length(tx) - 1            % discard minor peaks with a frequency f > 3.5 Hz (BPM_max = 210)
-    if (tx(k+1)-tx(k)) <= (1/3.5)
-        if note_1(k+1) < note_1(k)
-            kx_(k+1) = 0;
-        else
-            kx_(k) = 0;
-        end
-    end
-end
-
-% for k = 1:length(kx) - 1            % discard minor peaks with a frequency f > 3.5 Hz (BPM_max = 210)
-%     if (kx(k+1)-kx(k)) <= floor((1/3.5)/dt)
-%         kx_(k) = 0;
-%     end
+for i = 1 : k     % inter community 
+% ABC = {randn(3,1),randn(5,1),randn(4,1)};
+% Nrows = max(cellfun(@numel,ABC));
+% Z = nan(Nrows,numel(ABC));
+% for iCol = 1:numel(ABC),
+%   Z(1:numel(ABC{iCol}),iCol) = ABC{iCol};
 % end
 
-kx_major_index= find(kx_(1:end));
-kx_major = kx_(kx_major_index);
 
-sx_major = s_spl(kx_major + 1);
-tx_major = tx(kx_major_index);
+community_index(1:n(k),i) = find(idx(:,k)==i)';                     
+community(1:n(k),i) = note_x (community_index(:,i));   % community partition 
+   
+num_F_(i) =( n(i) * (distance(mean(community(:,i)), mean(note_x), 2))^2 ) / (k - 1);        % distance INTER - community 
 
-for k = 1 : length(tx_major)-1
-diff(k)=tx_major(k+1)-tx_major(k);
+for j = 1 : i     % intra community
+den_F_s(j) = distance(community(j,i), mean(community(:,i)), 2)^2 / (length(kx) - k);        % distance INTRA - community j
 end
 
-ax(1) = subplot(2,1,1);
-plot(diff,'rp');
-
-ax(2) = subplot(2,1,2);
-plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
-hold on
-plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-plot(td_spl, d_spl,'g--','MarkerSize',12,'LineWidth',1);     % derivative of s_n 
-plot(tx_major,sx_major,'rp','MarkerSize',15,'LineWidth',3);  % major peaks
-hold off
-
-% linkaxes(ax(1:2),'xy');
-% axis(ax,[0 60 -5 5]);
-
-%%
-%  - k-means clustering of peaks according to sx and note_2 -
-
-X = [ note_weighted(:) ];                        % data
-
-[idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
-    'Replicates',5,'Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output
-
-cluster1 = find(idx==1)';
-cluster2 = find(idx==2)';
-
-if note_weighted(cluster1(1)) > note_weighted(cluster2(1))                % assign major peak cluster
-    major_index = cluster1;
-else
-    major_index = cluster2; 
+den_F_(i) = sum(den_F_s);
 end
 
-tx_major = tx(major_index);                       
-sx_major = sx(major_index);
+num_F(k) = sum(num_F_);
+den_F(k) = sum(den_F_);
 
-subplot(2,1,1)
-plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
-hold on
-plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-plot(td_spl, d_spl,'g--','MarkerSize',12,'LineWidth',1);     % derivative of s_n 
-plot(tx,sx,'cp','MarkerSize',12,'LineWidth',1);              % note_1 
-plot(tx,note_weighted,'rd','MarkerSize',13,'LineWidth',1);     % note_weighted
-plot(tx_major,sx_major,'rp','MarkerSize',15,'LineWidth',3);  % major peaks
-
-plot(tx,dhi,'c^' ,'MarkerSize',12,'LineWidth',1);            % d_max_l
-plot(tx,dlo,'cv','MarkerSize',12,'LineWidth',1);             % d_max_r
-plot(kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]) , 'c-','MarkerSize',12,'LineWidth',1);    % note_2
-
-title('Peaks discrimination for heart rate monitoring');
-xlabel('Time, s');
-ylabel('arbitrary units');
-%legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Peaks','Major peaks','Location','southoutside');
-hold off
-
-subplot(2,1,2)
-plot(X(idx==1),'r.','MarkerSize',12);      % cluster 1 correspoding sx,delta_note2 (minor)
-hold on
-plot(X(idx==2),'b.','MarkerSize',12);      % cluster 2 correspoding sx,delta_note2 (major)
-plot(C,'kx','MarkerSize',15,'LineWidth',3);  % plot centroids
-title ('Cluster Assignments and Centroids');
-legend('Cluster1','Cluster2','Centroids','Location','NW');
-xlabel ('note_{1/2}, arbitrary units');
-hold off
-
-
-%%
-%   - plot(2 notes) -
-figure(1);
-plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12);      % cluster 1 correspoding sx,delta_note2 (minor)
-hold on
-plot(X(idx==2,1),X(idx==2,2),'b.','MarkerSize',12);      % cluster 2 correspoding sx,delta_note2 (major)
-plot(C(:,1),C(:,2),'kx','MarkerSize',15,'LineWidth',3);  % plot centroids
- 
-title ('Cluster Assignments and Centroids');
-legend('Cluster1','Cluster2','Centroids','Location','NW');
-xlabel ('note_1, a.u');
-ylabel ('{note_2}, a.u');
-hold off
-
-figure(2);
-plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
-hold on
-plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-plot(td_spl, d_spl,'g--','MarkerSize',12,'LineWidth',1);     % derivative of s_n 
-plot(tx_major,sx_major,'rp','MarkerSize',15,'LineWidth',3);  % major peaks
-
-title('Peaks discrimination for heart rate monitoring');
-xlabel('Time, s');
-ylabel('Arbitrary units');
-legend('s: original signal','s_n: sampled signal','d_n: derivative of s_n','Major peaks','Location','northeastoutside');
-hold off
-
-%%
-
-%   - {kx} periodicity -
-%[T,eps,R_sq,plot_reg] = periodicity(tx);
-
-tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
-mdl = fitlm(tbl,'tx~k');
-F_stat = anova(mdl);                        % analyse of variance
-F = F_stat.F(1);                            % F = MeanSq(xi)/MeanSq(Error) with MeanSq = SumSq/DF) (DF(xi)=1 , DF(error)=length(kx)-2)
-
-
-% %[T,eps,R_sq,plot_reg] = periodicity(tx);      % peaks periodicity                          
-% %plot_reg;
-% 
-% random_kx = randsample(  kx, length(kx)/2   );
-% random_kx = sort(random_kx);
-% random_tx = td_spl(random_kx) + (td_spl(random_kx+1)-td_spl(random_kx)) .* d_spl(random_kx)./(d_spl(random_kx)-d_spl(random_kx+1)); 
-% [T,eps,R_sq,plot_reg] = periodicity(random_tx); 
-% plot_reg;
-
-%   - Compute PPG frequency -
-tx_major = tx(major_index);                       
-sx_major = sx(major_index);
-
-for k = 1 : length(tx_major) - 1
-    
-    dtx_major(k)= tx_major(k+1) - tx_major(k);        % time interval between major peaks
-    
+clearvars n uv community_index community num_F_ den_F_ den_F_s;
 end
 
-freq_ppg = 1 ./ (mean(dtx_major));
-BPM = round(60 * freq_ppg)
-note_P = var(1./dtx_major);
-
-
-%%
-%X = [ note_1(:),note_2(:),note_P(:) ];  
-rng default;  % For reproducibility
-X = [gallery('uniformdata',[10 3],12);...
-    gallery('uniformdata',[10 3],13)+1.2;...
-    gallery('uniformdata',[10 3],14)+2.5];
-
-T = clusterdata(X,'distance','cityblock','maxclust',3);
-find(T==5)
-
-scatter3(X(:,1),X(:,2),X(:,3),100,T,'filled')
 
 
