@@ -64,18 +64,6 @@ else
     end
 end
 
-plot(t, s,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
-hold on
-plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-plot(td_spl, d_spl,'g--','MarkerSize',10,'LineWidth',1);     % derivative of s_n 
-plot(tx,sx,'rd','MarkerSize',12,'LineWidth',2);
-plot(tx_n,sx_n,'bd','MarkerSize',12,'LineWidth',2);
-plot(kron(tx,[1 1 1]),delta_plot , 'r-','LineWidth',3);                     % link delta
-hold off
-
-
-
-%%
 %   - Peaks notation
 note_1 = sx;
 for k = 2:length(kx)-1
@@ -95,8 +83,52 @@ for k = 1:length(kx)
     end
 end
 
-note_weighted = note_1 ./ note_2;
+note_3 = delta;
+note_x = (note_1 + note_2 + note_3)/3;
 
+%   - k++ means for centroïd research -
+X = [ note_x(:) ];                        % data
+K = 5;
+
+for k = 1: K
+[idx(:,k),C] = kmeans(X,k,'Distance','cityblock',...     % k clustering 
+    'Replicates',5,'Options',statset('Display','final'));
+
+uv = unique(idx(:,k));                                    % list of clutsters [1 .. k]
+n  = histc(idx(:,k),uv);                                  % number of elements in each cluster (vector)
+
+community(:,k) = find(idx==k)';                           % community partition
+    
+num_F(k) =  distance(community, mean(note_x), 2);  
+
+end
+%%
+
+% tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
+% mdl = fitlm(tbl,'tx~k');
+% F_stat = anova(mdl);                        % analyse of variance
+% F = F_stat.F(1);                            % F = MeanSq(xi)/MeanSq(Error) with MeanSq = SumSq/DF) (DF(xi)=1 , DF(error)=length(kx)-2)
+tbl = table([1:length(kx)]', note_1', note_2', note_3',note_x','VariableNames',{'k','note_1','note_2','note_3','note_x'});
+
+plot(tbl.k,tbl.note_1,'.r'...
+    , tbl.k,tbl.note_2,'.b'...
+    , tbl.k,tbl.note_3,'.g'...
+    , tbl.k,tbl.note_x,'xk','MarkerSize',12 ...
+    );
+legend('note_1','note_2','note_3','note_x');
+
+
+%%
+plot(t, s,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
+hold on
+plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+plot(td_spl, d_spl,'g--','MarkerSize',10,'LineWidth',1);     % derivative of s_n 
+plot(tx,sx,'rd','MarkerSize',12,'LineWidth',2);
+plot(tx_n,sx_n,'bd','MarkerSize',12,'LineWidth',2);
+plot(kron(tx,[1 1 1]),delta_plot , 'r-','LineWidth',3);                     % link delta
+hold off
+
+%%
 % major = kx;
 % for k = 1 : length(kx)
 %     if abs(note_weighted(k)) <= 1
