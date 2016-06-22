@@ -115,19 +115,25 @@ for k = 2: K
     F(k) = num_F(k) / den_F(k);             % F-statistics notation
     
     %   - plot centroïds and clusters -
-    figure(k);
-    for l = 1:k   
+    for l = 1:k
      plot(community{l},'.','MarkerSize',12);  
      hold on
-     plot (C(l,1),'xk','MarkerSize',15);
+     plot (C(1,l),'xk','MarkerSize',15);
     end
     hold off
     clearvars idx C n uv community_index community num_F_ den_F_ ;
 end
 
-
-figure(1);
+%%
+%   - plots -
+figure(10);
 plot(F);
+
+figure(2);
+plot(X(idx==1,1),X(idx==1,2),'r.','MarkerSize',12);      % cluster 1 correspoding sx,delta_note2 (minor)
+hold on
+plot(X(idx==2,1),X(idx==2,2),'b.','MarkerSize',12);      % cluster 2 correspoding sx,delta_note2 (major)
+plot(C(:,1),C(:,2),'kx','MarkerSize',15,'LineWidth',3);  % plot centroids
 
 
 

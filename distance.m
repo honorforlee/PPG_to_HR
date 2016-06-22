@@ -6,6 +6,6 @@ if type == 1                        % norm 1
     dist = sum( abs( X - Y ) );
 
 elseif type == 2                    % norm 2
-    dist = sqrt( sum(  (X - Y) .* (X - Y)    ));
+    dist = sqrt( sum(  (X - Y) .^2    ));
 end
 
