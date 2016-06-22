@@ -179,9 +179,9 @@ s = quant * floor( s / quant );                % quantization
 
 function plots_output(h)
 figure(1);
-plot([1:length(h.note_x)],h.note_x,'r.');
+plot(h.note_x,'r.');
 xlabel('kx'); ylabel('note_x');
-title('Note distribution of overall peaks'); 
+title('Note_x distribution fo
 
 function h = grids(h)
 h.xgrid = [ h.t0(1) h.t0(end) ];

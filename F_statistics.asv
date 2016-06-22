@@ -16,7 +16,7 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 fclose(fid);
 
 t0 = (1:length(val)) * interval;            % timeline
-s0 = val(6,1:length(val));
+s0 = val(1,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
