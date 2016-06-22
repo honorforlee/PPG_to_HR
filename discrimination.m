@@ -202,16 +202,16 @@ function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
     %         h.ft  = [nan nan]; h.fs  = [nan nan];
-    [h.tx,h.sx, h.dhi, h.dlo, h.td , h.d, h.tx_n, h.sx_n, h.delta, h.delta_plot_x,h.delta_plot_y] = signal_peaks(h.t, h.s);
+    [h.tx,h.sx, h.dhi, h.dlo, h.td , h.d, h.tx_N, h.sx_N, h.delta] = signal_peaks(h.t, h.s);
 else
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d,h.tx_n,h.sx_n,h.delta,h.delta_plot_x,h.delta_plot_y] = signal_peaks(h.ft ,h.fs );         % filter applied before derivative
+    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d,h.tx_N,h.sx_N,h.delta] = signal_peaks(h.ft ,h.fs );         % filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
     %         h.ft_ = [nan nan]; h.fs_ = [nan nan];
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_n,h.sy_n,h.delta,h.delta_plot_x,h.delta_plot_y] = signal_peaks(h.td ,h.d  );
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,h.delta] = signal_peaks(h.td ,h.d  );
 else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_n,h.sy_n,h.delta,h.delta_plot_x,h.delta_plot_y] = signal_peaks(h.ft_,h.fs_);
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,h.delta] = signal_peaks(h.ft_,h.fs_);
 end
 
 function plot_(h)
@@ -219,48 +219,21 @@ xl = h.axes.XLim; yl = h.axes.YLim;
 hold off
 
 if h.t_int == 0
-        plot( h.axes ...
+    plot( h.axes ...
         ,h.t , h.s , '-k','LineWidth',.5);
-        legend('Signal');
+    legend('Signal');
 else
     if isempty(h.ft)
         if isempty(h.ft_)
-            %         plot( h.axes ...
-            %             , h.t0 , h.s0 , '-k' ...    % signal
-            %             , h.t  , h.s  , 'ok'  ...   % sampled
-            %             , h.td , h.d , 'x:b' ...    % first derivative
-            %             , h.td2, h.d2, 'x:r' ...    % second derivative
-            %             , h.xgrid,h.ygrid , ':k' ...
-            %             , h.tx , h.sx   , 'pb' ...  % s_max = peak amplitude of s
-            %             , h.tx , h.dhi  , '^b' ...  % local maxima around s_max
-            %             , h.tx , h.dlo  , 'vb' ...  % local minima around s_max
-            %             , kron(h.tx,[1 1 1]) , kron(h.sx,[0 1 nan]) , '--b' ...                               % see note_1
-            %             , kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]) , '-b' ...       % link note_2
-            %             , h.ty , h.sy   , 'pr' ...
-            %             , h.ty , h.d2hi , '^r' ...
-            %             , h.ty , h.d2lo , 'vr' ...
-            %             , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
-            %             , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
-            %             , h.tx_n, h.sx_n, 'pm' ...
-            %             )
-            % hold on
-            % plot( h.t  , h.s  , 'ok','MarkerSize',12,'LineWidth',2);
-            % legend({'Signal','Sampled','D1','D2'});
-            % hold off
-            
             plot( h.axes ...
                 ,h.t0 , h.s0 , '-k','LineWidth',.5);
             hold on
             plot( h.t  , h.s  , 'ok');
             plot( h.td , h.d , 'x:b');
             plot( h.tx , h.sx   , 'pr','MarkerSize',15,'LineWidth',2);
-            plot( h.tx_n, h.sx_n , 'pm','MarkerSize',15,'LineWidth',2);
+            plot( h.tx_N, h.sx_N , 'pm','MarkerSize',15,'LineWidth',2);
             plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
-            if h.tx(1) < h.tx_n(1)
-                plot( kron(h.tx(2:min(length(h.tx),length(h.tx_n))),[1 1 1])  ,   kron(h.sx_n(1:min(length(h.tx),length(h.tx_n))-1),[1 0 nan]) + kron(h.sx( 1: min(length(h.tx),length(h.tx_n))-1),[0 1 nan]) , '-m');
-            elseif h.tx(1) > h.tx_n(1)
-                plot( kron(h.tx(1:min(length(h.tx),length(h.tx_n))),[1 1 1])  ,   kron(h.sx_n(1:min(length(h.tx),length(h.tx_n))),[1 0 nan]) + kron(h.sx( 1: min(length(h.tx),length(h.tx_n))),[0 1 nan]) , '-m');
-            end
+            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
             
             plot( h.tx , h.dhi  , '^c');
             plot( h.tx , h.dlo  , 'vc');
@@ -336,45 +309,48 @@ else
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
-function [tx,sx,dhi,dlo,td,d,tx_n,sx_n,delta,delta_plot_x,delta_plot_y] = signal_peaks(t,s)
-d  =  s(2:end) -  s(1:end-1);               % derivative
-td = (  t(2:end) +  t(1:end-1) ) / 2;       % shift timeline
-kx = d > 0;                                 % look at maxima
-kx = find(kx(1:end-1) & ~kx(2:end));        % find derivative zero crossing: indices i where d(i+1)=0 and d(i)~=0
-sx = s(kx+1);                               % asign s_max to next index
-tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % tx = td(kx) - d(kx)/D(kx) where D is derivative with respect to td
+function [tx,sx,dhi,dlo,td,d,tx_N,sx_N,delta] = signal_peaks(t,s)
+%   - Derivative, local maxima sx, maximum slope around sx -
+d = s(2:end) -  s(1:end-1);
+td = (  t(2:end) +  t(1:end-1) ) / 2;
+
+kx = d > 0;
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
+
+sx = s(kx+1);                          % local maxima
+tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+
 dhi = d(kx);
 dlo = d(kx+1);
+
 for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
+    i = kx(k)-1;   while i > 0             && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx-
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
 end
 
-kx_n = d < 0;
+kx_n = d < 0;                               % search for local minima
 kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
 
-tx_n = td(kx_n) + (td(kx_n+1)-td(kx_n)) .* d(kx_n)./(d(kx_n)-d(kx_n+1));
-sx_n = s(kx_n+1);
-
-delta = sx;
-
-if kx(1) < kx_n(1)
-    delta(1) = sx(1) - s(1);
-    delta_plot_x = kron(tx(2:min(length(kx),length(kx_n))),[1 1 1]);
-    delta_plot_y = kron(sx_n( 1: min(length(kx),length(kx_n))-1 ),[1 0 nan]) + kron(sx( 2: min(length(kx),length(kx_n))),[0 1 nan]) ;
-    for k = 1:min(length(kx)-1,length(kx_n))
-        delta(k+1) = sx(k+1) - sx_n(k);
+if kx_n(1) < kx(1)
+    for k = 1:length(kx)
+        kx_index(k) = max( find( kx_n < kx(k) ) );
     end
+    sx_N = s(kx_n( kx_index ) + 1);
+    tx_N = td(kx_n( kx_index )) + (td(kx_n( kx_index )+1)-td(kx_n( kx_index ))) .* d(kx_n( kx_index ))./(d(kx_n( kx_index ))-d(kx_n( kx_index )+1));
 else
-    delta_plot_x =  kron(tx(1:min(length(kx),length(kx_n))),[1 1 1]);
-    delta_plot_y =  kron(sx_n(1:min(length(kx),length(kx_n))),[1 0 nan]) + kron(sx( 1: min(length(kx),length(kx_n))),[0 1 nan]);
+    kx_index(1) = nan;
+    sx_N(1) = nan;
+    tx_N(1) = nan;
     
-    for k = 1:min(length(kx),length(kx_n))
-        delta(k) = sx(k) - sx_n(k);
+    for k = 2:length(kx)
+        kx_index(k) = max( find( kx_n < kx(k) ) );
+        sx_N(k) = s(kx_n( kx_index(k)) + 1);
+        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
     end
+    
 end
 
-
+delta = sx - sx_N;
 
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
@@ -411,10 +387,10 @@ h.value_t_int.String = h.slider_t_int.Value;
 guidata(h.output, h);
 
 function detect_points(h) %#ok<DEFNU>
-d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;       % first derivative
-d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;       % second derivative
-[tx,sx, dhi, dlo,~,~,~,~] = signal_peaks(h.t,h.s);                                      % detect peaks of signal
-[ty,sy,d2hi,d2lo,~,~,~,~] = signal_peaks( td,  d);                                      % detect peaks of first derivative
+d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
+d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
+[tx,sx, dhi, dlo,~,~,~,~,~] = signal_peaks(h.t,h.s);                                      % detect peaks of signal
+[ty,sy,d2hi,d2lo,~,~,~,~,~] = signal_peaks( td,  d);                                      % detect peaks of first derivative
 xl = h.axes.XLim;
 yl = h.axes.YLim;
 hold off
@@ -466,7 +442,7 @@ f = f/sum(f);
 f = [zeros(1,k) 1 zeros(1,k)] - f;
 ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
 if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[tx,sx, dhi, dlo,~,~,~,~] = signal_peaks(thf,ecg_hf);
+[tx,sx, dhi, dlo,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
 l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off

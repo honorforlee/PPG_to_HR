@@ -15,44 +15,44 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 
 fclose(fid);
 
-t = (1:length(val)) * interval;            % timeline
-s = val(6,1:length(val));
-s  = (s  - mean(s ))/sqrt(var(s ));        % rescale s on 0 (standard score of signal)
+t0 = (1:length(val)) * interval;            % timeline
+s0 = val(6,1:length(val));
+s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
 dt = 1/10;                           % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
 quant = 1e-4;                        % LSB: vertical step
 
-[t_spl,s_spl] = integration(t,s,interval,dt,t_int,quant,0);
+[t,s] = integration(t0,s0,interval,dt,t_int,quant,0);
 
 %   - Derivative, local maxima sx, maximum slope around sx -
-d_spl = s_spl(2:end) -  s_spl(1:end-1);
-td_spl = (  t_spl(2:end) +  t_spl(1:end-1) ) / 2;
+d = s(2:end) -  s(1:end-1);
+td = (  t(2:end) +  t(1:end-1) ) / 2;
 
-kx = d_spl > 0;
-kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d_spl > 0; d_spl( k_{x} + 1 ) <= 0
+kx = d > 0;
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
 
-sx = s_spl(kx+1);                          % local maxima
-tx = td_spl(kx) + (td_spl(kx+1)-td_spl(kx)) .* d_spl(kx)./(d_spl(kx)-d_spl(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+sx = s(kx+1);                          % local maxima
+tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 
-dhi = d_spl(kx);
-dlo = d_spl(kx+1);
+dhi = d(kx);
+dlo = d(kx+1);
 
 for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0             && d_spl(i) >= dhi(k); dhi(k) = d_spl(i); i = i-1; end    % search for maximum positive slope at kx-
-    i = kx(k)+2;   while i < length(d_spl) && d_spl(i) <= dlo(k); dlo(k) = d_spl(i); i = i+1; end    % search for maximmum negative slope at kx+
+    i = kx(k)-1;   while i > 0             && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx-
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
 end
 
-kx_n = d_spl < 0;
+kx_n = d < 0;
 kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
 
-tx_n = td_spl(kx_n) + (td_spl(kx_n+1)-td_spl(kx_n)) .* d_spl(kx_n)./(d_spl(kx_n)-d_spl(kx_n+1));
-sx_n = s_spl(kx_n+1);
+tx_n = td(kx_n) + (td(kx_n+1)-td(kx_n)) .* d(kx_n)./(d(kx_n)-d(kx_n+1));
+sx_n = s(kx_n+1);
 
 delta = sx;
 if kx(1) < kx_n(1)
-    delta(1) = sx(1) - s_spl(1);
+    delta(1) = sx(1) - s(1);
     delta_plot = kron(sx_n(2:length(kx)),[1 0 nan]) + kron(sx,[0 1 nan]);
     for k = 1:length(kx)-1
         delta(k+1) = sx(k+1) - sx_n(k);
@@ -75,11 +75,11 @@ note_2 = dhi - dlo;                           % maximum slope difference around 
 note_3 = zeros(1,length(kx));                 % peak prominence notation
 for k = 1:length(kx)
     i = kx(k) - 1;
-    if (i>0 && d_spl(i) > 0)
-        note_3(k) = sx(k) - s_spl(i);
+    if (i>0 && d(i) > 0)
+        note_3(k) = sx(k) - s(i);
         i = i-1;
-    elseif (i>0 && d_spl(i) <= 0)
-        note_3(k) = sx(k) - s_spl(i);
+    elseif (i>0 && d(i) <= 0)
+        note_3(k) = sx(k) - s(i);
     end
 end
 
