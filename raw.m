@@ -45,15 +45,15 @@ for k = 1:length(kx)
 end
 
 
-kx_n = d < 0;                               % search for local minima  
+kx_n = d < 0;                               % search for local minima
 kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
 
 if kx_n(1) < kx(1)
     for k = 1:length(kx)
         kx_index(k) = max( find( kx_n < kx(k) ) );
     end
-sx_N = s(kx_n( kx_index ) + 1);
-tx_N = td(kx_n( kx_index )) + (td(kx_n( kx_index )+1)-td(kx_n( kx_index ))) .* d(kx_n( kx_index ))./(d(kx_n( kx_index ))-d(kx_n( kx_index )+1));
+    sx_N = s(kx_n( kx_index ) + 1);
+    tx_N = td(kx_n( kx_index )) + (td(kx_n( kx_index )+1)-td(kx_n( kx_index ))) .* d(kx_n( kx_index ))./(d(kx_n( kx_index ))-d(kx_n( kx_index )+1));
 else
     kx_index(1) = nan;
     sx_N(1) = nan;
@@ -62,9 +62,9 @@ else
     for k = 2:length(kx)
         kx_index(k) = max( find( kx_n < kx(k) ) );
         sx_N(k) = s(kx_n( kx_index(k) ) + 1);
-        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));  
+        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
     end
-   
+    
 end
 
 %   - Peaks notation
@@ -93,33 +93,50 @@ note_x = (note_1 + 0.5*note_2 + delta)/3;
 
 X = [note_x ]';
 k_max = 5;
+clust{1} = note_x;
 
 for k = 2:k_max
-c = clusterdata(X,'linkage','ward','savememory','on','maxclust',k);
+    c = clusterdata(X,'linkage','ward','savememory','on','maxclust',k);
+    
+    uv = unique(c);                                    % list of clutsters [1 .. k]
+    n  = histc(c,uv);                                  % number of elements in each cluster (vector)
+    % for j = 1:k
+    % c_index{j,k-1} = find(c == j);
+    % clust{j,k-1} = note_x(c_index{j,k-1});
+    %
 
-for j = 1:k
-c_index{j,k-1} = find(c == j);
-clust{j,k-1} = note_x(c_index{j,k-1});
-
-figure(k-1);
-plot(clust{j,k-1} , '.');
-hold on
+    
+    for i = 1 : k     % inter clust
+        clust_index{i,k} = find(c == i);
+        clust{i,k} = note_x (clust_index{i,k});   % clust partition
+               
+        num_F_(i) =( n(i) * (distance(mean(clust{i,k}), mean(note_x), 2))^2 ) / (k - 1);              % distance INTER - clust
+        
+        for j = 1 : n(i)     % intra clust
+            den_F_d(j) = distance( clust{i,k}(j), mean(clust{i,k}), 2)^2 / (length(kx) - k);        % distance INTRA - clust j
+        end
+        
+        den_F_(i) = sum(den_F_d);
+        clearvars den_F_d;
+       
+        figure(k);
+        plot(clust{i,k} , '.');
+        hold on
+    end
+        hold off
+        
+    num_F(k) = sum(num_F_);
+    den_F(k) = sum(den_F_);
+    F(k) = num_F(k) / den_F(k);             % F-statistics notation
+    
 end
-hold off
-end
 
-
-% plot(clust_1,'r.');
-% hold on
-% plot(clust_2,'b.');
-% plot(clust_3,'g.');
-% plot(clust_4,'c.');
-% hold off
+plot(F);
 
 %%
 figure(1);
 plot(note_1,'.');
-hold on 
+hold on
 plot(ones(1,length(kx)) .* mean(note_1),'r-');
 hold off
 
@@ -145,7 +162,7 @@ figure(4);
 plot(t0, s0,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
 hold on
 plot(t, s,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
-plot(td, d,'g--','MarkerSize',10,'LineWidth',1);     % derivative of s_n 
+plot(td, d,'g--','MarkerSize',10,'LineWidth',1);     % derivative of s_n
 plot(tx,sx,'rd','MarkerSize',12,'LineWidth',2);
 plot(tx_N,sx_N,'bd','MarkerSize',12,'LineWidth',2);
 plot(kron(tx,[1 1 1]), kron(sx_N,[1 0 nan]) + kron(sx,[0 1 nan]),'r-');
