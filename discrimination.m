@@ -133,7 +133,6 @@ if h.t_int ~0
     h = grids(h);
     h = process_sig(h);
     plot_(h);
-    plots_output(h);
 else
     h = grids(h);
     plot_(h);
@@ -177,12 +176,6 @@ end
 
 s = quant * floor( s / quant );                % quantization
 
-function plots_output(h)
-figure(1);
-plot([1:length(h.note_x)],h.note_x,'r.');
-xlabel('kx'); ylabel('note_x');
-title('Note distribution of overall peaks'); 
-
 function h = grids(h)
 h.xgrid = [ h.t0(1) h.t0(end) ];
 h.ygrid = [ 0       0         ];
@@ -210,16 +203,16 @@ function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
     %         h.ft  = [nan nan]; h.fs  = [nan nan];
-    [h.tx,h.sx, h.dhi, h.dlo, h.td , h.d, h.tx_N, h.sx_N, h.delta,h.note_x] = signal_peaks(h.t, h.s);
+    [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d, h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x] = signal_peaks(h.t, h.s);
 else
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d,h.tx_N,h.sx_N,h.delta,h.note_x] = signal_peaks(h.ft ,h.fs );         % filter applied before derivative
+    [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d,h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x] = signal_peaks(h.ft, h.fs );         % filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
     %         h.ft_ = [nan nan]; h.fs_ = [nan nan];
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,h.delta,h.note_x] = signal_peaks(h.td ,h.d  );
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~] = signal_peaks(h.td, h.d  );
 else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,h.delta,h.note_x] = signal_peaks(h.ft_,h.fs_);
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~] = signal_peaks(h.ft_, h.fs_);
 end
 
 function plot_(h)
@@ -250,6 +243,16 @@ else
             legend({'Signal','Sampled signal','D1','Major peaks','Minima','Note_2','Peak to peak amplitude'});
             hold off
            
+            figure(1);
+            subplot(1,1,3);
+            plot(h.note_1);
+            subplot(2,1,3);
+            plot(h.note_2);
+            subplot(3,1,3)
+            plot(h.delta,'r.');
+            
+%             xlabel('kx'); ylabel('note_x');
+%             title('Peaks note distribution');
            
         else
             plot( h.axes ...
@@ -319,7 +322,7 @@ else
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
-function [tx,sx,dhi,dlo,td,d,tx_N,sx_N,delta,note_x] = signal_peaks(t,s)
+function [tx,sx,dhi,dlo,td,d,tx_N,sx_N,note_1,note_2,delta,note_x] = signal_peaks(t,s)
 %   - Derivative, local maxima sx, maximum slope around sx -
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
@@ -370,7 +373,7 @@ end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-note_x = (note_1 + note_2 + 1*delta)/3;
+note_x = (note_1 + note_2 + 1*delta) /3;
 
 
 function callback_infile(h)  %#ok<DEFNU>
@@ -410,8 +413,8 @@ guidata(h.output, h);
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
 d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
-[tx,sx, dhi, dlo,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                      % detect peaks of signal
-[ty,sy,d2hi,d2lo,~,~,~,~,~,~] = signal_peaks( td,  d);                                      % detect peaks of first derivative
+[tx,sx, dhi, dlo,~,~,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                      % detect peaks of signal
+[ty,sy,d2hi,d2lo,~,~,~,~,~,~,~,~] = signal_peaks( td,  d);                                      % detect peaks of first derivative
 xl = h.axes.XLim;
 yl = h.axes.YLim;
 hold off
@@ -463,7 +466,7 @@ f = f/sum(f);
 f = [zeros(1,k) 1 zeros(1,k)] - f;
 ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
 if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[tx,sx, dhi, dlo,~,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
+[tx,sx, dhi, dlo,~,~,~,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
 l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off

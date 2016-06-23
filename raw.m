@@ -20,9 +20,9 @@ s0 = val(1,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
-dt = 1/100;                           % sampling time: dt >> interval
+dt = 1/10;                           % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
-quant = 1e-4;                        % LSB: vertical step
+quant = .1;                        % LSB: vertical step
 
 [t,s] = integration(t0,s0,interval,dt,t_int,quant,0);
 
@@ -67,8 +67,81 @@ else
    
 end
 
+%   - Peaks notation
+note_1 = sx;
+for k = 2:length(kx)-1
+    note_1(k) = 2*sx(k) - sx(k+1) - sx(k-1);  % average peak value (doubled)
+end
+% note_1 = note_1;
+
+note_2 = dhi - dlo;                           % maximum slope difference around peak
+
+% note_3 = zeros(1,length(kx));                 % peak prominence notation
+% for k = 1:length(kx)
+%     i = kx(k) - 1;
+%     if (i>0 && d(i) > 0)
+%         note_3(k) = sx(k) - s(i);
+%         i = i-1;
+%     elseif (i>0 && d(i) <= 0)
+%         note_3(k) = sx(k) - s(i);
+%     end
+% end
+
 delta = sx - sx_N;
 
+note_x = (note_1 + 0.5*note_2 + delta)/3;
+
+X = [note_x ]';
+k_max = 5;
+
+for k = 2:k_max
+c = clusterdata(X,'linkage','ward','savememory','on','maxclust',k);
+
+for j = 1:k
+c_index{j,k-1} = find(c == j);
+clust{j,k-1} = note_x(c_index{j,k-1});
+
+figure(k-1);
+plot(clust{j,k-1} , '.');
+hold on
+end
+hold off
+end
+
+
+% plot(clust_1,'r.');
+% hold on
+% plot(clust_2,'b.');
+% plot(clust_3,'g.');
+% plot(clust_4,'c.');
+% hold off
+
+%%
+figure(1);
+plot(note_1,'.');
+hold on 
+plot(ones(1,length(kx)) .* mean(note_1),'r-');
+hold off
+
+% figure(2);
+% %subplot(2,1,2);
+% plot(note_2,'.');
+
+figure(3);
+subplot(2,1,1);
+plot(delta,'.');
+hold on
+plot(ones(1,length(kx)) .* mean(delta),'r-');
+hold off
+
+subplot(2,1,2);
+plot(normlist(note_x),'.');
+hold on
+plot(ones(1,length(kx)) .* mean(note_x),'r-');
+hold off
+
+
+figure(4);
 plot(t0, s0,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
 hold on
 plot(t, s,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
