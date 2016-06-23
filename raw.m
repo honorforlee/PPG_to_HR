@@ -98,21 +98,18 @@ clust{1} = note_x;
 for k = 2:k_max
     c = clusterdata(X,'linkage','ward','savememory','on','maxclust',k);
     
-    uv = unique(c);                                    % list of clutsters [1 .. k]
-    n  = histc(c,uv);                                  % number of elements in each cluster (vector)
-    % for j = 1:k
-    % c_index{j,k-1} = find(c == j);
-    % clust{j,k-1} = note_x(c_index{j,k-1});
-    %
-
+%     uv = unique(c);                                    % list of clutsters [1 .. k]
+%     n  = histc(c,uv);                                  % number of elements in each cluster (vector)
     
     for i = 1 : k     % inter clust
         clust_index{i,k} = find(c == i);
         clust{i,k} = note_x (clust_index{i,k});   % clust partition
-               
-        num_F_(i) =( n(i) * (distance(mean(clust{i,k}), mean(note_x), 2))^2 ) / (k - 1);              % distance INTER - clust
         
-        for j = 1 : n(i)     % intra clust
+        n = cellfun(@length,clust); 
+        
+        num_F_(i) =( n(i,k) * (distance(mean(clust{i,k}), mean(note_x), 2))^2 ) / (k - 1);              % distance INTER - clust
+        
+        for j = 1 : n(i,k)     % intra clust
             den_F_d(j) = distance( clust{i,k}(j), mean(clust{i,k}), 2)^2 / (length(kx) - k);        % distance INTRA - clust j
         end
         
@@ -131,7 +128,7 @@ for k = 2:k_max
     
 end
 
-plot(F);
+% plot(F);
 
 %%
 figure(1);
