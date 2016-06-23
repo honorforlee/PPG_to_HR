@@ -128,7 +128,7 @@ for k = 2:k_max
     
 end
 
-% plot(F);
+plot(F);
 
 %%
 figure(1);
