@@ -145,9 +145,7 @@ t = t0(1):dt:t0(end);                                   % timeline with new samp
 for k = 1:length(t)-1
     frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
 end
-noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise 
-
-of finite BW)
+noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
 
 % Integration
 if t_int ~0
@@ -378,9 +376,7 @@ else
     for k = 2:length(kx)
         kx_index(k) = max( find( kx_n < kx(k) ) );
         sx_N(k) = s(kx_n( kx_index(k)) + 1);
-        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d
-
-(kx_n( kx_index(k) )+1));
+        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
     end
     
 end
