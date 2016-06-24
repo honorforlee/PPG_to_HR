@@ -1,5 +1,5 @@
 % Ivan Ny Hanitra - Master thesis
-% Algorithm to discriminate PPG/ECG signal peaks and recover HR
+%       -- Algorithm to discriminate PPG/ECG signal peaks and recover HR --
 
 % Requirements
 %   - discriminate peaks in function of notes
@@ -67,7 +67,7 @@ h.f_ppg_row = [ppg_ecg ppg_noecg];
 h.f_ecg_row = [ecg_ecg ecg_noecg];
 h.f_dt0     = [dt0_ecg dt0_noecg];
 h.nf_ecg    = length(fl_ecg);
-update_filelist(h)
+update_filelist(h);
 h.popupmenu_files.Value = 1;
 h.ft = []; h.ft_ = []; h.fs = []; h.fs_ = [];
 h.output = hObject;
@@ -112,37 +112,45 @@ end
 h.t0 = (1:length(h.s0)) * h.dt0;
 h.axes.XLim = [h.t0(1) h.t0(end)];
 
-%Define y-axis
+% Define y-axis
 h.axes.YLim = [min(h.s0) max(h.s0)];
 guidata(h.output, h);
 h = quantize_input(h);
+
 
 %   - timeline, noise, integration, quantization -
 function h = quantize_input(h)
 h.dt   = 1/str2double(h.edit_f_sample.String);                    % apply t_sample
 h.t_int = h.dt * h.slider_t_int.Value;
 h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical precision (delta_samp)
-% 
+
 % h.t = h.t0(1):h.dt:h.t0(end);                                   % timeline with new sampling frequency
 % h.s = h.dNds * floor( interp1(h.t0,h.s0,h.t) / h.dNds );
 
-[h.t,h.s] = integration(h.t0,h.s0,h.dt0,h.dt,h.t_int,h.dNds);
+[h.t,h.s] = integration(h.t0,h.s0,h.dt0,h.dt,h.t_int,h.dNds,0);
 
-h = grids(h);
-h = process_sig(h);
-plot_(h);
+if h.t_int ~0
+    h = grids(h);
+    h = process_sig(h);
+    plot_(h);
+else
+    h = grids(h);
+    plot_(h);
+end
 
-function [t,s] = integration(t0,s0,dt0,dt,t_int,quant)
+function [t,s] = integration(t0,s0,dt0,dt,t_int,quant,add_noise)
 t = t0(1):dt:t0(end);                                   % timeline with new sampling frequency
 
 % Noise
 for k = 1:length(t)-1
     frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
 end
-noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
+noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise 
+
+of finite BW)
 
 % Integration
-if t_int ~=0
+if t_int ~0
     
     for k = 2:length(t)
         index = min (length(    [floor( (t(k-1)+ dt - t_int)/dt0 ): floor( t(k)/ dt0 ) ]    ));
@@ -153,7 +161,11 @@ if t_int ~=0
         frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
     end
     
-%    frameInteg_ = vertcat(frameInteg_,noise);      % add Gaussian noise before integration
+    if add_noise == 'noise'                               % add Gaussian noise before integration
+        frameInteg_ = vertcat(frameInteg_,noise);
+    elseif add_noise == 0
+        frameInteg_ = frameInteg_;
+    end
     
     s(1) = s0(1);
     for k = 2:length(t)
@@ -193,121 +205,241 @@ function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
     %         h.ft  = [nan nan]; h.fs  = [nan nan];
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.t  ,h.s  );
+    [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d, h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x, h.clust,h.F] = signal_peaks(h.t, h.s);
 else
-    [h.tx,h.sx, h.dhi, h.dlo,h.td ,h.d ] = signal_peaks(h.ft ,h.fs );         % filter applied before derivative
+    [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d,h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x, h.clust,h.F] = signal_peaks(h.ft, h.fs );         % 
+
+filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
     %         h.ft_ = [nan nan]; h.fs_ = [nan nan];
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.td ,h.d  );
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~] = signal_peaks(h.td, h.d  );
 else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2] = signal_peaks(h.ft_,h.fs_);
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~] = signal_peaks(h.ft_, h.fs_);
 end
 
 function plot_(h)
 xl = h.axes.XLim; yl = h.axes.YLim;
 hold off
-if isempty(h.ft)
-    if isempty(h.ft_)
-        plot( h.axes ...
-            , h.t0 , h.s0 , '-k' ...    % signal
-            , h.t  , h.s  , 'ok'  ...   % sampled
-            , h.td , h.d , 'x:b' ...    % first derivative
-            , h.td2, h.d2, 'x:r' ...    % second derivative
-            , h.xgrid,h.ygrid , ':k' ...
-            , h.tx , h.sx   , 'pb' ...  % s_max = peak amplitude of s
-            , h.tx , h.dhi  , '^b' ...  % local maxima around s_max
-            , h.tx , h.dlo  , 'vb' ...  % local minima around s_max
-            , kron(h.tx,[1 1 1]) , kron(h.sx,[0 1 nan]) , '--b' ...                               % see note_1
-            , kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]) , '-b' ...       % link note_2
-            , h.ty , h.sy   , 'pr' ...
-            , h.ty , h.d2hi , '^r' ...
-            , h.ty , h.d2lo , 'vr' ...
-            , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
-            , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
-            )
-        legend({'Signal','Sampled','D1','D2'});
-    else
-        plot( h.axes ...
-            , h.t0 , h.s0 , '-k' ...  %TODO  %
-            , h.t  , h.s  , 'ok'  ...
-            , h.td , h.d , 'x:b' ...
-            , h.ft_, h.fs_ , 'd:r' ...  % filter
-            , h.td2, h.d2, 'x:r' ...
-            , h.xgrid,h.ygrid , ':k' ...
-            , h.tx , h.sx   , 'pb' ...
-            , h.tx , h.dhi  , '^b' ...
-            , h.tx , h.dlo  , 'vb' ...
-            , kron(h.tx,[1 1 1]) , kron(h.sx,[0 1 nan]) , '--b' ...
-            , kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]) , '-b' ...
-            , h.ty , h.sy   , 'pr' ...
-            , h.ty , h.d2hi , '^r' ...
-            , h.ty , h.d2lo , 'vr' ...
-            , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
-            , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
-            )
-        legend({'Signal','Sampled','D1','FD2','D2'});           %*
-    end
+
+if h.t_int == 0
+    plot( h.axes ...
+        ,h.t , h.s , '-k','LineWidth',.5);
+    legend('Signal');
 else
-    if isempty(h.ft_)
-        plot( h.axes ...
-            , h.t0 , h.s0 , '-k' ...  %TODO  %
-            , h.t  , h.s  , 'ok'  ...
-            , h.ft , h.fs , 'd:b'  ...
-            , h.td , h.d , 'x:b' ...
-            , h.td2, h.d2, 'x:r' ...
-            , h.xgrid,h.ygrid , ':k' ...
-            , h.tx , h.sx   , 'pb' ...
-            , h.tx , h.dhi  , '^b' ...
-            , h.tx , h.dlo  , 'vb' ...
-            , kron(h.tx,[1 1 1]) , kron(h.sx,[0 1 nan]) , '--b' ...
-            , kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]) , '-b' ...
-            , h.ty , h.sy   , 'pr' ...
-            , h.ty , h.d2hi , '^r' ...
-            , h.ty , h.d2lo , 'vr' ...
-            , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
-            , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
-            )
-        legend({'Signal','Sampled','FD1','D1','D2'});                       %*
+    if isempty(h.ft)
+        if isempty(h.ft_)
+            plot( h.axes ...
+                ,h.t0 , h.s0 , '-k','LineWidth',.5);
+            hold on
+            plot( h.t  , h.s  , 'ok');
+            plot( h.td , h.d , 'x:b');
+            plot( h.tx , h.sx   , 'pr','MarkerSize',15,'LineWidth',2);
+            plot( h.tx_N, h.sx_N , 'pm','MarkerSize',15,'LineWidth',2);
+            plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
+            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
+            
+            plot( h.tx , h.dhi  , '^c');
+            plot( h.tx , h.dlo  , 'vc');
+            plot(h.xgrid,h.ygrid , ':k');
+            
+            legend({'Signal','Sampled signal','D1','Major peaks','Minima','Note_2','Peak to peak amplitude'});
+            hold off
+           
+            %   - plot  note_x clustering -
+               for i = 1 : 2
+                    figure(2);
+                       subplot(2,1,1);
+                    plot(h.clust{i,2} , '.');
+                    hold on
+                end
+                hold off
+                    subplot(2,1,2);
+                    plot(h.note_x,'.');
+                               
+                    
+%             figure(6);
+%             plot (h.F,'b-');
+%             
+            %   - plot peaks distribution -
+%             figure(1);
+%             subplot(1,1,3);
+%             plot(h.note_1);
+%             subplot(2,1,3);
+%             plot(h.note_2);
+%             subplot(3,1,3)
+%             plot(h.delta,'r.');
+            
+%             xlabel('kx'); ylabel('note_x');
+%             title('Peaks note distribution');
+           
+        else
+            plot( h.axes ...
+                , h.t0 , h.s0 , '-k' ...  %TODO  %
+                , h.t  , h.s  , 'ok'  ...
+                , h.td , h.d , 'x:b' ...
+                , h.ft_, h.fs_ , 'd:r' ...  % filter
+                , h.td2, h.d2, 'x:r' ...
+                , h.xgrid,h.ygrid , ':k' ...
+                , h.tx , h.sx   , 'pb' ...
+                , h.tx , h.dhi  , '^b' ...
+                , h.tx , h.dlo  , 'vb' ...
+                , kron(h.tx,[1 1 1]) , kron(h.sx,[0 1 nan]) , '--b' ...
+                , kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]) , '-b' ...
+                , h.ty , h.sy   , 'pr' ...
+                , h.ty , h.d2hi , '^r' ...
+                , h.ty , h.d2lo , 'vr' ...
+                , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
+                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
+                );
+            legend({'Signal','Sampled','D1','FD2','D2'});           %*
+        end
     else
-        plot( h.axes ...
-            , h.t0 , h.s0 , '-k' ...  %TODO  %
-            , h.t  , h.s  , 'ok'  ...
-            , h.ft , h.fs , 'd:b'  ...
-            , h.td , h.d , 'x:b' ...
-            , h.ft_, h.fs_ , 'd:r' ...
-            , h.td2, h.d2, 'x:r' ...
-            , h.xgrid,h.ygrid , ':k' ...
-            , h.tx , h.sx   , 'pb' ...
-            , h.tx , h.dhi  , '^b' ...
-            , h.tx , h.dlo  , 'vb' ...
-            , kron(h.tx,[1 1 1]) , kron(h.sx,[0 1 nan]) , '--b' ...
-            , kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]) , '-b' ...
-            , h.ty , h.sy   , 'pr' ...
-            , h.ty , h.d2hi , '^r' ...
-            , h.ty , h.d2lo , 'vr' ...
-            , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
-            , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
-            )
-        legend({'Signal','Sampled','FD1','D1','FD2','D2'});                %*
+        if isempty(h.ft_)
+            plot( h.axes ...
+                , h.t0 , h.s0 , '-k' ...  %TODO  %
+                , h.t  , h.s  , 'ok'  ...
+                , h.ft , h.fs , 'd:b'  ...
+                , h.td , h.d , 'x:b' ...
+                , h.td2, h.d2, 'x:r' ...
+                , h.xgrid,h.ygrid , ':k' ...
+                , h.tx , h.sx   , 'pb' ...
+                , h.tx , h.dhi  , '^b' ...
+                , h.tx , h.dlo  , 'vb' ...
+                , kron(h.tx,[1 1 1]) , kron(h.sx,[0 1 nan]) , '--b' ...
+                , kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]) , '-b' ...
+                , h.ty , h.sy   , 'pr' ...
+                , h.ty , h.d2hi , '^r' ...
+                , h.ty , h.d2lo , 'vr' ...
+                , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
+                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
+                );
+            legend({'Signal','Sampled','FD1','D1','D2'});                       %*
+        else
+            plot( h.axes ...
+                , h.t0 , h.s0 , '-k' ...  %TODO  %
+                , h.t  , h.s  , 'ok'  ...
+                , h.ft , h.fs , 'd:b'  ...
+                , h.td , h.d , 'x:b' ...
+                , h.ft_, h.fs_ , 'd:r' ...
+                , h.td2, h.d2, 'x:r' ...
+                , h.xgrid,h.ygrid , ':k' ...
+                , h.tx , h.sx   , 'pb' ...
+                , h.tx , h.dhi  , '^b' ...
+                , h.tx , h.dlo  , 'vb' ...
+                , kron(h.tx,[1 1 1]) , kron(h.sx,[0 1 nan]) , '--b' ...
+                , kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]) , '-b' ...
+                , h.ty , h.sy   , 'pr' ...
+                , h.ty , h.d2hi , '^r' ...
+                , h.ty , h.d2lo , 'vr' ...
+                , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
+                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
+                );
+            legend({'Signal','Sampled','FD1','D1','FD2','D2'});                %*
+        end
     end
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
-function [tx,sx,dhi,dlo,td,d] = signal_peaks(t,s)
-d  =  s(2:end) -  s(1:end-1);               % derivative
-td = (  t(2:end) +  t(1:end-1) ) / 2;       % shift timeline
-kx = d > 0;                                 % look at maxima
-kx = find(kx(1:end-1) & ~kx(2:end));        % find derivative zero crossing: indices i where d(i+1)=0 and d(i)~=0
-sx = s(kx+1);                               % asign s_max to next index
-tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % tx = td(kx) - d(kx)/D(kx) where D is derivative with respect to td
+function [tx,sx,dhi,dlo,td,d,tx_N,sx_N,note_1,note_2,delta_,note_x,clust,F] = signal_peaks(t,s)
+%   - Derivative, local maxima sx, maximum slope around sx -
+d = s(2:end) -  s(1:end-1);
+td = (  t(2:end) +  t(1:end-1) ) / 2;
+
+kx = d > 0;
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
+
+sx = s(kx+1);                          % local maxima
+tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+
 dhi = d(kx);
 dlo = d(kx+1);
+
 for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0         && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for local maxima at left
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for local minima at right
+    i = kx(k)-1;   while i > 0             && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx-
+    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
 end
+
+kx_n = d < 0;                               % search for local minima
+kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
+
+if kx_n(1) < kx(1)
+    for k = 1:length(kx)
+        kx_index(k) = max( find( kx_n < kx(k) ) );
+    end
+    sx_N = s(kx_n( kx_index ) + 1);
+    tx_N = td(kx_n( kx_index )) + (td(kx_n( kx_index )+1)-td(kx_n( kx_index ))) .* d(kx_n( kx_index ))./(d(kx_n( kx_index ))-d(kx_n( kx_index )+1));
+else
+    kx_index(1) = nan;
+    sx_N(1) = nan;
+    tx_N(1) = nan;
+    
+    for k = 2:length(kx)
+        kx_index(k) = max( find( kx_n < kx(k) ) );
+        sx_N(k) = s(kx_n( kx_index(k)) + 1);
+        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d
+
+(kx_n( kx_index(k) )+1));
+    end
+    
+end
+
+%   - Peaks notation
+note_1 = sx;
+for k = 2:length(kx)-1
+    note_1(k) = 2*sx(k) - sx(k+1) - sx(k-1);  % average peak value (doubled)
+end
+
+note_2 = dhi - dlo;                           % maximum slope difference around peak
+
+delta = sx - sx_N;
+delta_ = delta;
+for k = 2:length(kx)-1
+    delta_(k) = 2*delta(k) - delta(k+1) - delta(k-1);  % average peak value (doubled)
+end
+
+note_x = delta_;
+
+%   - Hierarchical clustering according to Ward's criterion and F-statistics to evaluate best number of cluster -
+k_max = 5;
+clust{1} = note_x;
+
+for k = 2:k_max
+    c = clusterdata(note_x','linkage','ward','savememory','on','maxclust',k);
+    
+    for i = 1 : k     % inter clust
+        clust_index{i,k} = find(c == i);
+        clust{i,k} = note_x (clust_index{i,k});   % clust partition
+        
+        n = cellfun(@length,clust);
+        
+        %         num_F_(i) =( n(i,k) * (distance(mean(clust{i,k}), mean(note_x), 2))^2 ) / (k - 1);            % distance INTER - clust
+        %
+        %         for j = 1 : n(i,k)     % intra clust
+        %             den_F_d(j) = distance( clust{i,k}(j), mean(clust{i,k}), 2)^2 / (length(kx) - k);        % distance INTRA - clust j
+        %         end
+        %
+        %         den_F_(i) = sum(den_F_d);
+        %         clearvars den_F_d;
+        
+        num_F_(i) =( n(i,k) * (distance(mean(clust{i,k}), mean(note_x), 2))^2 );
+        
+        for j = 1 : n(i,k)     % intra clust
+            den_F_d(j) = distance( clust{i,k}(j), mean(clust{i,k}), 2)^2;        % distance INTRA - clust j
+        end
+        
+        den_F_(i) = sum(den_F_d);
+        clearvars den_F_d
+        
+    end
+    
+    num_F(k) = sum(num_F_);
+    den_F(k) = sum(den_F_);
+    F(k) = num_F(k) / den_F(k);             % F-statistics notation
+    warning('off','all');
+end
+    
 
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
@@ -344,10 +476,10 @@ h.value_t_int.String = h.slider_t_int.Value;
 guidata(h.output, h);
 
 function detect_points(h) %#ok<DEFNU>
-d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;       % first derivative
-d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;       % second derivative
-[tx,sx, dhi, dlo] = signal_peaks(h.t,h.s);                                      % detect peaks of signal
-[ty,sy,d2hi,d2lo] = signal_peaks( td,  d);                                      % detect peaks of first derivative
+d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
+d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
+[tx,sx, dhi, dlo,~,~,~,~,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                      % detect peaks of signal
+[ty,sy,d2hi,d2lo,~,~,~,~,~,~,~,~,~,~] = signal_peaks( td,  d);                                      % detect peaks of first derivative
 xl = h.axes.XLim;
 yl = h.axes.YLim;
 hold off
@@ -367,7 +499,7 @@ plot( h.axes ...
     , ty , d2lo , 'vr' ...
     , kron(ty,[1 1 1]) , kron(sy,[0 1 nan]) , '--r' ...
     , kron(ty,[1 1 1]) , kron(d2lo,[1 0 nan]) + kron(d2hi,[0 1 nan]) , '-r' ...
-    )
+    );
 legend({'Signal','Sampled','D1','D2'});
 
 function ECG_analysis(h)
@@ -399,7 +531,7 @@ f = f/sum(f);
 f = [zeros(1,k) 1 zeros(1,k)] - f;
 ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
 if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[tx,sx, dhi, dlo] = signal_peaks(thf,ecg_hf);
+[tx,sx, dhi, dlo,~,~,~,~,~,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
 l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off
@@ -411,7 +543,7 @@ plot( h.axes ...
     , tx(k), sx(k), 'or' ...
     , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
     , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
-    )
+    );
 
 
 function edit13_Callback(hObject, eventdata, handles)
@@ -443,5 +575,4 @@ function checkbox5_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 %
 % Hint: get(hObject,'Value') returns toggle state of checkbox5
-
 

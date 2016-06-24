@@ -5,7 +5,7 @@ s = val(1,1:length(val));
 s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
 
 
-[t_spl,s_spl] = integration(t,s,interval,dt,t_int,quant);
+[t_spl,s_spl] = integration(t,s,interval,dt,t_int,quant,0);
 
 %   - Derivative, local maxima sx, maximum slope around sx -
 d_spl = s_spl(2:end) -  s_spl(1:end-1);

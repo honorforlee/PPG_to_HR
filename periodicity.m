@@ -1,7 +1,12 @@
+% Ivan Ny Hanitra - Master thesis
+%       -- Linear regression of tx (3 methods) - output period, normalized Mean Squared Error, coefficient of determination - regression plot --
+
 function [T,eps,R_sq,plot_reg] = periodicity(tx)
 %   - with linear regression function -
-tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
-mdl = fitlm(tbl,'tx~k');
+% tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
+% mdl = fitlm(tbl,'tx~k');
+% T_est = mdl.Coefficients(2);    % period estimate
+% RMSE_est = mdl.RMSE;            % Square root of the mean squared error, which estimates the standard deviation of the error distribution.
 
 %   - with covariance matrix - 
 j = [1:length(tx)];
