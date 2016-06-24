@@ -205,9 +205,9 @@ if isempty(h.ft)
     %         h.ft  = [nan nan]; h.fs  = [nan nan];
     [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d, h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x, h.clust,h.F] = signal_peaks(h.t, h.s);
 else
-    [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d,h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x, h.clust,h.F] = signal_peaks(h.ft, h.fs );         %
-    
-    filter applied before derivative
+    [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d,h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x, h.clust,h.F] = signal_peaks(h.ft, h.fs );         % 
+
+filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
@@ -244,35 +244,34 @@ else
             
             legend({'Signal','Sampled signal','D1','Major peaks','Minima','Note_2','Peak to peak amplitude'});
             hold off
-            
+           
             %   - plot  note_x clustering -
-            for i = 1 : 2
-                figure(2);
-                subplot(2,1,1);
-                plot(h.clust{i,2} , '.');
-                hold on
-            end
-            hold off
-            subplot(2,1,2);
-            plot(h.normlist,'.');
-            %plot( abs(normlist(h.note_x)), '.');
-            
-            
-            %             figure(6);
-            %             plot (h.F,'b-');
-            %
+               for i = 1 : 2
+                    figure(2);
+                       subplot(2,1,1);
+                    plot(h.clust{i,2} , '.');
+                    hold on
+                end
+                hold off
+                    subplot(2,1,2);
+               plot( abs(normlist(h.note_x)), ';
+                               
+                    
+%             figure(6);
+%             plot (h.F,'b-');
+%             
             %   - plot peaks distribution -
-            %             figure(1);
-            %             subplot(1,1,3);
-            %             plot(h.note_1);
-            %             subplot(2,1,3);
-            %             plot(h.note_2);
-            %             subplot(3,1,3)
-            %             plot(h.delta,'r.');
+%             figure(1);
+%             subplot(1,1,3);
+%             plot(h.note_1);
+%             subplot(2,1,3);
+%             plot(h.note_2);
+%             subplot(3,1,3)
+%             plot(h.delta,'r.');
             
-            %             xlabel('kx'); ylabel('note_x');
-            %             title('Peaks note distribution');
-            
+%             xlabel('kx'); ylabel('note_x');
+%             title('Peaks note distribution');
+           
         else
             plot( h.axes ...
                 , h.t0 , h.s0 , '-k' ...  %TODO  %
@@ -437,7 +436,7 @@ for k = 2:k_max
     F(k) = num_F(k) / den_F(k);             % F-statistics notation
     warning('off','all');
 end
-
+    
 
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
