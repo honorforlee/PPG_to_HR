@@ -145,7 +145,9 @@ t = t0(1):dt:t0(end);                                   % timeline with new samp
 for k = 1:length(t)-1
     frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
 end
-noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
+noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise 
+
+of finite BW)
 
 % Integration
 if t_int ~0
@@ -205,7 +207,9 @@ if isempty(h.ft)
     %         h.ft  = [nan nan]; h.fs  = [nan nan];
     [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d, h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x, h.clust,h.F] = signal_peaks(h.t, h.s);
 else
-    [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d,h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x, h.clust,h.F] = signal_peaks(h.ft, h.fs );         % filter applied before derivative
+    [h.tx, h.sx, h.dhi, h.dlo, h.td , h.d,h.tx_N, h.sx_N, h.note_1, h.note_2, h.delta, h.note_x, h.clust,h.F] = signal_peaks(h.ft, h.fs );         % 
+
+filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
@@ -244,18 +248,20 @@ else
             hold off
            
             %   - plot  note_x clustering -
-%             for k = 2 : 5
-%                 for i = 1 : k
-%                     figure(k);
-%                     plot(h.clust{i,k} , '.');
-%                     hold on
-%                 end
-%                 hold off
-%             end
-            
-            figure(6);
-            plot (h.F,'b-');
-            
+               for i = 1 : 2
+                    figure(2);
+                       subplot(2,1,1);
+                    plot(h.clust{i,2} , '.');
+                    hold on
+                end
+                hold off
+                    subplot(2,1,2);
+                    plot(h.note_x,'.');
+                               
+                    
+%             figure(6);
+%             plot (h.F,'b-');
+%             
             %   - plot peaks distribution -
 %             figure(1);
 %             subplot(1,1,3);
@@ -336,7 +342,7 @@ else
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
-function [tx,sx,dhi,dlo,td,d,tx_N,sx_N,note_1,note_2,delta,note_x,clust,F] = signal_peaks(t,s)
+function [tx,sx,dhi,dlo,td,d,tx_N,sx_N,note_1,note_2,delta_,note_x,clust,F] = signal_peaks(t,s)
 %   - Derivative, local maxima sx, maximum slope around sx -
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
@@ -372,12 +378,12 @@ else
     for k = 2:length(kx)
         kx_index(k) = max( find( kx_n < kx(k) ) );
         sx_N(k) = s(kx_n( kx_index(k)) + 1);
-        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
+        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d
+
+(kx_n( kx_index(k) )+1));
     end
     
 end
-
-delta = sx - sx_N;
 
 %   - Peaks notation
 note_1 = sx;
@@ -387,7 +393,13 @@ end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-note_x = (note_1 + note_2 + 1*delta) /3;
+delta = sx - sx_N;
+delta_ = delta;
+for k = 2:length(kx)-1
+    delta_(k) = 2*delta(k) - delta(k+1) - delta(k-1);  % average peak value (doubled)
+end
+
+note_x = delta_;
 
 %   - Hierarchical clustering according to Ward's criterion and F-statistics to evaluate best number of cluster -
 k_max = 5;
@@ -563,5 +575,4 @@ function checkbox5_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 %
 % Hint: get(hObject,'Value') returns toggle state of checkbox5
-
 
