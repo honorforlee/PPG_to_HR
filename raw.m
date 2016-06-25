@@ -34,7 +34,7 @@ kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
 
 %   - Local maxima sx, maximum slope around sx -
-[~,~,~,~, note_x] = peaks_processing(t,s, kx);
+[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
 %   - Agglomerative clustering -
 [clust, clust_index] = agglo_clustering(note_x,5);
@@ -42,7 +42,7 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 %   - Remove oultiers -
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));
 
-[tx,sx,  tx_N,sx_N,  note_x] = peaks_processing(t,s, kx);
+[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
 plot(t0, s0,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
 hold on
@@ -52,7 +52,6 @@ plot(tx,sx,'rd','MarkerSize',12,'LineWidth',2);
 plot(tx_N,sx_N,'bd','MarkerSize',12,'LineWidth',2);
 plot(kron(tx,[1 1 1]), kron(sx_N,[1 0 nan]) + kron(sx,[0 1 nan]),'r-');
 hold off
-
 
 
 %%

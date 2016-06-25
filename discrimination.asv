@@ -353,7 +353,7 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 [clust, clust_index] = agglo_clustering(note_x,2);      % 2 clusters
 
 %   - Remove oultiers -
-kx = outlier(kx,clust_index, floor (0.05*length(kx)));  % remove cluster population of less than 5% length(kx)
+kx = outlier(kx,clust_index, floor (0.05*length(kx)));  % remove cluster popu
 
 [tx,sx, dhi,dlo,  tx_N,sx_N,  note_x] = peaks_processing(t,s, kx);
 

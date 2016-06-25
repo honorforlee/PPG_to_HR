@@ -36,5 +36,5 @@ for k = 2:kmax
     num_F(k) = sum(num_F_);
     den_F(k) = sum(den_F_);
     F(k) = num_F(k) / den_F(k);             % F-statistics notation
-    
+    warning('off','all');
 end

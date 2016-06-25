@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Local maxima sx, maximum slope around sx --
 
-function [tx,sx,  tx_N,sx_N,  note_x] = peaks_processing(t,s,kx)
+function [tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx)
 
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
