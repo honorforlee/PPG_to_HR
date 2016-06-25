@@ -1,20 +1,26 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Agglomerative clustering with Ward's criterion as linkage (decrease in variance for the cluster being merged) --
 
-function [clust, clust_index, kmax_value] = agglo_clustering(note_x,kmax)
+function [clust, clust_index, mean_clust, kmax_value, diff] = agglo_clustering(note_x,kmax)
 kmax_value = kmax;
 X = [note_x ]';
 clust{1} = note_x;
 
+mean_clust = nan(kmax,kmax);
+mean_clust(1,1) = mean(note_x);
+
 for k = 2:kmax
-    c = clusterdata(X,'linkage','ward','savememory','on','maxclust',k); 
+    c = clusterdata(X,'linkage','ward','savememory','on','maxclust',k);
     
     %     uv = unique(c);                                    % list of clutsters [1 .. k]
     %     n  = histc(c,uv);                                  % number of elements in each cluster (vector)
+
     
     for i = 1 : k     % inter clust
         clust_index{i,k} = find(c == i);
         clust{i,k} = note_x (clust_index{i,k});   % clust partition
+               
+        mean_clust(i,k) = mean(clust{i,k});
         
         n = cellfun(@length,clust);
         
@@ -38,4 +44,13 @@ for k = 2:kmax
     den_F(k) = sum(den_F_);
     F(k) = num_F(k) / den_F(k);             % F-statistics notation
     warning('off','all');
+end    
+
+%  Search best number of clusters
+mean_clust = sort(mean_clust);      
+
+for k = 2 : kmax
+    for i = 2:kmax
+    diff(i,k) = mean_clust(i,k)-mean_clust(i-1,k);
+    end
 end

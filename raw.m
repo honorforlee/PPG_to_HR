@@ -26,7 +26,7 @@ quant = .1;                        % LSB: vertical step
 
 [t,s] = integration(t0,s0,interval,dt,t_int,quant,0);
 
-%   - Derivative - 
+%   - Derivative -
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
 
@@ -37,13 +37,40 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 [tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
 %   - Agglomerative clustering -
-[clust, clust_index, kmax] = agglo_clustering(note_x,5);
+% Initialization
+kmax_init = 6;              
+[clust, clust_index, mean_clust, kmax, diff] = agglo_clustering(note_x,kmax_init);      
 
-%   - Remove oultiers -
-kx = outlier(kx,clust_index, floor (0.05*length(kx)));
+% Remove oultiers 
+kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
+[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx); 
 
-[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
+% Initialization with outliers removed
+[clust, clust_index, mean_clust, kmax, diff] = agglo_clustering(note_x,kmax_init);   
+diff_ = diff;
+mean_clust_ = mean_clust;
+        
+% Search for best number of clusters 
+div = 2;
+while min( diff(2:end,kmax) ) <= max(mean_clust(:,kmax))/div && kmax >= 3  
+ 
+kmax = kmax -1;   
+[clust, clust_index, mean_clust, kmax,diff] = agglo_clustering(note_x,kmax);
 
+end
+
+
+for i = 1 : kmax
+    figure(2);
+    subplot(2,1,1);
+    plot(clust{i,kmax} , '.');
+    hold on
+end
+hold off
+subplot(2,1,2);
+plot( note_x, '.');
+
+%%
 plot(t0, s0,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
 hold on
 plot(t, s,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n

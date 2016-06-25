@@ -244,7 +244,7 @@ else
             hold off
             
             %   - plot  note_x clustering -
-            
+            if h.kmax >= 2
             for i = 1 : h.kmax
                 figure(2);
                 subplot(2,1,1);
@@ -254,7 +254,10 @@ else
             hold off
             subplot(2,1,2);
             plot( h.note_x, '.');
-            
+            else
+                figure(2);
+                plot( h.note_x, '.');
+            end    
             
             %             figure(6);
             %             plot (h.F,'b-');
@@ -348,15 +351,37 @@ kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
 
 %   - Local maxima sx, maximum slope around sx -
-[~,~, ~,~, ~,~, note_x] = peaks_processing(t,s,kx);
+[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
 %   - Agglomerative clustering -
-[clust, clust_index, kmax] = agglo_clustering(note_x,5);      % kmax clusters
+% Initialization
+kmax_init = 6;              
+[clust, clust_index, mean_clust, kmax, diff] = agglo_clustering(note_x,kmax_init);      
 
-%   - Remove oultiers -
-kx = outlier(kx,clust_index, floor (0.05*length(kx)));  % remove cluster population of less than 5% length(kx)
+% Remove oultiers 
+kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
+[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx); 
 
-[tx,sx, dhi,dlo,  tx_N,sx_N,  note_x] = peaks_processing(t,s, kx);
+if diff(2,2) >= 1    % EMPIRICAL
+
+% Initialization with outliers removed
+[clust, clust_index, mean_clust, kmax, diff] = agglo_clustering(note_x,kmax_init);   
+diff_ = diff;
+mean_clust_ = mean_clust;
+        
+% Search for best number of clusters 
+div = 4;            % EMPIRICAL                                                
+while min( diff(2:end,kmax) ) <= max(mean_clust(:,kmax))/div && kmax >= 3  % merging clusters that are too close
+ 
+kmax = kmax - 1;   
+[clust, clust_index, mean_clust, kmax,diff] = agglo_clustering(note_x,kmax);
+
+end
+
+else
+    clust = nan;
+    kmax = 1;
+end    
 
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
