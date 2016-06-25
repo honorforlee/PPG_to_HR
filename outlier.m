@@ -11,15 +11,15 @@
 %     end
 % end
 
-function kx = outlier(kx,clust_index)
+function kx = outlier(kx,clust_index,min_population)
 size_ = size(clust_index);
 clust_outlier = zeros(length(kx),size_(1)*size_(2));
 k = 1;
 for i = 1:size_(1)
     for j = 1:size_(2)
         
-%        if length( clust_index{i,j} ) <= floor ( 0.05 * length(kx) ) && length( clust_index{i,j} ) ~ 0
-         if length( clust_index{i,j} ) <= floor ( 0.1 * length(kx) ) && length( clust_index{i,j} ) ~ 0
+       if length( clust_index{i,j} ) <= floor ( min_population ) && length( clust_index{i,j} ) ~ 0
+
             clust_outlier(1:length(clust_index{i,j}),k) =  clust_index{i,j};
             k = k+1;
         else
