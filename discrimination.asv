@@ -244,7 +244,8 @@ else
             hold off
             
             %   - plot  note_x clustering -
-            for i = 1 : 2
+            
+            for i = 1 : kmax
                 figure(2);
                 subplot(2,1,1);
                 plot(h.clust{i,2} , '.');
@@ -350,10 +351,10 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 [~,~, ~,~, ~,~, note_x] = peaks_processing(t,s,kx);
 
 %   - Agglomerative clustering -
-[clust, clust_index] = agglo_clustering(note_x,2);      % 2 clusters
+[clust, clust_index, kma] = agglo_clustering(note_x,5);      % 2 clusters
 
 %   - Remove oultiers -
-kx = outlier(kx,clust_index, floor (0.05*length(kx)));  % remove cluster popu
+kx = outlier(kx,clust_index, floor (0.05*length(kx)));  % remove cluster population of less than 5% length(kx)
 
 [tx,sx, dhi,dlo,  tx_N,sx_N,  note_x] = peaks_processing(t,s, kx);
 

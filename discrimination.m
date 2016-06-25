@@ -203,16 +203,16 @@ function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
     
-    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust] = signal_peaks(h.t, h.s);
+    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust, h.kmax] = signal_peaks(h.t, h.s);
 else
-    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
+    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust, h.kmax] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
 
-     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~] = signal_peaks(h.td, h.d  );
+     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~] = signal_peaks(h.td, h.d  );
 else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~] = signal_peaks(h.ft_, h.fs_);
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~] = signal_peaks(h.ft_, h.fs_);
 end
 
 function plot_(h)
@@ -244,10 +244,11 @@ else
             hold off
             
             %   - plot  note_x clustering -
-            for i = 1 : 2
+            
+            for i = 1 : h.kmax
                 figure(2);
                 subplot(2,1,1);
-                plot(h.clust{i,2} , '.');
+                plot(h.clust{i,h.kmax} , '.');
                 hold on
             end
             hold off
@@ -338,7 +339,7 @@ else
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
-function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust] = signal_peaks(t,s)
+function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust, kmax] = signal_peaks(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
@@ -350,7 +351,7 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 [~,~, ~,~, ~,~, note_x] = peaks_processing(t,s,kx);
 
 %   - Agglomerative clustering -
-[clust, clust_index] = agglo_clustering(note_x,2);      % 2 clusters
+[clust, clust_index, kmax] = agglo_clustering(note_x,5);      % kmax clusters
 
 %   - Remove oultiers -
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));  % remove cluster population of less than 5% length(kx)
@@ -394,8 +395,8 @@ guidata(h.output, h);
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
 d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
-[tx,sx, dhi, dlo,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
-[ty,sy,d2hi,d2lo,~,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
+[tx,sx, dhi, dlo,~,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
+[ty,sy,d2hi,d2lo,~,~,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
 xl = h.axes.XLim;
 yl = h.axes.YLim;
 hold off
@@ -447,7 +448,7 @@ f = f/sum(f);
 f = [zeros(1,k) 1 zeros(1,k)] - f;
 ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
 if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[tx,sx, dhi, dlo,~,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
+[tx,sx, dhi, dlo,~,~,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
 l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off
