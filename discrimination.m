@@ -254,8 +254,7 @@ else
             end
             hold off
             subplot(2,1,2);
-            plot(h.normlist,'.');
-            %plot( abs(normlist(h.note_x)), '.');
+            plot( abs(normlist(h.note_x)), '.');
             
             
             %             figure(6);
@@ -394,12 +393,12 @@ delta = sx - sx_N;
 
 note_3 = delta;
 for k = 2:length(kx)-1
-    note_3(k) = 2*delta(k) - delta(k+1) - delta(k-1);  % average peak value (doubled)
+    note_3(k) = 2*delta(k) - delta(k+1) - delta(k-1);  % average peak to peak value (doubled)
 end
 
-note_x = note_3;
+note_x = note_3;                                % global note
 
-%   - Hierarchical clustering according to Ward's criterion and F-statistics to evaluate best number of cluster -
+%   - Hierarchical clustering according to Ward's criterion and F-statistics to evaluate best number of cluster 
 k_max = 5;
 clust{1} = note_x;
 

@@ -33,12 +33,48 @@ td = (  t(2:end) +  t(1:end-1) ) / 2;
 kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
 
-%   - Local maxima sx, maximum slope around sx -
-[kx,    tx,sx,  tx_N,sx_N,  note_x] = peaks_processing(t,s);
+%   - local maxima sx, maximum slope around sx -
+[kx,note_x] = peaks_processing(t,s)
 
-%   - Remove oultiers -
+% note_x = (note_1 + 0.5*note_2 + delta)/3;
 
+X = [note_x ]';
+k_max = 5;
+clust{1} = note_x;
 
+for k = 2:k_max
+    c = clusterdata(X,'linkage','ward','savememory','on','maxclust',k);
+    
+    %     uv = unique(c);                                    % list of clutsters [1 .. k]
+    %     n  = histc(c,uv);                                  % number of elements in each cluster (vector)
+    
+    for i = 1 : k     % inter clust
+        clust_index{i,k} = find(c == i);
+        clust{i,k} = note_x (clust_index{i,k});   % clust partition
+        
+        n = cellfun(@length,clust);
+        
+        num_F_(i) =( n(i,k) * (distance(mean(clust{i,k}), mean(note_x), 2))^2 ) / (k - 1);              % distance INTER - clust
+        
+        for j = 1 : n(i,k)     % intra clust
+            den_F_d(j) = distance( clust{i,k}(j), mean(clust{i,k}), 2)^2 / (length(kx) - k);        % distance INTRA - clust j
+        end
+        
+        den_F_(i) = sum(den_F_d);
+        clearvars den_F_d;
+    end
+    
+    %         figure(k);
+    %         plot(clust{i,k} , '.');
+    %         hold on
+    %     end
+    %         hold off
+    
+    num_F(k) = sum(num_F_);
+    den_F(k) = sum(den_F_);
+    F(k) = num_F(k) / den_F(k);             % F-statistics notation
+    
+end
 
 kx = outlier(kx,clust_index);
  
