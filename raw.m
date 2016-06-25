@@ -40,7 +40,7 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 [clust, clust_index] = agglo_clustering(note_x,5);
 
 %   - Remove oultiers -
-kx = outlier(kx,clust_index, floor (0.1*length(kx)));
+kx = outlier(kx,clust_index, floor (0.05*length(kx)));
 
 [tx,sx,  tx_N,sx_N,  note_x] = peaks_processing(t,s, kx);
 
