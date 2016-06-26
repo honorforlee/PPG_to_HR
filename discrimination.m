@@ -129,7 +129,7 @@ h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical
 
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0,h.dt,h.t_int,h.dNds,0);
 
-if h.t_int ~0
+if h.t_int ~ 0
     h = grids(h);
     h = process_sig(h);
     plot_(h);
@@ -190,7 +190,7 @@ if h.checkbox_dNdS.Value                                        % ?
     h.ygrid = [ h.ygrid  nan  kron(y,[1 1 1]) ];
 end
 
-function [ft,fs] = apply_filter_(t,s,f)         %? values entered
+function [ft,fs] = apply_filter_(t,s,f)        
 f = str2num(f); %#ok<ST2NM>
 if length(f) > 0
     fs = conv( s , fliplr(f)     , 'valid' ) ;
@@ -380,7 +380,7 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 %   - Local maxima sx, maximum slope around sx -
 [tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
-%   - Agglomerative clustering -
+%   - Hierarchical clustering (agglomerative) -
 % Initialization
 kmax_init = 6;
 [clust_index,  ~,~,  ~,~,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
@@ -395,8 +395,8 @@ if diff(2,2) >= .5    % EMPIRICAL: no clustering if 2-clustering clusters are to
     [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
     
     % Search for best number of clusters
-    div = 4;            % EMPIRICAL: merge clusters that are too close
-    while min( diff(2:end,kmax) ) <= max(mean_clust(:,kmax))/div && kmax >= 3 
+    div = 2;            % EMPIRICAL: merge clusters that are too close
+    while min( diff(2:end,kmax) ) <= ( max(mean_clust(:,kmax)) - min(mean_clust(:,kmax)) )/div && kmax >= 3 
         
         kmax = kmax - 1;
         [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax);
