@@ -243,7 +243,7 @@ else
             legend({'Signal','Sampled signal','D1','Major peaks','Minima','Note_2','Peak to peak amplitude'});
             hold off
             
-
+            
             if h.kmax >= 2
                 
                 % plot clust_note_x
@@ -253,7 +253,7 @@ else
                     plot(h.clust_note_x{i,h.kmax} , '.');
                     hold on
                 end
-                Legend=cell(h.kmax,1)
+                Legend=cell(h.kmax,1);
                 for iter=1:h.kmax
                     Legend{iter}=strcat('cluster ', num2str(iter));
                 end
@@ -267,7 +267,7 @@ else
                 base_max = max (base_array(:,h.kmax));
                 base = [1:base_max];
                 
-                % plot clust_periodicity                
+                % plot clust_periodicity
                 data = nan(base_max,h.kmax);
                 
                 for i = 1 : h.kmax
@@ -278,7 +278,8 @@ else
                     hold on
                 end
                 
-                Legend=cell(h.kmax,1)
+                Legend=cell(h.kmax,1);
+                
                 for iter=1:h.kmax
                     Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
                 end
@@ -288,16 +289,16 @@ else
                 xlabel('k');
                 ylabel('t_{x,k}, s');
                 hold off
-            
+                
             elseif h.kmax == 1
-                  figure(2);
-                  plot( h.note_x, '.');
-                  
-                  figure(3);
-                  base = [1:length(h.tx)];
-                  plot(base,h.tx,'.');
-                  Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
-                  legend(Legend);  
+                figure(2);
+                plot( h.note_x, '.');
+                
+                figure(3);
+                base = [1:length(h.tx)];
+                plot(base,h.tx,'.');
+                Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
+                legend(Legend);
             end
             
         else
@@ -388,17 +389,14 @@ kmax_init = 6;
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
 [tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
-if diff(2,2) >= .5    % EMPIRICAL
+if diff(2,2) >= .5    % EMPIRICAL: no clustering if 2-clustering clusters are too close
     
     % Initialization with outliers removed
     [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
     
-    diff_ = diff;                               % only for observation
-    mean_clust_ = mean_clust;                   % only for observation
-    
     % Search for best number of clusters
-    div = 4;            % EMPIRICAL
-    while min( diff(2:end,kmax) ) <= max(mean_clust(:,kmax))/div && kmax >= 3  % merging clusters that are too close
+    div = 4;            % EMPIRICAL: merge clusters that are too close
+    while min( diff(2:end,kmax) ) <= max(mean_clust(:,kmax))/div && kmax >= 3 
         
         kmax = kmax - 1;
         [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax);
@@ -406,6 +404,7 @@ if diff(2,2) >= .5    % EMPIRICAL
     end
     
 else
+    
     kmax = 1;
     clust_note_x = nan;
     clust_tx = nan;

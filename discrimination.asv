@@ -243,7 +243,7 @@ else
             legend({'Signal','Sampled signal','D1','Major peaks','Minima','Note_2','Peak to peak amplitude'});
             hold off
             
-
+            
             if h.kmax >= 2
                 
                 % plot clust_note_x
@@ -267,7 +267,7 @@ else
                 base_max = max (base_array(:,h.kmax));
                 base = [1:base_max];
                 
-                % plot clust_periodicity                
+                % plot clust_periodicity
                 data = nan(base_max,h.kmax);
                 
                 for i = 1 : h.kmax
@@ -288,15 +288,16 @@ else
                 xlabel('k');
                 ylabel('t_{x,k}, s');
                 hold off
-            
-            else
-                  figure(2);
-                  plot( h.note_x, '.');
-                  
-                  figure(3);
-                  base = [1:length(h.tx)];
-                  plot(base,h.tx,'.');
-                  
+                
+            elseif h.kmax == 1
+                figure(2);
+                plot( h.note_x, '.');
+                
+                figure(3);
+                base = [1:length(h.tx)];
+                plot(base,h.tx,'.');
+                Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
+                legend(Legend);
             end
             
         else
@@ -381,7 +382,7 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 %   - Agglomerative clustering -
 % Initialization
 kmax_init = 6;
-[clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
+[clust_index,  ~,~,  ~,~,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
 
 % Remove oultiers
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
@@ -391,9 +392,6 @@ if diff(2,2) >= .5    % EMPIRICAL
     
     % Initialization with outliers removed
     [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
-    
-    diff_ = diff;                               % only for observation
-    mean_clust_ = mean_clust;                   % only for observation
     
     % Search for best number of clusters
     div = 4;            % EMPIRICAL
@@ -405,12 +403,11 @@ if diff(2,2) >= .5    % EMPIRICAL
     end
     
 else
+    kmax = 1;
     clust_note_x = nan;
     clust_tx = nan;
     
     [clust_periodicity(1),clust_periodicity(2),clust_periodicity(3)] = periodicity(tx);
-    kmax = 1;
-    
 end
 
 function callback_infile(h)  %#ok<DEFNU>

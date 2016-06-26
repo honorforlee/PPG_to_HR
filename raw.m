@@ -74,7 +74,7 @@ for i = 1 : kmax
     plot(clust_note_x{i,kmax} , '.');
     hold on
 end
-Legend=cell(kmax,1)
+Legend=cell(kmax,1);
  for iter=1:kmax
    Legend{iter}=strcat('cluster ', num2str(iter));
  end
@@ -100,7 +100,7 @@ for i = 1 : kmax
     hold on
 end
 
-Legend=cell(kmax,1)
+Legend=cell(kmax,1);
  for iter=1:kmax
    Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(clust_periodicity{iter,kmax}(1)), '; eps = ', num2str(clust_periodicity{iter,kmax}(2)), '; R = ', num2str(clust_periodicity{iter,kmax}(3)));
  end
