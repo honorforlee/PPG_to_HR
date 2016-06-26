@@ -67,7 +67,7 @@ else
     kmax = 1;
 end   
 
-%plot cluster note_x partition 
+% plot clust_note_x 
 for i = 1 : kmax
     figure(2);
     subplot(2,1,1);
@@ -88,7 +88,7 @@ base_array = cellfun(@length,clust_tx);
 base_max = max (base_array(:,kmax));
 base = [1:base_max];
 
-% plot 
+% plot clust_periodicity
 
 data = nan(base_max,kmax);
 
@@ -102,7 +102,7 @@ end
 
 Legend=cell(kmax,1)
  for iter=1:kmax
-   Legend{iter}=strcat('cluster ', num2str(iter));
+   Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(clust_periodicity{iter,kmax}(1)), '; eps = ', num2str(clust_periodicity{iter,kmax}(2)), '; R = ', num2str(clust_periodicity{iter,kmax}(3)));
  end
  legend(Legend);
  

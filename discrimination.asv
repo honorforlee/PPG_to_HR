@@ -289,15 +289,14 @@ else
                 ylabel('t_{x,k}, s');
                 hold off
             
-            elseif h.kmax == 1
+            else
                   figure(2);
                   plot( h.note_x, '.');
                   
                   figure(3);
                   base = [1:length(h.tx)];
                   plot(base,h.tx,'.');
-                  Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
-                  legend(Legend);  
+                  
             end
             
         else
@@ -382,7 +381,7 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 %   - Agglomerative clustering -
 % Initialization
 kmax_init = 6;
-[clust_index,  ~,~,  ~,~,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
+[clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
 
 % Remove oultiers
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
@@ -406,11 +405,12 @@ if diff(2,2) >= .5    % EMPIRICAL
     end
     
 else
-    kmax = 1;
     clust_note_x = nan;
     clust_tx = nan;
     
     [clust_periodicity(1),clust_periodicity(2),clust_periodicity(3)] = periodicity(tx);
+    kmax = 1;
+    
 end
 
 function callback_infile(h)  %#ok<DEFNU>
