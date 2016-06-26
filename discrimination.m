@@ -342,7 +342,7 @@ else
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
-function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust, kmax] = signal_peaks(t,s)
+function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust_note_x, kmax] = signal_peaks(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);
 td = (  t(2:end) +  t(1:end-1) ) / 2;
@@ -356,7 +356,7 @@ kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} +
 %   - Agglomerative clustering -
 % Initialization
 kmax_init = 6;              
-[clust, clust_index, mean_clust, kmax, diff] = agglo_clustering(note_x,kmax_init);      
+[clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
 
 % Remove oultiers 
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
@@ -365,23 +365,24 @@ kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster con
 if diff(2,2) >= 1    % EMPIRICAL
 
 % Initialization with outliers removed
-[clust, clust_index, mean_clust, kmax, diff] = agglo_clustering(note_x,kmax_init);   
-diff_ = diff;
-mean_clust_ = mean_clust;
+[clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
+
+diff_ = diff;                               % only for observation
+mean_clust_ = mean_clust;                   % only for observation
         
 % Search for best number of clusters 
 div = 4;            % EMPIRICAL                                                
 while min( diff(2:end,kmax) ) <= max(mean_clust(:,kmax))/div && kmax >= 3  % merging clusters that are too close
  
 kmax = kmax - 1;   
-[clust, clust_index, mean_clust, kmax,diff] = agglo_clustering(note_x,kmax);
+[clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax);
 
 end
 
 else
-    clust = nan;
+    clust_note_x = nan;
     kmax = 1;
-end    
+end   
 
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);

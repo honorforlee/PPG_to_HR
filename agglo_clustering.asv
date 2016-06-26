@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Agglomerative clustering with Ward's criterion as linkage (decrease in variance for the cluster being merged) --
 
-function [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax_value, diff] = agglo_clustering(note_x, tx, kmax)
+function [clust_index,  clust_note_x,mean_clust,  clust_tx, kmax_value, diff] = agglo_clustering(note_x, tx, kmax)
 kmax_value = kmax;
 X = [note_x ]';
 clust_note_x{1} = note_x;
