@@ -33,7 +33,7 @@ freq_init = clustering_function(val_div(1,:), 8e-3, 0.1, 0.1/3, 1e-4);   % PPG a
 freq(1,1) = freq_init;       % PPG frequencies with initial parameters
 freq_ref(1,1) = freq_init;   % reference frequency
 
-ratio(1,1) = 1;              % rapport of frequency from one peak to next one
+ratio(1,1) = 1;              % ratio of frequency from one peak to next one
 note_P(1,1) = 0;             % note
 
 freq_ppg (1) = freq_init;
