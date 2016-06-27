@@ -45,10 +45,9 @@ note_1 = sx;
 for k = 2:length(kx)-1
     note_1(k) = 2*sx(k) - sx(k+1) - sx(k-1);  % average peak value (doubled)
 end
-% note_1 = note_1;
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
 delta = sx - sx_N;
 
-note_x = note_1 + .5*note_2 + delta;
+note_x = note_1 + delta;

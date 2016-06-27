@@ -49,10 +49,10 @@ for k = 2:kmax
 end    
 
 %  Search best number of clusters
-mean_clust = sort(mean_clust);      
+mean_clust_ = sort(mean_clust);      
 
 for k = 2 : kmax
     for i = 2:kmax
-    diff(i,k) = mean_clust(i,k)-mean_clust(i-1,k);
+    diff(i,k) = mean_clust_(i,k)-mean_clust_(i-1,k);
     end
 end

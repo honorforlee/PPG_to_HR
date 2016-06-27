@@ -190,7 +190,7 @@ if h.checkbox_dNdS.Value                                        % ?
     h.ygrid = [ h.ygrid  nan  kron(y,[1 1 1]) ];
 end
 
-function [ft,fs] = apply_filter_(t,s,f)        
+function [ft,fs] = apply_filter_(t,s,f)
 f = str2num(f); %#ok<ST2NM>
 if length(f) > 0
     fs = conv( s , fliplr(f)     , 'valid' ) ;
@@ -203,16 +203,16 @@ function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
     
-    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust_note_x, h.clust_tx, h.clust_periodicity, h.kmax] = signal_peaks(h.t, h.s);
+    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust_note_x, h.clust_tx, h.clust_periodicity, h.kmax, h.tx_major, h.sx_major] = signal_peaks(h.t, h.s);
 else
-    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust_note_x, h.clust_tx, h.clust_periodicity, h.kmax] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
+    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust_note_x, h.clust_tx, h.clust_periodicity, h.kmax, h.tx_major, h.sx_major] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
     
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~] = signal_peaks(h.td, h.d  );
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~,~] = signal_peaks(h.td, h.d  );
 else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~] = signal_peaks(h.ft_, h.fs_);
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~,~] = signal_peaks(h.ft_, h.fs_);
 end
 
 function plot_(h)
@@ -231,16 +231,18 @@ else
             hold on
             plot( h.t  , h.s  , 'ok');
             plot( h.td , h.d , 'x:b');
-            plot( h.tx , h.sx   , 'pr','MarkerSize',15,'LineWidth',2);
-            plot( h.tx_N, h.sx_N , 'pm','MarkerSize',15,'LineWidth',2);
-            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
+            plot( h.tx , h.sx   , 'dr','MarkerSize',12,'LineWidth',2);
+            plot( h.tx_major , h.sx_major   , 'pk','MarkerSize',15,'LineWidth',2);
+            plot( h.tx_N, h.sx_N , 'dm','MarkerSize',12,'LineWidth',2);
+            
             plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
+            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
             
             plot( h.tx , h.dhi  , '^c');
             plot( h.tx , h.dlo  , 'vc');
             plot(h.xgrid,h.ygrid , ':k');
             
-            legend({'Signal','Sampled signal','First derivative','Major peaks','Minima','Peak to peak amplitude','Maximum slope @ left/right'},'FontSize',8,'Orientation','Horizontal');
+            legend({'Signal','Sampled signal','First derivative','Maxima','Major peaks','Minima','Maximum slope difference','Peak to peak amplitude',},'FontSize',8,'Orientation','Horizontal');
             hold off
             
             
@@ -258,16 +260,23 @@ else
                     Legend{iter}=strcat('cluster ', num2str(iter));
                 end
                 legend(Legend);
+                title('Global note clustering');
+                xlabel('k');
+                ylabel('note_{x,k}, a.u');
                 
                 hold off
                 subplot(2,1,2);
                 plot( h.note_x, '.');
                 
+                title('Global note distribution');
+                xlabel('k');
+                ylabel('note_{x,k}, a.u');
+                
+                % plot clust_periodicity
                 base_array = cellfun(@length,h.clust_tx);
                 base_max = max (base_array(:,h.kmax));
                 base = [1:base_max];
                 
-                % plot clust_periodicity
                 data = nan(base_max,h.kmax);
                 
                 for i = 1 : h.kmax
@@ -291,14 +300,22 @@ else
                 hold off
                 
             elseif h.kmax == 1
-                figure(2);
+                figure(4);
                 plot( h.note_x, '.');
+                
+                title('Global note distribution');
+                xlabel('k');
+                ylabel('note_{x,k}, a.u');
                 
                 figure(3);
                 base = [1:length(h.tx)];
                 plot(base,h.tx,'.');
                 Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
                 legend(Legend);
+                
+                title('Linear regression of t_{x,k}');
+                xlabel('k');
+                ylabel('t_{x,k}, s');
             end
             
         else
@@ -369,7 +386,7 @@ else
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
-function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust_note_x, clust_tx, clust_periodicity, kmax] = signal_peaks(t,s)
+function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust_note_x, clust_tx, clust_periodicity, kmax, tx_major,sx_major ] = signal_peaks(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);
 %td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
@@ -388,30 +405,37 @@ kmax_init = 6;
 
 % Remove oultiers
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
+
 [tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
-if diff(2,2) >= .5    % EMPIRICAL: no clustering if 2-clustering clusters are too close
+if diff(2,2) >= 1    % EMPIRICAL: no clustering if 2-clustering clusters are too close
     
     % Initialization with outliers removed
     [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
     
     % Search for best number of clusters
-    div = 2;            % EMPIRICAL: merge clusters that are too close
-    while min( diff(2:end,kmax) ) <= ( max(mean_clust(:,kmax)) - min(mean_clust(:,kmax)) )/div && kmax >= 3 
+    div = 2;            % EMPIRICAL: merge clusters that are too close (    min(mean_clust difference) <= (max(mean_clust) - min(mean_clust)) / div
+    while min( diff(2:end,kmax) ) <= ( max(mean_clust(:,kmax)) - min(mean_clust(:,kmax)) )/div && kmax >= 3
         
         kmax = kmax - 1;
         [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax);
         
     end
     
+[~,clust_major_index] = max(mean_clust(:,kmax));
+kx_major = clust_index{clust_major_index,kmax};
+tx_major = tx(kx_major);
+sx_major = sx(kx_major);
+
 else
-    
-    kmax = 1;
     clust_note_x = nan;
-    clust_tx = nan;
-    
+    clust_tx = nan;  
     [clust_periodicity(1),clust_periodicity(2),clust_periodicity(3)] = periodicity(tx);
+    kmax = 1;
+    tx_major = tx;
+    sx_major = sx;    
 end
+
 
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
@@ -450,8 +474,8 @@ guidata(h.output, h);
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
 d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
-[tx,sx, dhi, dlo,~,~,~,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
-[ty,sy,d2hi,d2lo,~,~,~,~,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
+[tx,sx, dhi, dlo,~,~,~,~,~,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
+[ty,sy,d2hi,d2lo,~,~,~,~,~,~,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
 xl = h.axes.XLim;
 yl = h.axes.YLim;
 hold off
@@ -503,7 +527,7 @@ f = f/sum(f);
 f = [zeros(1,k) 1 zeros(1,k)] - f;
 ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
 if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[tx,sx, dhi, dlo,~,~,~,~,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
+[tx,sx, dhi, dlo,~,~,~,~,~,~,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
 l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off
