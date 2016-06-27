@@ -4,7 +4,8 @@
 function [tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx)
 
 d = s(2:end) -  s(1:end-1);
-td = (  t(2:end) +  t(1:end-1) ) / 2;
+%td = (  t(2:end) +  t(1:end-1) ) / 2;    % shift derivative timeline of t_spl/2
+td = t(2:end);
 
 sx = s(kx+1);                          % local maxima
 tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)

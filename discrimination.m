@@ -233,14 +233,14 @@ else
             plot( h.td , h.d , 'x:b');
             plot( h.tx , h.sx   , 'pr','MarkerSize',15,'LineWidth',2);
             plot( h.tx_N, h.sx_N , 'pm','MarkerSize',15,'LineWidth',2);
-            plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
             plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
+            plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
             
             plot( h.tx , h.dhi  , '^c');
             plot( h.tx , h.dlo  , 'vc');
             plot(h.xgrid,h.ygrid , ':k');
             
-            legend({'Signal','Sampled signal','D1','Major peaks','Minima','Note_2','Peak to peak amplitude'});
+            legend({'Signal','Sampled signal','First derivative','Major peaks','Minima','Peak to peak amplitude','Maximum slope @ left/right'},'FontSize',8,'Orientation','Horizontal');
             hold off
             
             
@@ -320,7 +320,7 @@ else
                 , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
                 , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
                 );
-            legend({'Signal','Sampled','D1','FD2','D2'});           %*
+            legend({'Signal','Sampled signal','D1: First derivative','F1: D1 filtered','D2: F1 derivative'});           %*
         end
     else
         if isempty(h.ft_)
@@ -342,7 +342,7 @@ else
                 , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
                 , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
                 );
-            legend({'Signal','Sampled','FD1','D1','D2'});                       %*
+            legend({'Signal','Sampled signal','F1: sampled signal filtered','D1: F1 derivative','D2: D1 derivative'});                       %*
         else
             plot( h.axes ...
                 , h.t0 , h.s0 , '-k' ...  %TODO  %
@@ -363,7 +363,7 @@ else
                 , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
                 , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
                 );
-            legend({'Signal','Sampled','FD1','D1','FD2','D2'});                %*
+            legend({'Signal','Sampled signal','F1: sampled signal filtered','D1: F1 derivative','F2: D1 filtered','F2: F2 derivative'});                %*
         end
     end
 end
@@ -372,7 +372,8 @@ h.axes.XLim = xl; h.axes.YLim = yl;
 function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust_note_x, clust_tx, clust_periodicity, kmax] = signal_peaks(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);
-td = (  t(2:end) +  t(1:end-1) ) / 2;
+%td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
+td = t(2:end);
 
 kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
