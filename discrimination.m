@@ -217,83 +217,6 @@ else
     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~,~] = signal_peaks(h.ft_, h.fs_);
 end
 
-
-function plot_cluster(h)
-    if h.t_int > 0        
-        if h.kmax >= 2
-
-            % plot clust_note_x
-            for i = 1 : h.kmax
-                figure(2);
-                subplot(2,1,1);
-                plot(h.clust_note_x{i,h.kmax} , '.');
-                hold on
-            end
-            Legend=cell(h.kmax,1);
-            for iter=1:h.kmax
-                Legend{iter}=strcat('cluster ', num2str(iter));
-            end
-            legend(Legend);
-            title('Global note clustering');
-            xlabel('k');
-            ylabel('note_{x,k}, a.u');
-
-            hold off
-            subplot(2,1,2);
-            plot( h.note_x, '.');
-
-            title('Global note distribution');
-            xlabel('k');
-            ylabel('note_{x,k}, a.u');
-
-            % plot clust_periodicity
-            base_array = cellfun(@length,h.clust_tx);
-            base_max = max (base_array(:,h.kmax));
-            base = [1:base_max];
-
-            data = nan(base_max,h.kmax);
-
-            for i = 1 : h.kmax
-
-                data(1:base_array(i,h.kmax),i) = h.clust_tx{i,h.kmax};
-                figure(3);
-                tx_disp(i) = plot(base,data(:,i),'.');
-                hold on
-            end
-
-            Legend=cell(h.kmax,1);
-
-            for iter=1:h.kmax
-                Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
-            end
-            legend(Legend);
-
-            title('Linear regression of t_{x,k}');
-            xlabel('k');
-            ylabel('t_{x,k}, s');
-            hold off
-
-        elseif h.kmax == 1
-            figure(4);
-            plot( h.note_x, '.');
-
-            title('Global note distribution');
-            xlabel('k');
-            ylabel('note_{x,k}, a.u');
-
-            figure(3);
-            base = [1:length(h.tx)];
-            plot(base,h.tx,'.');
-            Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
-            legend(Legend);
-
-            title('Linear regression of t_{x,k}');
-            xlabel('k');
-            ylabel('t_{x,k}, s');
-        end
-    end
-
-
 function plot_(h)
 xl = h.axes.XLim; yl = h.axes.YLim;
 hold off
@@ -305,13 +228,15 @@ if h.t_int == 0
 else
     if isempty(h.ft)
         if isempty(h.ft_)
-            if h.checkbox_detect.Value
+            if h.checkbox_detect.Value == 0
                 plot( h.axes ...
                     ,h.t0 , h.s0 , '-k','LineWidth',.5);
                 hold on
                 plot( h.t  , h.s  , 'ok');
                 plot( h.td , h.d , 'x:b');
+            
             end
+                
             plot( h.tx , h.sx   , 'dr','MarkerSize',12,'LineWidth',2);
             hold on
             plot( h.tx_major , h.sx_major   , 'pk','MarkerSize',15,'LineWidth',2);
@@ -324,7 +249,7 @@ else
             plot( h.tx , h.dlo  , 'vc');
             plot(h.xgrid,h.ygrid , ':k');
             
-            if h.checkbox_detect.Value
+            if h.checkbox_detect.Value == 0
                 legend({'Signal','Sampled signal','First derivative','Maxima','Major peaks','Minima','Maximum slope difference','Peak to peak amplitude',},'FontSize',8,'Orientation','Horizontal');
             else
                 legend({'Maxima','Major peaks','Minima','Maximum slope difference','Peak to peak amplitude',},'FontSize',8,'Orientation','Horizontal');
@@ -448,6 +373,82 @@ else
     tx_major = tx;
     sx_major = sx;    
 end
+
+
+function plot_cluster(h)
+    if h.t_int > 0        
+        if h.kmax >= 2
+
+            % plot clust_note_x
+            for i = 1 : h.kmax
+                figure(2);
+                subplot(2,1,1);
+                plot(h.clust_note_x{i,h.kmax} , '.');
+                hold on
+            end
+            Legend=cell(h.kmax,1);
+            for iter=1:h.kmax
+                Legend{iter}=strcat('cluster ', num2str(iter));
+            end
+            legend(Legend);
+            title('Global note clustering');
+            xlabel('k');
+            ylabel('note_{x,k}, a.u');
+
+            hold off
+            subplot(2,1,2);
+            plot( h.note_x, '.');
+
+            title('Global note distribution');
+            xlabel('k');
+            ylabel('note_{x,k}, a.u');
+
+            % plot clust_periodicity
+            base_array = cellfun(@length,h.clust_tx);
+            base_max = max (base_array(:,h.kmax));
+            base = [1:base_max];
+
+            data = nan(base_max,h.kmax);
+
+            for i = 1 : h.kmax
+
+                data(1:base_array(i,h.kmax),i) = h.clust_tx{i,h.kmax};
+                figure(3);
+                tx_disp(i) = plot(base,data(:,i),'.');
+                hold on
+            end
+
+            Legend=cell(h.kmax,1);
+
+            for iter=1:h.kmax
+                Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
+            end
+            legend(Legend);
+
+            title('Linear regression of t_{x,k}');
+            xlabel('k');
+            ylabel('t_{x,k}, s');
+            hold off
+
+        elseif h.kmax == 1
+            figure(4);
+            plot( h.note_x, '.');
+
+            title('Global note distribution');
+            xlabel('k');
+            ylabel('note_{x,k}, a.u');
+
+            figure(3);
+            base = [1:length(h.tx)];
+            plot(base,h.tx,'.');
+            Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
+            legend(Legend);
+
+            title('Linear regression of t_{x,k}');
+            xlabel('k');
+            ylabel('t_{x,k}, s');
+        end
+    end
 
 
 function callback_infile(h)  %#ok<DEFNU>
