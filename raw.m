@@ -1,6 +1,9 @@
+% Ivan NY HANITRA - Master thesis
+%       -- Clustering peaks, discrimination, compute PPG frequency --
+
 %   - Load file and data -
-%Name = '3987834m';     % BPM = 78
-Name = '3900497m'; % BPM = 95
+Name = '3801060_0007m';   % row 1
+%Name = '3900497m';     % row 6 - BPM = 95
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -12,67 +15,163 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 
 fclose(fid);
 
-t = (1:length(val)) * interval;            % timeline
-s = val(6,1:length(val));
-s  = (s  - mean(s ))/sqrt(var(s ));          % rescale s on 0 (standard score of signal)
+t0 = (1:length(val)) * interval;            % timeline
+s0 = val(1,1:length(val));
+s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
 dt = 1/10;                           % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
-quant = 1e-4;                        % LSB: vertical step
+quant = .1;                        % LSB: vertical step
 
-t_spl = t(1):dt:t(end);    
+[t,s] = integration(t0,s0,interval,dt,t_int,quant,0);
 
-% % Noise
-% frameNoise = (0:round(dt/interval))';
-% frameNoise = bsxfun(@minus, subels, frameNoise);
-% frameNoise_zero = find (frameNoise <= 0);
-% frameNoise(frameNoise_zero) = 1;
+%   - Derivative -
+d = s(2:end) -  s(1:end-1);
+%td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
+td = t(2:end);
+
+kx = d > 0;
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
+
+%   - Local maxima sx, maximum slope around sx -
+[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
+
+%   - Hierarchical clustering (agglomerative) -
+% Initialization
+kmax_init = 6;
+[clust_index,  ~,~,  ~,~,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
+
+% Remove oultiers
+kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
+
+[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
+
+if diff(2,2) >= 1    % EMPIRICAL: no clustering if 2-clustering clusters are too close
+    
+    % Initialization with outliers removed
+    [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
+    
+    % Search for best number of clusters
+    div = 2;            % EMPIRICAL: merge clusters that are too close (    min(mean_clust difference) <= (max(mean_clust) - min(mean_clust)) / div
+    while min( diff(2:end,kmax) ) <= ( max(mean_clust(:,kmax)) - min(mean_clust(:,kmax)) )/div && kmax >= 3
+        
+        kmax = kmax - 1;
+        [clust_index,  clust_note_x,mean_clust,  clust_tx,clust_periodicity,  kmax, diff] = agglo_clustering(note_x, tx, kmax);
+        
+    end
+
+N = cellfun(@length,clust_index);   
+    
+for i = 1:kmax    
+    note_clust(i)= ( N(i,kmax) ) / length(kx) + mean_clust(i,kmax) + clust_periodicity{i,kmax}(2) ;
+end   
+[~,clust_major_index] = max(mean_clust(:,kmax));
+
+kx_major = clust_index{clust_major_index,kmax};
+tx_major = tx(kx_major);
+sx_major = sx(kx_major);
+
+else
+    kmax = 1;
+    clust_note_x = nan;
+    clust_tx = nan;
+    
+    [clust_periodicity(1),clust_periodicity(2),clust_periodicity(3)] = periodicity(tx);
+end
+
+
+% % plot clust_note_x
+% for i = 1 : kmax
+%     figure(2);
+%     subplot(2,1,1);
+%     plot(clust_note_x{i,kmax} , '.');
+%     hold on
+% end
+% Legend=cell(kmax,1);
+% for iter=1:kmax
+%     Legend{iter}=strcat('cluster ', num2str(iter));
+% end
+% legend(Legend);
 % 
-% noise= random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(subels));                     % Gaussian distribution (model thermal noise of finite BW)
-
-% % Integration
-% frameInteg = (0:t_int)';
-% frameInteg = bsxfun(@minus, t_spl, frameInteg);
-% frameInteg_zero = find (frameInteg <= 0);
-% frameInteg(frameInteg_zero) = 1;                       % t_int < dt
-% 
-% %s_spl = mean( vertcat(s(frameInteg),noise) );          % sampled signal = average of Nint last values + noise during dt
-% s_spl = mean( interp1(t,s,frameInteg) );                          % signal with no noise
-
-% s_spl(1) = s(1);
-% for k = 2:length(t_spl) 
-%    
-%     s_spl(k) = mean ( [s(floor( (t_spl(k-1)+ dt-t_int)/interval ): s(floor( (t_spl(k-1)+ dt-t_int)/interval ) :s(floor(dt/interval))) ] );
-%             
-% end 
-
-%s_spl = interp1(t,s,t_spl); 
-%s_spl = quant*floor(s_spl/quant);                      % quantization
-
-% plot(t, s,'k-','MarkerSize',12,'LineWidth',1);               % siganl s
-% hold on
-% plot(t_spl, s_spl,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
 % hold off
+% subplot(2,1,2);
+% plot( note_x, '.');
+% 
+% base_array = cellfun(@length,clust_tx);
+% base_max = max (base_array(:,kmax));
+% base = [1:base_max];
+% 
+% % plot clust_periodicity
+% data = nan(base_max,kmax);
+% 
+% for i = 1 : kmax
+%     
+%     data(1:base_array(i,kmax),i) = clust_tx{i,kmax};
+%     figure(3);
+%     tx_disp(i) = plot(base,data(:,i),'.');
+%     hold on
+% end
+% 
+% Legend=cell(kmax,1);
+% for iter=1:kmax
+%     Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(clust_periodicity{iter,kmax}(1)), '; eps = ', num2str(clust_periodicity{iter,kmax}(2)), '; R = ', num2str(clust_periodicity{iter,kmax}(3)));
+% end
+% legend(Legend);
+% 
+% title('Linear regression of t_{x,k}');
+% xlabel('k');
+% ylabel('t_{x,k}, s');
+% hold off
+
+figure(3);
+plot(t0, s0,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
+hold on
+plot(t, s,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+plot(td, d,'g--','MarkerSize',10,'LineWidth',1);     % derivative of s_n
+plot(tx,sx,'rd','MarkerSize',12,'LineWidth',2);
+plot(tx_N,sx_N,'bd','MarkerSize',12,'LineWidth',2);
+plot(kron(tx,[1 1 1]), kron(sx_N,[1 0 nan]) + kron(sx,[0 1 nan]),'r-');
+plot(tx_major,sx_major,'pk','MarkerSize',16);
+hold off
+
+
 %%
+%plot(F);
 
-for k = 1:length(t_spl)-1
-frameNoise (:,k) = [ floor(t_spl(k)/interval) :  floor(t_spl(k)/interval) + floor(dt/interval) ]; 
-end
-noise= random('Normal',mean(s(frameNoise)),std(s(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
+figure(1);
+plot(note_1,'.');
+hold on
+plot(ones(1,length(kx)) .* mean(note_1),'r-');
+hold off
 
-for k = 2:length(t_spl)
-index = min (length(    [floor( (t_spl(k-1)+ dt-t_int)/interval ): floor( t_spl(k)/ interval ) ]    ));
-end
-index = index-1;
-for k = 2:length(t_spl)
-frameInteg(:,k-1) = [ floor( t_spl(k)/ interval ) - index : floor( t_spl(k)/ interval ) ];    
-frameInteg_(:,k-1)= s(frameInteg(:,k-1)) ;
-end
-frameInteg_ = vertcat(frameInteg_,noise);
+% figure(2);
+% %subplot(2,1,2);
+% plot(note_2,'.');
 
-s_spl(1) = s(1);
-for k = 2:length(t_spl)
-    s_spl(k) = mean(frameInteg_(:,k-1));
-end    
+figure(3);
+subplot(2,1,1);
+plot(delta,'.');
+hold on
+plot(ones(1,length(kx)) .* mean(delta),'r-');
+hold off
+
+subplot(2,1,2);
+plot(normlist(note_x),'.');
+hold on
+plot(ones(1,length(kx)) .* mean(note_x),'r-');
+hold off
+
+
+figure(4);
+plot(t0, s0,'k-','MarkerSize',8,'LineWidth',.5);               % siganl s
+hold on
+plot(t, s,'ko--','MarkerSize',10,'LineWidth',1);     % sampled signal s_n
+plot(td, d,'g--','MarkerSize',10,'LineWidth',1);     % derivative of s_n
+plot(tx,sx,'rd','MarkerSize',12,'LineWidth',2);
+plot(tx_N,sx_N,'bd','MarkerSize',12,'LineWidth',2);
+plot(kron(tx,[1 1 1]), kron(sx_N,[1 0 nan]) + kron(sx,[0 1 nan]),'r-');
+hold off
+
+
 
