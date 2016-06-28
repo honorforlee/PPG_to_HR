@@ -223,42 +223,64 @@ hold off
 
 if h.t_int == 0
     plot( h.axes ...
-        ,h.t , h.s , '-k','LineWidth',.5);
+        , h.t , h.s , '-k','LineWidth',.5);
     legend('Signal');
 else
     if isempty(h.ft)
         if isempty(h.ft_)
-            if h.checkbox_detect.Value == 0
+            if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
                 plot( h.axes ...
                     ,h.t0 , h.s0 , '-k','LineWidth',.5);
                 hold on
                 plot( h.t  , h.s  , 'ok');
                 plot( h.td , h.d , 'x:b');
-            
-            end
+                legend({'Signal','Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
+                hold off
                 
-            plot( h.tx , h.sx   , 'dr','MarkerSize',12,'LineWidth',2);
-            hold on
-            plot( h.tx_major , h.sx_major   , 'pk','MarkerSize',15,'LineWidth',2);
-            plot( h.tx_N, h.sx_N , 'dm','MarkerSize',12,'LineWidth',2);
-            
-            plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
-            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
-            
-            plot( h.tx , h.dhi  , '^c');
-            plot( h.tx , h.dlo  , 'vc');
-            plot(h.xgrid,h.ygrid , ':k');
-            
-            if h.checkbox_detect.Value == 0
-                legend({'Signal','Sampled signal','First derivative','Maxima','Major peaks','Minima','Maximum slope difference','Peak to peak amplitude',},'FontSize',8,'Orientation','Horizontal');
-            else
+            elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0  % plot events
+                
+                plot( h.tx , h.sx   , 'dr','MarkerSize',12,'LineWidth',2);
+                hold on
+                plot( h.tx_major , h.sx_major   , 'pk','MarkerSize',15,'LineWidth',2);
+                plot( h.tx_N, h.sx_N , 'dm','MarkerSize',12,'LineWidth',2);
+                
+                plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
+                plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
+                
+                plot( h.tx , h.dhi  , '^c');
+                plot( h.tx , h.dlo  , 'vc');
+                plot(h.xgrid,h.ygrid , ':k');
                 legend({'Maxima','Major peaks','Minima','Maximum slope difference','Peak to peak amplitude',},'FontSize',8,'Orientation','Horizontal');
+                hold off
+                
+            elseif h.checkbox_detect_.Value == 1                                % plot signal + events
+                
+                plot( h.axes ...
+                    ,h.t0 , h.s0 , '-k','LineWidth',.5);
+                hold on
+                plot( h.t  , h.s  , 'ok');
+                plot( h.td , h.d , 'x:b');
+                plot( h.tx , h.sx   , 'dr','MarkerSize',12,'LineWidth',2);
+                
+                plot( h.tx_major , h.sx_major   , 'pk','MarkerSize',15,'LineWidth',2);
+                plot( h.tx_N, h.sx_N , 'dm','MarkerSize',12,'LineWidth',2);
+                
+                plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
+                plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
+                
+                plot( h.tx , h.dhi  , '^c');
+                plot( h.tx , h.dlo  , 'vc');
+                plot(h.xgrid,h.ygrid , ':k');
+                
+                legend({'Signal','Sampled signal','First derivative','Maxima','Major peaks','Minima','Maximum slope difference','Peak to peak amplitude',},'FontSize',8,'Orientation','Horizontal');
+                hold off
+                                
             end
-            hold off
+            
             
         else
             plot( h.axes ...
-                , h.t0 , h.s0 , '-k' ...  %TODO  %
+                ,h.t0 , h.s0 , '-k' ...  %TODO  %
                 , h.t  , h.s  , 'ok'  ...
                 , h.td , h.d , 'x:b' ...
                 , h.ft_, h.fs_ , 'd:r' ...  % filter
@@ -273,14 +295,14 @@ else
                 , h.ty , h.d2hi , '^r' ...
                 , h.ty , h.d2lo , 'vr' ...
                 , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
-                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
-                );
+                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r');
             legend({'Signal','Sampled signal','D1: First derivative','F1: D1 filtered','D2: F1 derivative'});           %*
+            
         end
     else
         if isempty(h.ft_)
             plot( h.axes ...
-                , h.t0 , h.s0 , '-k' ...  %TODO  %
+                ,h.t0 , h.s0 , '-k' ...  %TODO  %
                 , h.t  , h.s  , 'ok'  ...
                 , h.ft , h.fs , 'd:b'  ...
                 , h.td , h.d , 'x:b' ...
@@ -295,12 +317,12 @@ else
                 , h.ty , h.d2hi , '^r' ...
                 , h.ty , h.d2lo , 'vr' ...
                 , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
-                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
-                );
+                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r');
             legend({'Signal','Sampled signal','F1: sampled signal filtered','D1: F1 derivative','D2: D1 derivative'});                       %*
+            
         else
             plot( h.axes ...
-                , h.t0 , h.s0 , '-k' ...  %TODO  %
+                ,h.t0 , h.s0 , '-k' ...  %TODO  %
                 , h.t  , h.s  , 'ok'  ...
                 , h.ft , h.fs , 'd:b'  ...
                 , h.td , h.d , 'x:b' ...
@@ -316,9 +338,9 @@ else
                 , h.ty , h.d2hi , '^r' ...
                 , h.ty , h.d2lo , 'vr' ...
                 , kron(h.ty,[1 1 1]) , kron(h.sy,[0 1 nan]) , '--r' ...
-                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r' ...
-                );
+                , kron(h.ty,[1 1 1]) , kron(h.d2lo,[1 0 nan]) + kron(h.d2hi,[0 1 nan]) , '-r');
             legend({'Signal','Sampled signal','F1: sampled signal filtered','D1: F1 derivative','F2: D1 filtered','F2: F2 derivative'});                %*
+            
         end
     end
 end
@@ -360,95 +382,95 @@ if diff(2,2) >= 1    % EMPIRICAL: no clustering if 2-clustering clusters are too
         
     end
     
-[~,clust_major_index] = max(mean_clust(:,kmax));
-kx_major = clust_index{clust_major_index,kmax};
-tx_major = tx(kx_major);
-sx_major = sx(kx_major);
-
+    [~,clust_major_index] = max(mean_clust(:,kmax));
+    kx_major = clust_index{clust_major_index,kmax};
+    tx_major = tx(kx_major);
+    sx_major = sx(kx_major);
+    
 else
     clust_note_x = nan;
-    clust_tx = nan;  
+    clust_tx = nan;
     [clust_periodicity(1),clust_periodicity(2),clust_periodicity(3)] = periodicity(tx);
     kmax = 1;
     tx_major = tx;
-    sx_major = sx;    
+    sx_major = sx;
 end
 
 
 function plot_cluster(h)
-    if h.t_int > 0        
-        if h.kmax >= 2
-
-            % plot clust_note_x
-            for i = 1 : h.kmax
-                figure(2);
-                subplot(2,1,1);
-                plot(h.clust_note_x{i,h.kmax} , '.');
-                hold on
-            end
-            Legend=cell(h.kmax,1);
-            for iter=1:h.kmax
-                Legend{iter}=strcat('cluster ', num2str(iter));
-            end
-            legend(Legend);
-            title('Global note clustering');
-            xlabel('k');
-            ylabel('note_{x,k}, a.u');
-
-            hold off
-            subplot(2,1,2);
-            plot( h.note_x, '.');
-
-            title('Global note distribution');
-            xlabel('k');
-            ylabel('note_{x,k}, a.u');
-
-            % plot clust_periodicity
-            base_array = cellfun(@length,h.clust_tx);
-            base_max = max (base_array(:,h.kmax));
-            base = [1:base_max];
-
-            data = nan(base_max,h.kmax);
-
-            for i = 1 : h.kmax
-
-                data(1:base_array(i,h.kmax),i) = h.clust_tx{i,h.kmax};
-                figure(3);
-                tx_disp(i) = plot(base,data(:,i),'.');
-                hold on
-            end
-
-            Legend=cell(h.kmax,1);
-
-            for iter=1:h.kmax
-                Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
-            end
-            legend(Legend);
-
-            title('Linear regression of t_{x,k}');
-            xlabel('k');
-            ylabel('t_{x,k}, s');
-            hold off
-
-        elseif h.kmax == 1
-            figure(4);
-            plot( h.note_x, '.');
-
-            title('Global note distribution');
-            xlabel('k');
-            ylabel('note_{x,k}, a.u');
-
-            figure(3);
-            base = [1:length(h.tx)];
-            plot(base,h.tx,'.');
-            Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
-            legend(Legend);
-
-            title('Linear regression of t_{x,k}');
-            xlabel('k');
-            ylabel('t_{x,k}, s');
+if h.t_int > 0
+    if h.kmax >= 2
+        
+        % plot clust_note_x
+        for i = 1 : h.kmax
+            figure(2);
+            subplot(2,1,1);
+            plot(h.clust_note_x{i,h.kmax} , '.');
+            hold on
         end
+        Legend=cell(h.kmax,1);
+        for iter=1:h.kmax
+            Legend{iter}=strcat('cluster ', num2str(iter));
+        end
+        legend(Legend);
+        title('Global note clustering');
+        xlabel('k');
+        ylabel('note_{x,k}, a.u');
+        
+        hold off
+        subplot(2,1,2);
+        plot( h.note_x, '.');
+        
+        title('Global note distribution');
+        xlabel('k');
+        ylabel('note_{x,k}, a.u');
+        
+        % plot clust_periodicity
+        base_array = cellfun(@length,h.clust_tx);
+        base_max = max (base_array(:,h.kmax));
+        base = [1:base_max];
+        
+        data = nan(base_max,h.kmax);
+        
+        for i = 1 : h.kmax
+            
+            data(1:base_array(i,h.kmax),i) = h.clust_tx{i,h.kmax};
+            figure(3);
+            tx_disp(i) = plot(base,data(:,i),'.');
+            hold on
+        end
+        
+        Legend=cell(h.kmax,1);
+        
+        for iter=1:h.kmax
+            Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
+        end
+        legend(Legend);
+        
+        title('Linear regression of t_{x,k}');
+        xlabel('k');
+        ylabel('t_{x,k}, s');
+        hold off
+        
+    elseif h.kmax == 1
+        figure(4);
+        plot( h.note_x, '.');
+        
+        title('Global note distribution');
+        xlabel('k');
+        ylabel('note_{x,k}, a.u');
+        
+        figure(3);
+        base = [1:length(h.tx)];
+        plot(base,h.tx,'.');
+        Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
+        legend(Legend);
+        
+        title('Linear regression of t_{x,k}');
+        xlabel('k');
+        ylabel('t_{x,k}, s');
     end
+end
 
 
 function callback_infile(h)  %#ok<DEFNU>
@@ -475,8 +497,14 @@ h = grids(h);
 plot_(h);
 guidata(h.output, h);
 
-function callback_ECG(h) %#ok<DEFNU>
+function callback_detect(h) %#ok<DEFNU>
 plot_(h);
+
+function callback_ECG(h) %#ok<DEFNU>
+if update_filelist(h)
+    h = update_infile(h);
+    guidata(h.output, h);
+end
 
 function callback_t_int(h) %#ok<DEFNU>
 h = quantize_input(h);
@@ -552,36 +580,3 @@ plot( h.axes ...
     , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
     , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
     );
-
-
-function edit13_Callback(hObject, eventdata, handles)
-% hObject    handle to edit13 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit13 as text
-%        str2double(get(hObject,'String')) returns contents of edit13 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit13_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit13 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in checkbox5.
-function checkbox5_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox5 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-%
-% Hint: get(hObject,'Value') returns toggle state of checkbox5
-
-   
