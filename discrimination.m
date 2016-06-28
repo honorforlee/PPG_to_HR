@@ -206,7 +206,6 @@ else
 end
 
 function h = process_sig(h) %#ok<DEFNU>
-
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
     
@@ -655,7 +654,6 @@ h.value_t_int.String = h.slider_t_int.Value;
 guidata(h.output, h);
 
 function callback_filters(h) %#ok<DEFNU>
-
 if h.checkbox_clustering.Value
     h = process_clustering(h);
     plot_cluster(h);
@@ -674,10 +672,16 @@ else
 end
 
 function callback_clustering(h)
-h = process_clustering(h);
-plot_cluster(h);
-plot_cluster_distribution(h);
-guidata(h.output, h);
+if h.checkbox_clustering.Value
+    h = process_clustering(h);
+    plot_cluster(h);
+    plot_cluster_distribution(h);
+    guidata(h.output, h);
+else
+    h = process_sig(h);
+    plot_(h);
+    guidata(h.output, h);
+end
 
 function callback_ECG(h) %#ok<DEFNU>
 if update_filelist(h)
