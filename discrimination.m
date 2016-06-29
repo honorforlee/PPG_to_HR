@@ -28,6 +28,8 @@ end
 
 %   - Executes just before discrimination is made visible -
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
+set(gcf, 'units', 'centimeter', 'position',[0 30 40 25],'outerposition',[0 40 40 25]);
+set(0,'ScreenPixelsPerInch', 70);
 fl_ecg   = {}; ppg_ecg   = {}; ecg_ecg   = {}; dt0_ecg   = {};
 fl_noecg = {}; ppg_noecg = {}; ecg_noecg = {}; dt0_noecg = {};
 fl = what;
