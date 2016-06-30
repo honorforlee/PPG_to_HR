@@ -57,13 +57,14 @@ end
 %        end
 % end   
 
-note_x_ = note_x;
 kx_ = kx;
 
 for i = 1:length(kx)
     if kx_(i) ~= 0
-        clust(1,i) = note_x(i);
+
         idx(1,i) = kx(i);
+        clust(1,i) = note_x(i);
+        per(1,i) = tx(i);
         j = 2;
         
         for k = i + 1 : length(kx)
@@ -71,13 +72,14 @@ for i = 1:length(kx)
             if  var([note_x(i) note_x(k)],1) < eps;
                 
                 clust(j,i) = note_x(k);
-                             
+                per(j,i) = tx(k);             
                 idx(j,i) = kx(k);
                 kx_(k) = 0;
                 
                 j = j+1;
             else
                 clust(j,i)=nan;
+                per(j,i)=nan; 
                 idx(j,i)=nan;
                 
                 j = j+1;
@@ -91,11 +93,16 @@ zero = find(~idx(1,:));
 
 for k = 1:length(zero)
    clust(:,zero(k))=[];
+   per(:,zero(k))=[];
    idx(:,zero(k))=[];
    zero = bsxfun(@minus ,zero,ones(1,length(zero))) ;
-
 end
 
+L = size(idx);
+for k = 1:L(2)
+   clust_size(k) = nnz(idx(:,k)) - sum(isnan(idx(:,k)));
+%    clust_note(k) = mean(clust(i))*  
+end
 
 %%
 plot( kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]), '-c');       % link note_2
