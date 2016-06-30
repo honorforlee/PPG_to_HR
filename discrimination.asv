@@ -211,42 +211,42 @@ end
 % [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 % if isempty(h.ft)
 %     
-%     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t, h.s);
+%     [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t, h.s);
 % else
-%     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
+%     [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
 % end
 % [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 % if isempty(h.ft_)
 %     
-%     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
+%     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
 % else
-%     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
+%     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
 % end
 
 function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 
-range = (1 : (10/h.dt)) * h.dt;             % create subset data of 10s each
-for k = 0 : length(h.s) / length(range) - 1
-    
-    t_div (k+1,:) =  h.t(  k*(length(range)) + 1 : (k+1)*(length(range)) ) ;
-    s_div(k+1,:)= h.s(  k*(length(range)) + 1 : (k+1)*(length(range)) ) ;
-    
-end
+% range = (1 : (5/interval)) * interval;
+% 
+% for k = 0 : length(val) / length(range) - 1
+%     val_div(k+1,:)= val(  k*(length(range)) + 1 : (k+1)*(length(range)) ) ;
+% end
 
+range = (1 : (5/h.dt)) * h.dt;
+t_ = h.t(1: floor( 10/h.dt));
 
 if isempty(h.ft)
     
-    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] = signal_peaks(t_div(1,:), s_div(1,:));
+    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] = signal_peaks(t_, s_);
 else
-    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
+    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
     
-    [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
 else
-    [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
+    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
 end
 
 
@@ -267,7 +267,7 @@ else
 end
 
 
-function [kx,tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x] = signal_peaks(t,s)
+function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x] = signal_peaks(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);
 %td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
@@ -722,8 +722,8 @@ end
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
 d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
-[kx,tx,sx, dhi, dlo,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
-[ky,ty,sy,d2hi,d2lo,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
+[tx,sx, dhi, dlo,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
+[ty,sy,d2hi,d2lo,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
 xl = h.axes.XLim;
 yl = h.axes.YLim;
 hold off
@@ -775,7 +775,7 @@ f = f/sum(f);
 f = [zeros(1,k) 1 zeros(1,k)] - f;
 ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
 if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[kx,tx,sx, dhi, dlo,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
+[tx,sx, dhi, dlo,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
 l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off

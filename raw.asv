@@ -87,13 +87,14 @@ for i = 1:length(kx)
     end
 end
 
-zero = find(~idx(1,:));
-
-for k = 1:length(zero)
-   clust(:,zero(k))=[];
+zero = find(~kx_(1,:));
+zero_i
+%%
+while zero(zero_i) < length(clust)
+   clust(:,zero(zero_i))=[];
    idx(:,zero(k))=[];
    zero = bsxfun(@minus ,zero,ones(1,length(zero))) ;
-
+   k = k+1;
 end
 
 
