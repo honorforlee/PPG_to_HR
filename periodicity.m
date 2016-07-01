@@ -39,22 +39,22 @@ sum_C = cumsum(C); sum_D = cumsum(D);
 eps = sum_B(length(tx)) / (length(tx)*T^2);                     % MSE normalized with respect to #samples and period
 R_sq = sum_C(length(tx)) / sum_D(length(tx));                   % coefficient of determination R^2
 
-%  - plot -
-plot_reg=plot(j,tx,'r.', j,t_reg,'b-');
-hold on 
-title('Linear regression of t_{x,k}');
-xlabel('k');
-ylabel('t_{x,k}, s');
-legend('sampled t_{x,k}','linear regression of t_{x,k}','Location','northwest');
-
-xlim=get(gca,'XLim');
-ylim=get(gca,'YLim');
-
-polyfit_str = ['\bf \tau = ' num2str(mean(tx) - T*mean(j)) ' + k*' num2str(T)];
-
-equation = text(0.8*xlim(1)+0.15*xlim(2),0.3*ylim(1)+0.95*ylim(2),polyfit_str);
-equation.Color = 'blue';
-equation.FontSize = 14;
-hold off
+% %  - plot -
+% plot_reg=plot(j,tx,'r.', j,t_reg,'b-');
+% hold on 
+% title('Linear regression of t_{x,k}');
+% xlabel('k');
+% ylabel('t_{x,k}, s');
+% legend('sampled t_{x,k}','linear regression of t_{x,k}','Location','northwest');
+% 
+% xlim=get(gca,'XLim');
+% ylim=get(gca,'YLim');
+% 
+% polyfit_str = ['\bf \tau = ' num2str(mean(tx) - T*mean(j)) ' + k*' num2str(T)];
+% 
+% equation = text(0.8*xlim(1)+0.15*xlim(2),0.3*ylim(1)+0.95*ylim(2),polyfit_str);
+% equation.Color = 'blue';
+% equation.FontSize = 14;
+% hold off
 
 end

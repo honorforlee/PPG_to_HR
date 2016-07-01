@@ -24,3 +24,27 @@ plot(tbl.k,tbl.note_1,'.r'...
     , tbl.k,tbl.note_x,'xk','MarkerSize',12 ...
     );
 legend('note_1','note_2','note_3','note_x');
+
+%%
+for k = 1 : length(kx)-1
+    Var_1(k) = var( [note_x(k+1) note_x(k)] );
+end
+
+for k = 1 : length(kx)-2
+    Var_2(k) = var( [note_x(k+2) note_x(k)] );
+end
+
+% for k = 2:length(kx)  
+%     if var([ref(ref_) note_x(k)],1) < eps
+%         clust(k - ref_,ref_) = [note_x(k)];
+%         idx(k - ref_,ref_) = [kx(k)];
+%         ref(k) = ref(ref_);
+%      elseif var([ref(ref_) note_x(k+1)],1) < eps
+%         clust(k - ref_,ref_) = [note_x(k+1)];
+%         idx(k - ref_,ref_) = [kx(k+1)];
+%         ref(k) = ref(ref_);
+%     else
+%          ref(k) = note_x(k);
+%          ref_ = k;        
+%        end
+% end   

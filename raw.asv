@@ -96,15 +96,13 @@ for k = 1:L(2)
         NOTE(k) = mean(note_);    
         SIZE(k) = clust_size(k);
         
-        clust_note(k) = (0.5 * NOTE(k) + 0.5 * SIZE(k)) / PER_eps(k);
+        clust_note(k) = (0.5 * NOTE(k) + 0.5 * SIZE(k)) / 10*PER_eps(k);
         
         clear NAN_idx NAN_per NAN_note per_ note_
     end
 end
 
-tbl_note = table([1:L(2)]', PER_T',PER_eps', PER_R', NOTE', SIZE', clust_note','VariableNames',{'Cluster','T','eps','R','Note_x','Size','Cluster_note'})
-
-
+tbl_note = table([1:length(idx)]', PER_T',PER_eps(k), PER_R NOTE', SIZE' ,'VariableNames',{'k','note_1','note_2','note_3','note_x'});
 
 %%
 plot( kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]), '-c');       % link note_2
