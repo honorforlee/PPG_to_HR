@@ -17,7 +17,7 @@ s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));        % rescale s on 0 (standard score 
 %   - Timeline, noise, integration, quantization -
 dt = 1/10;                           % sampling time: dt >> interval
 t_int = dt * (1/3);                  % integration time: interval <= t_int < dt
-quant = .1;                        % LSB: vertical step
+quant = 0.1;                          % LSB: vertical step
 
 [t,s] = integration(t0,s0,interval,dt,t_int,quant,0);
 
@@ -31,18 +31,18 @@ for k = 0 : length(s) / length(range) - 1
     
 end
 
-%   - Peaks identification - 
+%   - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x] = signal_peaks(t_div(1,:),s_div(1,:));
 
-%   - noteering according to minimum variance of note_x -
-eps = 0.1;      
+%   - Clustering according to minimum variance of note_x -
+eps = 0.1;
 kx_ = kx;
 
 for i = 1:length(kx)
     if kx_(i) ~= 0
-
-        idx(1,i) = kx(i);           
-        note(1,i) = note_x(i);     
+        
+        idx(1,i) = kx(i);
+        note(1,i) = note_x(i);
         per(1,i) = tx(i);
         j = 2;
         
@@ -51,14 +51,15 @@ for i = 1:length(kx)
             if  var([note_x(i) note_x(k)],1) < eps;
                 
                 note(j,i) = note_x(k);
-                per(j,i) = tx(k);             
+                per(j,i) = tx(k);
                 idx(j,i) = kx(k);
+                
                 kx_(k) = 0;
                 
                 j = j+1;
             else
                 note(j,i)=nan;
-                per(j,i)=nan; 
+                per(j,i)=nan;
                 idx(j,i)=nan;
                 
                 j = j+1;
@@ -72,51 +73,141 @@ end
 zero = find(~idx(1,:));
 
 for k = 1:length(zero)
-   note(:,zero(k))=[];
-   per(:,zero(k))=[];
-   idx(:,zero(k))=[];
-   zero = bsxfun(@minus ,zero,ones(1,length(zero))) ;
+    note(:,zero(k))=[];
+    per(:,zero(k))=[];
+    idx(:,zero(k))=[];
+    zero = bsxfun(@minus ,zero,ones(1,length(zero))) ;
 end
 
-%   - Cluster notation: size, mean note, periodicity -
-
-
+%   - Create cells: kx-tx-note_x -
 L = size(idx);
 for k = 1:L(2)
-   clust_size(k) = nnz(idx(:,k)) - sum(isnan(idx(:,k)));
-       if clust_size(k) >= 2
-            NAN_idx = ~isnan(per(:,k));         % extract non NAN value of per, note
-            NAN_per = per(NAN_idx,k);
-            NAN_note = note(NAN_idx,k);
-            
-            per_ = NAN_per(find(NAN_per));      % extract non zero value of per, note
-            note_ = NAN_note(find(NAN_note));
-                        
-        [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(per_);    % note
-        NOTE(k) = mean(note_);    
-        SIZE(k) = clust_size(k);
+    NAN_ = ~isnan(per(:,k));         % extract non NAN value of per, note
+    NAN_idx = idx(NAN_,k);
+    NAN_per = per(NAN_,k);
+    NAN_note = note(NAN_,k);
+    
+    idx_ = NAN_idx(find(NAN_idx));     % extract non zero value of per, note
+    per_ = NAN_per(find(NAN_per));
+    note_ = NAN_note(find(NAN_note));
+    
+    clust_cell{k,1} = idx_;            % kx
+    clust_cell{k,2} = per_;            % tx
+    clust_cell{k,3} = note_;           % note_x
+    
+    clear NAN_ NAN_idx NAN_per NAN_note idx_ per_ note_
+end
+
+
+for k = 1:L(2)
+    if length(clust_cell{k,1}) > 2
         
-        clust_note(k) = (0.5 * NOTE(k) + 0.5 * SIZE(k)) / PER_eps(k);
+        [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(clust_cell{k,2});    % note
         
-        clear NAN_idx NAN_per NAN_note per_ note_
+        if PER_eps(k) <= 0.01
+            PER_eps(k) = 0.01;
+        end
+        
+        NOTE(k) = mean(clust_cell{k,3});
+        SIZE(k) = length(clust_cell{k,1});
+        
+        clust_note(k) = (0.2 * NOTE(k) + 0.4 * SIZE(k)) / (PER_eps(k)/0.4);
+        
+    else
+        
+        PER_T(k) = 0; PER_eps(k) = 0; PER_R(k) = 0;
+        NOTE(k) = mean(clust_cell{k,2});
+        SIZE(k) = length(clust_cell{k,1});
+        clust_note(k) = 0;
+        
     end
 end
 
+
 tbl_note = table([1:L(2)]', PER_T',PER_eps', PER_R', NOTE', SIZE', clust_note','VariableNames',{'Cluster','T','eps','R','Note_x','Size','Cluster_note'})
+
+note_major(1) = max(clust_note);
+
+for k = 1:L(2)
+    
+    if var([note_major(1) clust_note(k)],1) < 5*eps
+        tx_major = clust_cell{k,2};
+        sx_major = clust_cell{k,3);
+    end
+        
+end
 
 
 
 %%
-plot( kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]), '-c');       % link note_2
-hold on
-plot( tx_major , sx_major   , 'pk','MarkerSize',15);
+
+% %   - Cluster notation: size, mean note, periodicity -
+% L = size(idx);
+% for k = 1:L(2)
+%     clust_size(k) = nnz(idx(:,k)) - sum(isnan(idx(:,k)));
+%     if clust_size(k) > 2
+%         NAN_idx = ~isnan(per(:,k));         % extract non NAN value of per, note
+%         NAN_per = per(NAN_idx,k);
+%         NAN_note = note(NAN_idx,k);
+%         
+%         per_ = NAN_per(find(NAN_per));      % extract non zero value of per, note
+%         note_ = NAN_note(find(NAN_note));
+%         
+%         [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(per_);    % note
+%         
+%         if PER_eps(k) <= 0.01
+%             PER_eps(k) = 0.01;
+%         end
+%         NOTE(k) = mean(note_);
+%         SIZE(k) = clust_size(k);
+%         
+%         clust_note(k) = (0.2 * NOTE(k) + 0.4 * SIZE(k)) / (PER_eps(k)/0.4);
+%         
+%         clear NAN_idx NAN_per NAN_note per_ note_
+%     else
+%         NAN_idx = ~isnan(per(:,k));
+%         NAN_note = note(NAN_idx,k);
+%         note_ = NAN_note(find(NAN_note));
+%         
+%         PER_T(k) = 0; PER_eps(k) = 0; PER_R(k) = 0; 
+%         NOTE(k) = mean(note_);
+%         SIZE(k) = clust_size(k);
+%         clust_note(k) = 0;
+%         
+%         clear NAN_idx NAN_note note_
+%     end
+% end
+% 
+% tbl_note = table([1:L(2)]', PER_T',PER_eps', PER_R', NOTE', SIZE', clust_note','VariableNames',{'Cluster','T','eps','R','Note_x','Size','Cluster_note'})
+
+note_major(1) = max(clust_note);
+
+j=1;
+for k = 1:L(2)
+    
+    if var([note_major(1) clust_note(k)],1) < 5*eps
+        clust_major(j) = k;
+        j = j+1;
+    end
+    
+end
+
+kx_major = kx(clust_major);
+
+
+
+%%
 plot( tx , sx   , 'dr','MarkerSize',12);
+hold on
 plot(tx, dhi,'c^','MarkerSize',12);
 plot(tx, dlo,'cv','MarkerSize',12);
+plot( kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]), '-c');       % link note_2
+%%plot( tx_major , sx_major   , 'pk','MarkerSize',15);
 plot( tx,sx_N, 'dr','MarkerSize',12);
 plot(kron(tx,[1 1 1]), kron(sx_N,[1 0 nan]) + kron(sx,[0 1 nan]),'r-');
 hold off
 
+%%
 % plot note_note_x
 for i = 1 : kmax
     figure(2);
@@ -142,7 +233,7 @@ base = [1:base_max];
 data = nan(base_max,kmax);
 
 for i = 1 : kmax
-
+    
     data(1:base_array(i,kmax),i) = note_tx{i,kmax};
     figure(3);
     tx_disp(i) = plot(base,data(:,i),'.');
@@ -159,30 +250,3 @@ title('Linear regression of t_{x,k}');
 xlabel('k');
 ylabel('t_{x,k}, s');
 hold off
-
-    
-%%
-delta = delta_tx(tx);
-[T,eps,R,plot_reg] = periodicity(tx);
-
-plot_reg;
-
-eps_note_x = 1;
-eps_per = 0.05;
-
-med = median(note_x);
-med_ = find(note_x == med);
-
-% if var([note_x(1) note_x(2)]) < 1
-%     %periodic_note_x(1) = note_x(1); periodic_note_x(2) = note_x(2);
-%     for k = 2 : length(kx)-1
-%     var( [tx(k+1)-tx(k) tx(k)-tx(k-1)]) < 1
-%         note_per(k-1:k+1) = note_x(k-1:k+1);
-%     
-%         
-%     end    
-% else
-%     periodic_note_x(1) = note_x(1);
-%     
-%     
-% end
