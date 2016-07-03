@@ -127,7 +127,6 @@ tbl_note = table([1:L(2)]', PER_T',PER_eps', PER_R', NOTE', SIZE', clust_note','
 
 %   - Major cluster -
 [note_major major_idx] = max(clust_note);   
-kx_major = clust_cell{major_idx,1};
 
 Nrows = max(cellfun(@numel,clust_cell));
 X = nan(Nrows(1),L(2));
@@ -135,21 +134,22 @@ for iCol = 1:L(2)
   X(1:numel(clust_cell{iCol}),iCol) = clust_cell{iCol};
 end
 
+kx_major = nan(Nrows(1),L(2));
+
 %   - Merge sub-major clusters -
+
 for k = 1:L(2)
     
-    if var([note_major clust_note(k)],1) < 5*eps && k ~= major_idx
+    if var([note_major clust_note(k)],1) < 5*eps
 
         kx_major = vertcat(kx_major,clust_cell{k,1});
-
+        
+        tx_major = clust_cell{k,2};
+        sx_major = clust_cell{k,3};
     end
         
 end
 
-%   - Final major peaks -
-kx_major = unique(kx_major);        % remove repeated elements
-tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-sx = s(kx_major+1);                          % local maxima
 
 
 %%
