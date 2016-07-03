@@ -1,5 +1,5 @@
 %Name = '3900679m';      % row 5
-Name = '3801060_0007m';  % row 6
+Name = '3801060_0007m';  % row 1
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid);
@@ -11,7 +11,7 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 fclose(fid);
 
 t0 = (1:length(val)) * interval;            % timeline
-s0 = val(5,1:length(val));
+s0 = val(1,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -37,7 +37,7 @@ t_ = t_div(6,:);    s_ = s_div(6,:);
 [kx,tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x] = signal_peaks(t_,s_);
 
 %   - Minimum variance algorithm -
-kx_major = min_variance(kx,tx,sx,note_x, 0.1);
+kx_major = min_variance(kx,tx,sx,note_x, 0.5);
 
 %   - Final major peaks -
 kx_major = unique(kx_major);        % remove repeated elements
