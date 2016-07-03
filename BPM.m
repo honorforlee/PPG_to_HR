@@ -3,7 +3,7 @@
 
 
 Name = '3987834m';           % BPM = 78
-Name = '3801060_0007m';     % BPM = 95
+%Name = '3801060_0007m';     % BPM = 95
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
