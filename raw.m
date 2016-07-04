@@ -164,37 +164,46 @@ tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_ma
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
 
-% %   - Modify cluster according to periodicity -
-% tx_ = normlist(delta_tx(tx_major));
-% kx_add = nan(length(kx_major),1);
-% tx_add = nan(length(kx_major),1);
-% sx_add = nan(length(kx_major),1);
-% 
-% for k = 1:length(tx_) 
-%     if tx_(k) > 0.5
-%        left(k) = kx_major(k);
-%        right(k) = kx_major(k+1);
-%  
-%        kx_add(k) = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
-%        tx_add(k) = td(kx_add) + (td(kx_add+1)-td(kx_add)) .* d(kx_add)./(d(kx_add)-d(kx_add+1));
-%        sx_add(k) = s_(kx_add+1); 
-%        
-% %     elseif tx_(k) < 0.5  
-% %        left_(k) = kx_major(k);
-% %        right(k) = kx_major(k+1);
-% %  
-% %        kx_add(k) = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
-% %        tx_add(k) = td(kx_add) + (td(kx_add+1)-td(kx_add)) .* d(kx_add)./(d(kx_add)-d(kx_add+1));
-% %        sx_add(k) = s_(kx_add+1); 
-%         
-%         
-%     end   
-%     
-% end
-% 
-% kx_major = vertcat(kx_major,kx_add);
-% tx_major = vertcat(tx_major,tx_add);
-% sx_major = vertcat(sx_major,sx_add);
+%   - Modify cluster according to periodicity -
+% ADD PEAK
+tx_pos = delta_tx(tx_major);
+kx_add = nan(1,length(kx_major));
+tx_add = nan(1,length(kx_major));
+sx_add = nan(1,length(kx_major));
+
+for k = 1:length(tx_pos)
+    if tx_pos(k) > T + 0.5*T            % add a major peak 
+        left(k) = kx_major(k);
+        right(k) = kx_major(k+1);
+        
+        kx_add(k) = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
+        
+    end
+    
+end
+
+kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
+kx_major(isnan(kx_major)) = [];             % remove NaN values
+kx_major = unique(kx_major);                % sort
+
+tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+sx_major = s_(kx_major+1);          % local maxima
+T = mean(delta_tx(tx_major));
+
+% REMOVE PEAK
+tx_neg = delta_tx(tx_major);
+for k = 1:length(tx_neg)
+    if tx_neg(k) < T - T*0.5        % remove peaks - another loop because of matrix size issue 
+        kx_major(k+1) = nan;
+    end
+end
+
+kx_major(isnan(kx_major)) = [];             % remove NaN values
+kx_major = unique(kx_major);                % sort
+
+tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+sx_major = s_(kx_major+1);          % local maxima
+T = mean(delta_tx(tx_major));
 
 %   - Plots -
 figure(2);
