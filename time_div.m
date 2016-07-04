@@ -1,5 +1,5 @@
-function [t_ s_] = time_div(t,s,dt,m)
-range = (1 : (10/dt)) * dt;
+function [t_ s_] = time_div(t,s,dt, frame_length,frame)
+range = (1 : (frame_length/dt)) * dt;
 
 %   - Divide timeline -
 for k = 0 : length(s) / length(range) - 1
@@ -9,4 +9,4 @@ for k = 0 : length(s) / length(range) - 1
     
 end
 
-t_ = t_div(m,:);    s_ = s_div(m,:);    
+t_ = t_div(frame,:);    s_ = s_div(frame,:);    

@@ -28,8 +28,8 @@ end
 
 %   - Executes just before discrimination is made visible -
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
-set(gcf,'units','normalized','position',[0 0 1 1],'outerposition',[0 0 .9 .9]);
-set(0,'ScreenPixelsPerInch', 90);
+set(gcf,'units','normalized','position',[0 .2 .8 .9],'outerposition',[0 .1 .8 .9]);
+set(0,'ScreenPixelsPerInch', 85);
 
 % set(gcf, 'units', 'centimeter', 'position',[0 30 40 25],'outerposition',[0 30 40 25]);
 %set(0,'ScreenPixelsPerInch', 70);
@@ -135,7 +135,10 @@ h.dNds = str2double(h.edit_dNdS.String);                        % apply vertical
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0,h.dt,h.t_int,h.dNds,0);
 
 % Divide timeline
-[h.t_ h.s_] = time_div(h.t,h.s,h.dt,1);
+h.frame_length = str2double(h.edit_frame_length.String);
+h.frame = str2double(h.edit_frame.String);
+
+[h.t_ h.s_] = time_div(h.t,h.s,h.dt, h.frame_length,h.frame);
 
 h = grids(h);
 
@@ -796,3 +799,5 @@ plot( h.axes ...
     , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
     , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
     );
+
+
