@@ -68,14 +68,14 @@ for k = 1:L(2)
         
         [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(clust_cell{k,2});    % note
         
-        if PER_eps(k) <= 0.01
-            PER_eps(k) = 0.01;
+        if PER_eps(k) <= 0.1
+            PER_eps(k) = 0.1;
         end
         
         NOTE(k) = mean(clust_cell{k,3});
         SIZE(k) = length(clust_cell{k,1});
         
-        clust_note(k) = (0.2 * NOTE(k) + 0.4 * SIZE(k)) / (PER_eps(k)/0.4);
+        clust_note(k) = (0.4 * NOTE(k) + 0.3 * SIZE(k)) / (PER_eps(k)/0.3);
         
     else
         
@@ -90,22 +90,26 @@ end
 tbl_note = table([1:L(2)]', PER_T',PER_eps', PER_R', NOTE', SIZE', clust_note','VariableNames',{'Cluster','T','eps','R','Note_x','Size','Cluster_note'})
 
 %   - Major cluster -
-[note_major major_idx] = max(clust_note);   
+for k = 1:L(2)
+    if NOTE(k) > 0
+        clust_note_pos(k) = clust_note(k);
+    end
+end
+[clust_note_max major_idx] = max(clust_note_pos);
 kx_major = clust_cell{major_idx,1};
 
 Nrows = max(cellfun(@numel,clust_cell));
 X = nan(Nrows(1),L(2));
 for iCol = 1:L(2)
-  X(1:numel(clust_cell{iCol}),iCol) = clust_cell{iCol};
+    X(1:numel(clust_cell{iCol}),iCol) = clust_cell{iCol};
 end
 
 %   - Merge sub-major clusters -
 for k = 1:L(2)
-    
-    if var([note_major clust_note(k)],1) < 5*eps && k ~= major_idx
-
-        kx_major = vertcat(kx_major,clust_cell{k,1});
-
+    if NOTE(k) > 0
+        if var([clust_note_max clust_note(k)],1) < eps && var([max(NOTE) NOTE(k)],1) < eps && k ~= major_idx
+            kx_major = vertcat(kx_major,clust_cell{k,1});
+        end
     end
-        
+    
 end

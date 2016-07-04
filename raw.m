@@ -1,5 +1,5 @@
-%Name = '3900679m';      % row 5
-Name = '3801060_0007m';  % row 1
+Name = '3900679m';      % row 5
+%Name = '3801060_0007m';  % row 1
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid);
@@ -11,7 +11,7 @@ interval = interval(2);              % data acquisition rate (interval = 1/f_spl
 fclose(fid);
 
 t0 = (1:length(val)) * interval;            % timeline
-s0 = val(1,1:length(val));
+s0 = val(5,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0 ));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -31,20 +31,173 @@ for k = 0 : length(s) / length(range) - 1
     
 end
 
-t_ = t_div(6,:);    s_ = s_div(6,:);    
+t_ = t_div(1,:);    s_ = s_div(1,:);    
 
 %   - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x] = signal_peaks(t_,s_);
 
-%   - Minimum variance algorithm -
-kx_major = min_variance(kx,tx,sx,note_x, 0.5);
+% %   - Minimum variance algorithm -
+% kx_major = min_variance(kx,tx,sx,note_x, 0.5);
+% function [kx_major] = min_variance(kx,tx,sx,note_x, eps)
+%   - Clustering according to minimum variance of note_x -
+kx_ = kx;
+eps = 0.1;
 
-%   - Final major peaks -
-kx_major = unique(kx_major);        % remove repeated elements
+for i = 1:length(kx)
+    if kx_(i) ~= 0
+        
+        idx(1,i) = kx(i);
+        note(1,i) = note_x(i);
+        per(1,i) = tx(i);
+        j = 2;
+        
+        for k = i + 1 : length(kx)
+            
+            if  var([note_x(i) note_x(k)],1) < eps;
+                
+                note(j,i) = note_x(k);
+                per(j,i) = tx(k);
+                idx(j,i) = kx(k);
+                
+                kx_(k) = 0;
+                
+                j = j+1;
+            else
+                note(j,i)=nan;
+                per(j,i)=nan;
+                idx(j,i)=nan;
+                
+                j = j+1;
+            end
+            
+        end
+    end
+end
+
+%   - Remove columns -
+zero = find(~idx(1,:));
+
+for k = 1:length(zero)
+    note(:,zero(k))=[];
+    per(:,zero(k))=[];
+    idx(:,zero(k))=[];
+    zero = bsxfun(@minus ,zero,ones(1,length(zero))) ;
+end
+
+%   - Create cells: kx-tx-note_x -
+L = size(idx);
+for k = 1:L(2)
+    NAN_ = ~isnan(per(:,k));         % extract non NAN value of per, note
+    NAN_idx = idx(NAN_,k);
+    NAN_per = per(NAN_,k);
+    NAN_note = note(NAN_,k);
+    
+    idx_ = NAN_idx(find(NAN_idx));     % extract non zero value of per, note
+    per_ = NAN_per(find(NAN_per));
+    note_ = NAN_note(find(NAN_note));
+    
+    clust_cell{k,1} = idx_;            % kx
+    clust_cell{k,2} = per_;            % tx
+    clust_cell{k,3} = note_;           % note_x
+    
+    clear NAN_ NAN_idx NAN_per NAN_note idx_ per_ note_
+end
+
+%   - Cluster notation: size, note_x, periodicity -
+for k = 1:L(2)
+    if length(clust_cell{k,1}) > 2
+        
+        [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(clust_cell{k,2});    % note
+        
+        if PER_eps(k) <= 0.1
+            PER_eps(k) = 0.1;
+        end
+        
+        NOTE(k) = mean(clust_cell{k,3});
+        SIZE(k) = length(clust_cell{k,1});
+        
+        clust_note(k) = (0.4 * NOTE(k) + 0.3 * SIZE(k)) / (PER_eps(k)/0.3);
+        
+    else
+        
+        PER_T(k) = 0; PER_eps(k) = 0; PER_R(k) = 0;
+        NOTE(k) = mean(clust_cell{k,2});
+        SIZE(k) = length(clust_cell{k,1});
+        clust_note(k) = 0;
+        
+    end
+end
+
+tbl_note = table([1:L(2)]', PER_T',PER_eps', PER_R', NOTE', SIZE', clust_note','VariableNames',{'Cluster','T','eps','R','Note_x','Size','Cluster_note'})
+
+%   - Major cluster -
+for k = 1:L(2)
+    if NOTE(k) > 0
+        clust_note_pos(k) = clust_note(k);
+    end
+end
+[clust_note_max major_idx] = max(clust_note_pos);
+kx_major = clust_cell{major_idx,1};
+
+%   - Merge sub-major clusters -
+Nrows = max(cellfun(@numel,clust_cell));
+X = nan(Nrows(1),L(2));
+for iCol = 1:L(2)
+    X(1:numel(clust_cell{iCol}),iCol) = clust_cell{iCol};
+end
+clust_merge = nan(Nrows(1),L(2));
+clust_merge(:,major_idx) = X(:,major_idx);
+
+for k = 1:L(2)
+    if NOTE(k) > 0
+        if var([max(NOTE) NOTE(k)],1) < eps && k ~= major_idx
+            clust_merge(:,k) = X(:,k);
+        end
+    end
+end
+
+clust_merge(isnan(clust_merge)) = [];      % remove NaN values
+
+%   - Major peaks -
+kx_major = unique(clust_merge);        % remove repeated elements
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-sx_major = s_(kx_major+1);                          % local maxima
+sx_major = s_(kx_major+1);          % local maxima
+T = mean(delta_tx(tx_major));
+
+% %   - Modify cluster according to periodicity -
+% tx_ = normlist(delta_tx(tx_major));
+% kx_add = nan(length(kx_major),1);
+% tx_add = nan(length(kx_major),1);
+% sx_add = nan(length(kx_major),1);
+% 
+% for k = 1:length(tx_) 
+%     if tx_(k) > 0.5
+%        left(k) = kx_major(k);
+%        right(k) = kx_major(k+1);
+%  
+%        kx_add(k) = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
+%        tx_add(k) = td(kx_add) + (td(kx_add+1)-td(kx_add)) .* d(kx_add)./(d(kx_add)-d(kx_add+1));
+%        sx_add(k) = s_(kx_add+1); 
+%        
+% %     elseif tx_(k) < 0.5  
+% %        left_(k) = kx_major(k);
+% %        right(k) = kx_major(k+1);
+% %  
+% %        kx_add(k) = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
+% %        tx_add(k) = td(kx_add) + (td(kx_add+1)-td(kx_add)) .* d(kx_add)./(d(kx_add)-d(kx_add+1));
+% %        sx_add(k) = s_(kx_add+1); 
+%         
+%         
+%     end   
+%     
+% end
+% 
+% kx_major = vertcat(kx_major,kx_add);
+% tx_major = vertcat(tx_major,tx_add);
+% sx_major = vertcat(sx_major,sx_add);
 
 %   - Plots -
+figure(2);
 plot( tx , sx   , 'dr','MarkerSize',12);
 hold on
 plot(t_,s_,'-k','LineWidth',.2);
