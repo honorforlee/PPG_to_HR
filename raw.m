@@ -154,13 +154,28 @@ T = mean(delta_tx(tx_major));
 tx_pos = delta_tx(tx_major);
 kx_add = nan(1,length(kx_major));
 
-for k = 1:length(tx_pos)
-    if tx_pos(k) > T + 0.5*T            % add a major peak 
+for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
+    if tx_pos(k) > T + 0.5*T            % add a major peak
         left(k) = kx_major(k);
         right(k) = kx_major(k+1);
-        
-        kx_add(k) = kx( kx(1,:) > left(k) & kx(1,:) < right(k)); 
-    end   
+        kx_add_ = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
+               
+        if length(kx_add_) == 1
+            kx_add(k) = kx_add_;
+        elseif length(kx_add_) >= 2
+            for i = 1:length(kx_add_)
+                kx_add_idx(i) = find(kx == kx_add_(i));
+                kx_add_note(i) = note_x(kx_add_idx(i));
+            end
+            
+            [value kx_add_max] = max(kx_add_note);
+            kx_add(k) = kx_add_(kx_add_max);
+            
+            clearvars kx_add_idx kx_add_note kx_add_max value ;
+        end
+   
+    end
+    clearvars kx_add_;
 end
 
 kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
