@@ -2,8 +2,8 @@
 %Name = '3801060_0007m';  % row 1
 %Name = '3914288m';       % row 5
 %Name = '3919370m';       % row 5
-Name = '3916979m (1)';     % row 6  
-
+%Name = '3916979m (1)';     % row 6  
+Name = '3916979m (3)';     % row 6  
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid);
@@ -25,7 +25,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,4);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,4);
 
 
 %  - Peaks identification -
@@ -186,8 +186,14 @@ for k = 1:L(2)
         clust_note_pos(k) = clust_note(k);
     end
 end
+
+if clust_note ~= 0          
 [clust_note_max major_idx] = max(clust_note_pos);
 kx_major = clust_cell{major_idx,1}';
+else                            % all cluster have zero note (all size <= 2)
+[NOTE_max major_idx] = max(NOTE);
+kx_major = clust_cell{major_idx,1}';   
+end
 
 %   - Merge sub-major clusters -
 Nrows = max(cellfun(@numel,clust_cell));
@@ -209,9 +215,9 @@ end
 %   - Major peaks -
 
 clust_merge(isnan(clust_merge)) = [];   % remove NaN values
-merge = unique(clust_merge);            % remove repeated elements
+clust_merge = unique(clust_merge);            % remove repeated elements ans sort array
 
-kx_major(1,1:length(merge)) = merge; 
+kx_major(1,1:length(clust_merge)) = clust_merge; 
 
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
@@ -273,10 +279,10 @@ if find(~kx_add_temp)                   % one imaginary peak to create
 else
     kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
     kx_major(isnan(kx_major)) = [];             % remove NaN values
-    kx_major = unique(kx_major);        % sort
+    kx_major = unique(kx_major);                % sort
     
     tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-    sx_major = s_(kx_major+1);          % local maxima
+    sx_major = s_(kx_major+1);                  % local maxima
 end
 
 T = mean(delta_tx(tx_major));
