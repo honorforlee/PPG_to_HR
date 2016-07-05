@@ -48,6 +48,12 @@ end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-delta = sx - sx_N;
+for k = 1:length(tx)                          % if minimum out of frame, take next min for delta 
+    if tx(k) >= tx_N(k)
+        delta(k) = sx(k) - sx_N(k);         
+    else
+        delta(k)=sx(k) - sx_N(k+1);
+    end
+end
 
 note_x = 0.2*note_1 + 0.2*note_2 + 0.6*delta;

@@ -106,7 +106,7 @@ clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
     if NOTE(k) > 0
-        if var([max(NOTE) NOTE(k)],1) < eps && k ~= major_idx
+        if var([max(NOTE) NOTE(k)],1) < 3*eps && k ~= major_idx   % EMPIRICAL
             clust_merge(:,k) = X(:,k);
         end
     end     
