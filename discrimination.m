@@ -28,8 +28,9 @@ end
 
 %   - Executes just before discrimination is made visible -
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
-set(gcf,'units','normalized','position',[0 .2 .8 .9],'outerposition',[0 .1 .8 .9]);
-set(0,'ScreenPixelsPerInch', 85);
+scrsz = get(groot,'ScreenSize');
+set(gcf,'Units','pixels','Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]);
+set(0,'ScreenPixelsPerInch', 95);
 
 % set(gcf, 'units', 'centimeter', 'position',[0 30 40 25],'outerposition',[0 30 40 25]);
 %set(0,'ScreenPixelsPerInch', 70);

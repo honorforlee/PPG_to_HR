@@ -186,17 +186,17 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
     clearvars kx_add_;
 end
 kx_add_temp = kx_add;
-kx_add_temp(isnan(kx_add_temp)) = []; 
+kx_add_temp(isnan(kx_major)) = []; 
 
-if find(~kx_add_temp)                   % one imaginary peak to create
+if find(~kx_add)                    % one imaginary peak to create
     zeros = find(~kx_add);              % indexes to create peak
-    T_temp = mean(tx_pos,'omitnan');    % peaks period omitting peak missing
+    T_temp = mean(tx_pos,'omitnan');     % peaks period omitting peak missing
     tx_add = nan(1,length(kx_major));
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));
     
     for k = 1:length(zeros)
-        tx_add(zeros(k)) = tx_major(zeros(k)) + T_temp;     % add one time sampled
-        insert(nan, sx_major, zeros(k) );                   % inset one nan value at added time sampled
+        tx_add(zeros(k)) = tx_major(zeros(k)) + T_temp;      % add one time sampled
+        insert(nan, sx_major, zeros(k) );                   % add one nan value at added time sampled
     end
     
     tx_major = horzcat(tx_major,tx_add);
@@ -214,7 +214,7 @@ end
 
 T = mean(delta_tx(tx_major));
 
-% REMOVE PEAK FROM MAJOR CLUSTER
+% REMOVE PEAK
 tx_neg = delta_tx(tx_major);
 for k = 1:length(tx_neg)
     if tx_neg(k) < T - T*0.5        % remove peaks - another loop because of matrix size issue
