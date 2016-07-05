@@ -139,13 +139,16 @@ for k = 1:L(2)
         if var([max(NOTE) NOTE(k)],1) < eps && k ~= major_idx
             clust_merge(:,k) = X(:,k);
         end
-    end
+    end     
 end
 
-clust_merge(isnan(clust_merge)) = [];   % remove NaN values
-
 %   - Major peaks -
-kx_major = unique(clust_merge)';      % remove repeated elements
+
+clust_merge(isnan(clust_merge)) = [];   % remove NaN values
+merge = unique(clust_merge);            % remove repeated elements
+
+kx_major(1,1:length(merge)) = merge; 
+
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
@@ -217,7 +220,7 @@ T = mean(delta_tx(tx_major));
 % REMOVE PEAK FROM MAJOR CLUSTER
 tx_neg = delta_tx(tx_major);
 for k = 1:length(tx_neg)
-    if tx_neg(k) < T - T*0.5        % remove peaks - another loop because of matrix size issue
+    if tx_neg(k) < T - T*0.5        % remove peaks - another loop because of matrix size inconsistency
         kx_major(k+1) = nan;
     end
 end
@@ -228,7 +231,6 @@ kx_major = unique(kx_major);                % sort
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
-
 
 
 %   - Plots -

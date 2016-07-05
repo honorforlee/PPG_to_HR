@@ -1,6 +1,6 @@
-%Name = '3900679m';      % row 5
+Name = '3900679m';      % row 5
 %Name = '3801060_0007m';  % row 1
-Name = '3914288m';       % row 5
+%Name = '3914288m';       % row 5
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid);
@@ -139,13 +139,21 @@ for k = 1:L(2)
         if var([max(NOTE) NOTE(k)],1) < eps && k ~= major_idx
             clust_merge(:,k) = X(:,k);
         end
-    end
+    end     
 end
 
-clust_merge(isnan(clust_merge)) = [];   % remove NaN values
+L_merge = size(clust_merge);
+
+for i=1:length 
 
 %   - Major peaks -
-kx_major = unique(clust_merge)';      % remove repeated elements
+if isnan(clust_merge)
+clust_merge(isnan(clust_merge)) = [];   % remove NaN values
+kx_major = unique(clust_merge);      % remove repeated elements
+else 
+    kx_major = unique(clust_merge)';
+end    
+
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
@@ -186,17 +194,17 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
     clearvars kx_add_;
 end
 kx_add_temp = kx_add;
-kx_add_temp(isnan(kx_major)) = []; 
+kx_add_temp(isnan(kx_add_temp)) = []; 
 
-if find(~kx_add)                    % one imaginary peak to create
+if find(~kx_add_temp)                   % one imaginary peak to create
     zeros = find(~kx_add);              % indexes to create peak
-    T_temp = mean(tx_pos,'omitnan');     % peaks period omitting peak missing
+    T_temp = mean(tx_pos,'omitnan');    % peaks period omitting peak missing
     tx_add = nan(1,length(kx_major));
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));
     
     for k = 1:length(zeros)
-        tx_add(zeros(k)) = tx_major(zeros(k)) + T_temp;      % add one time sampled
-        insert(nan, sx_major, zeros(k) );                   % add one nan value at added time sampled
+        tx_add(zeros(k)) = tx_major(zeros(k)) + T_temp;     % add one time sampled
+        insert(nan, sx_major, zeros(k) );                   % inset one nan value at added time sampled
     end
     
     tx_major = horzcat(tx_major,tx_add);
@@ -214,10 +222,10 @@ end
 
 T = mean(delta_tx(tx_major));
 
-% REMOVE PEAK
+% REMOVE PEAK FROM MAJOR CLUSTER
 tx_neg = delta_tx(tx_major);
 for k = 1:length(tx_neg)
-    if tx_neg(k) < T - T*0.5        % remove peaks - another loop because of matrix size issue
+    if tx_neg(k) < T - T*0.5        % remove peaks - another loop because of matrix size inconsistency
         kx_major(k+1) = nan;
     end
 end
@@ -228,7 +236,6 @@ kx_major = unique(kx_major);                % sort
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
-
 
 
 %   - Plots -
