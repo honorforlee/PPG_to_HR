@@ -50,4 +50,4 @@ note_2 = dhi - dlo;                           % maximum slope difference around 
 
 delta = sx - sx_N;
 
-note_x = 0.4*note_1 + 0.6*delta;
+note_x = 0.2*note_1 + 0.2*note_2 + 0.6*delta;
