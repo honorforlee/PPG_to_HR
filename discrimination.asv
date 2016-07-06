@@ -137,9 +137,6 @@ h.dNds = str2double(h.edit_dNdS.String);                         % apply vertica
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0,h.dt,h.t_int,h.dNds,0);
 
 % Divide timeline
-h.frame_length = str2double(h.edit_frame_length.String);
-h.frame = str2double(h.edit_frame.String);
-
 [h.t0_ h.s0_ h.t_ h.s_] = time_div(h.t0,h.s0,h.dt0, h.t,h.s,h.dt, h.frame_length,h.frame);
 
 h = grids(h);
@@ -734,20 +731,14 @@ else
 end
 
 function callback_sampling(h) %#ok<DEFNU>
-% h.frame_length = str2double(h.edit_frame_length.String);
-% h.slider_frame.Max = floor(60/h.frame_length); 
-% h.frame = h.slider_frame.Value;
-% h.value_frame.String = h.slider_frame.Value;
-
+h.frame_length = str2double(h.edit_frame_length.String);
+h.slider_frame.Max = floor(60/h.frame_length); 
+%h.frame = str2double(h.edit_frame.String);
+h.frame = h.slider_frame.Value;
 h = quantize_input(h);
 guidata(h.output, h);
 
 function callback_t_int(h) %#ok<DEFNU>
-% h.frame_length = str2double(h.edit_frame_length.String);
-% h.slider_frame.Max = floor(60/h.frame_length); 
-% h.frame = h.slider_frame.Value;
-% h.value_frame.String = h.slider_frame.Value;
-
 h = quantize_input(h);
 h.value_t_int.String = h.slider_t_int.Value;
 guidata(h.output, h);
@@ -858,4 +849,5 @@ plot( h.axes ...
     , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
     , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
     );
+
 
