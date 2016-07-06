@@ -43,7 +43,7 @@ end
 %   - Peaks notation
 note_1 = sx;
 for k = 2:length(kx)-1
-    note_1(k) = 2*sx(k) - sx(k+1) - sx(k-1);  % average peak value (doubled)
+    note_1(k) = sx(k) - ( sx(k+1) - sx(k-1) )/2;  % average peak value (doubled)
 end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak

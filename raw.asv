@@ -25,7 +25,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,10,3);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,10,4);
 
 
 %  - Peaks identification -
@@ -38,7 +38,7 @@ quant = 0.1;                         % LSB: vertical step
 % d = s_(2:end) -  s_(1:end-1);
 % td = t_(2:end);
 % kx = d > 0;
-% kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
+% kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d(k(x) > 0; d( k(x) + 1 ) <= 0
 % 
 % sx = s_(kx+1);                          % local maxima
 % tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
@@ -187,13 +187,13 @@ for k = 1:L(2)
     end
 end
 
-if ~all(clust_note)          
+if all(clust_note == 0)      % all cluster have zero note (all size <= 2)
+[NOTE_major major_idx] = max(NOTE);
+kx_major = clust_cell{major_idx,1}'; 
+else
 [clust_note_max major_idx] = max(clust_note_pos);
 kx_major = clust_cell{major_idx,1}';
 NOTE_major = NOTE(major_idx);
-else                            % all cluster have zero note (all size <= 2)
-[NOTE_major major_idx] = max(NOTE);
-kx_major = clust_cell{major_idx,1}';   
 end
 
 %   - Merge sub-major clusters -
@@ -207,9 +207,10 @@ clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
     if NOTE(k) > 0
-        if var([NOTE_major NOTE(k)],1) < 3*eps && k ~= major_idx   % EMPIRICAL
+        if var([NOTE_major NOTE(k)],1) < 6*eps && k ~= major_idx   % EMPIRICAL
+            NOTE_major = NOTE(k) * ( L(2) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );              % NOTE_major = weighted mean of clust_merge
             clust_merge(:,k) = X(:,k);
-            NOTE_major = mean( [NOTE_major NOTE(k)] );              % adjust NOTE_major ti merged cluster
+            NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
         end
     end     
 end
@@ -259,11 +260,9 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
     end
     clearvars kx_add_;
 end
-kx_add_temp = kx_add;
-kx_add_temp(isnan(kx_add_temp)) = [];   % remove NaN to find zeros
 
-if find(~kx_add_temp)                   % one imaginary peak to create
-    zeros = find(~kx_add);              % indexes to create peak
+if find(kx_add==0)                      % one imaginary peak to create
+    zeros = find(kx_add==0);            % indexes to create peak
     T_temp = mean(tx_pos,'omitnan');    % peaks period omitting peak missing
     
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert: function to insert value in array
