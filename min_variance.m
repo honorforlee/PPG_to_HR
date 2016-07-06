@@ -118,11 +118,10 @@ for k = 1:L(2)
     end     
 end
 
-%   - Major peaks -
-
-clust_merge(isnan(clust_merge)) = [];   % remove NaN values
+clust_merge(isnan(clust_merge)) = [];         % remove NaN values
 clust_merge = unique(clust_merge);            % remove repeated elements ans sort array
 
+%   - Major peaks -
 kx_major(1,1:length(clust_merge)) = clust_merge; 
 
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
@@ -135,7 +134,7 @@ tx_pos = delta_tx(tx_major);
 kx_add = nan(1,length(kx_major));
 
 for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
-    if tx_pos(k) > T + 0.5*T
+    if tx_pos(k) > T + 0.5*T            % need enough large frame length to give weight to T
         left(k) = kx_major(k);
         right(k) = kx_major(k+1);
         kx_add_ = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
@@ -156,7 +155,7 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
             
         else
             kx_add_ = nan;
-            tx_pos(k) = nan;
+            tx_pos(k) = nan;            % to compute T not affected by missing tx_major
             kx_add(k) = 0;
             
         end
@@ -165,23 +164,20 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
     clearvars kx_add_;
 end
 kx_add_temp = kx_add;
-kx_add_temp(isnan(kx_add_temp)) = []; 
+kx_add_temp(isnan(kx_add_temp)) = [];   % remove NaN to find zeros
 
 if find(~kx_add_temp)                   % one imaginary peak to create
     zeros = find(~kx_add);              % indexes to create peak
     T_temp = mean(tx_pos,'omitnan');    % peaks period omitting peak missing
-    tx_add = nan(1,length(kx_major));
-    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));
+    
+    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert: function to insert value in array
     
     for k = 1:length(zeros)
-        tx_add(zeros(k)) = tx_major(zeros(k)) + T_temp;     % add one time sampled
-        insert(nan, sx_major, zeros(k) );                   % inset one nan value at added time sampled
+        tx_major = insert(tx_major(zeros(k)) + T_temp, tx_major, zeros(k)); % insert tx_major
+        sx_major = insert(sx_major(zeros(k)), sx_major, zeros(k) );        % inset sx_major at added time 
+        zeros = bsxfun(@plus ,zeros,ones(1,length(zeros)));                % shift index of zeros when adding one element in tx_major, sx_major
     end
-    
-    tx_major = horzcat(tx_major,tx_add);
-    tx_major(isnan(tx_major)) = [];             % remove NaN values
-    tx_major = unique(tx_major);                % sort
-    
+   
 else
     kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
     kx_major(isnan(kx_major)) = [];             % remove NaN values

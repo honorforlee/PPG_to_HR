@@ -249,7 +249,7 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
             
         else
             kx_add_ = nan;
-            tx_pos(k) = nan;            % to compute T not affected by missing tx_major
+            tx_pos(k) = nan;
             kx_add(k) = 0;
             
         end
@@ -267,11 +267,15 @@ if find(~kx_add_temp)                   % one imaginary peak to create
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert: function to insert value in array
     
     for k = 1:length(zeros)
-        tx_major = insert(tx_major(zeros(k)) + T_temp, tx_major, zeros(k)); % insert tx_major
-        sx_major = insert(sx_major(zeros(k)), sx_major, zeros(k) );        % inset sx_major at added time 
-        zeros = bsxfun(@plus ,zeros,ones(1,length(zeros)));                % shift index of zeros when adding one element in tx_major, sx_major
+        tx_major = insert(tx_major(zeros(k)) + T_temp,tx_major, zeros(k));
+        sx_major = insert(nan, sx_major, zeros(k) );        % inset one nan value at added time sampled
+        zeros = bsxfun(@plus ,zeros,ones(1,length(zeros))); % shift index of zeros when adding one element 
     end
-   
+    
+%     tx_major = horzcat(tx_major,tx_add);
+%     tx_major(isnan(tx_major)) = [];             % remove NaN values
+%     tx_major = unique(tx_major);                % sort
+    
 else
     kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
     kx_major(isnan(kx_major)) = [];             % remove NaN values
