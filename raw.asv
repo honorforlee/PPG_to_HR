@@ -25,7 +25,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,4);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,10,3);
 
 
 %  - Peaks identification -
@@ -187,27 +187,29 @@ for k = 1:L(2)
     end
 end
 
-if clust_note ~= 0          
+if ~all(clust_note)          
 [clust_note_max major_idx] = max(clust_note_pos);
 kx_major = clust_cell{major_idx,1}';
+NOTE_major = NOTE(major_idx);
 else                            % all cluster have zero note (all size <= 2)
-[NOTE_max major_idx] = max(NOTE);
+[NOTE_major major_idx] = max(NOTE);
 kx_major = clust_cell{major_idx,1}';   
 end
 
 %   - Merge sub-major clusters -
 Nrows = max(cellfun(@numel,clust_cell));
 X = nan(Nrows(1),L(2));
-for iCol = 1:L(2)
-    X(1:numel(clust_cell{iCol}),iCol) = clust_cell{iCol};
+for iCol = 1:L(2)   
+    X(1:numel(clust_cell{iCol}),iCol) = clust_cell{iCol};       % copy idx values of each cluster into X
 end
 clust_merge = nan(Nrows(1),L(2));
 clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
     if NOTE(k) > 0
-        if var([max(NOTE) NOTE(k)],1) < 3*eps && k ~= major_idx   % EMPIRICAL
+        if var([NOTE_major NOTE(k)],1) < 3*eps && k ~= major_idx   % EMPIRICAL
             clust_merge(:,k) = X(:,k);
+            NOTE_major = mean( [NOTE_major NOTE(k)] );              % adjust NOTE_major ti merged cluster
         end
     end     
 end
@@ -249,7 +251,7 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
             
         else
             kx_add_ = nan;
-            tx_pos(k) = nan;
+            tx_pos(k) = nan;            % to compute T not affected by missing tx_major
             kx_add(k) = 0;
             
         end
@@ -267,15 +269,11 @@ if find(~kx_add_temp)                   % one imaginary peak to create
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert: function to insert value in array
     
     for k = 1:length(zeros)
-        tx_major = insert(tx_major(zeros(k)) + T_temp,tx_major, zeros(k));
-        sx_major = insert(nan, sx_major, zeros(k) );        % inset one nan value at added time sampled
-        zeros = bsxfun(@plus ,zeros,ones(1,length(zeros))); % shift index of zeros when adding one element 
+        tx_major = insert(tx_major(zeros(k)) + T_temp, tx_major, zeros(k)); % insert tx_major
+        sx_major = insert(sx_major(zeros(k)), sx_major, zeros(k) );         % inset sx_major at added time 
+        zeros = bsxfun(@plus ,zeros,ones(1,length(zeros)));                 % shift index of zeros when adding one element in tx_major, sx_major
     end
-    
-%     tx_major = horzcat(tx_major,tx_add);
-%     tx_major(isnan(tx_major)) = [];             % remove NaN values
-%     tx_major = unique(tx_major);                % sort
-    
+   
 else
     kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
     kx_major(isnan(kx_major)) = [];             % remove NaN values
@@ -314,105 +312,4 @@ plot( kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]), '-c');      
 plot( tx_major , sx_major, 'pk','MarkerSize',15);
 plot( tx,sx_N, 'dr','MarkerSize',12);
 plot(kron(tx,[1 1 1]), kron(sx_N,[1 0 nan]) + kron(sx,[0 1 nan]),'r-');
-hold off
-
-
-
-%%
-% %   - Cluster notation: size, mean note, periodicity -
-% L = size(idx);
-% for k = 1:L(2)
-%     clust_size(k) = nnz(idx(:,k)) - sum(isnan(idx(:,k)));
-%     if clust_size(k) > 2
-%         NAN_idx = ~isnan(per(:,k));         % extract non NAN value of per, note
-%         NAN_per = per(NAN_idx,k);
-%         NAN_note = note(NAN_idx,k);
-%
-%         per_ = NAN_per(find(NAN_per));      % extract non zero value of per, note
-%         note_ = NAN_note(find(NAN_note));
-%
-%         [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(per_);    % note
-%
-%         if PER_eps(k) <= 0.01
-%             PER_eps(k) = 0.01;
-%         end
-%         NOTE(k) = mean(note_);
-%         SIZE(k) = clust_size(k);
-%
-%         clust_note(k) = (0.2 * NOTE(k) + 0.4 * SIZE(k)) / (PER_eps(k)/0.4);
-%
-%         clear NAN_idx NAN_per NAN_note per_ note_
-%     else
-%         NAN_idx = ~isnan(per(:,k));
-%         NAN_note = note(NAN_idx,k);
-%         note_ = NAN_note(find(NAN_note));
-%
-%         PER_T(k) = 0; PER_eps(k) = 0; PER_R(k) = 0;
-%         NOTE(k) = mean(note_);
-%         SIZE(k) = clust_size(k);
-%         clust_note(k) = 0;
-%
-%         clear NAN_idx NAN_note note_
-%     end
-% end
-%
-% tbl_note = table([1:L(2)]', PER_T',PER_eps', PER_R', NOTE', SIZE', clust_note','VariableNames',{'Cluster','T','eps','R','Note_x','Size','Cluster_note'})
-
-note_major(1) = max(clust_note);
-
-j=1;
-for k = 1:L(2)
-    
-    if var([note_major(1) clust_note(k)],1) < 5*eps
-        clust_major(j) = k;
-        j = j+1;
-    end
-    
-end
-
-kx_major = kx(clust_major);
-
-
-%%
-% plot note_note_x
-for i = 1 : kmax
-    figure(2);
-    subplot(2,1,1);
-    plot(note_note_x{i,kmax} , '.');
-    hold on
-end
-Legend=cell(kmax,1);
-for iter=1:kmax
-    Legend{iter}=strcat('noteer ', num2str(iter));
-end
-legend(Legend);
-
-hold off
-subplot(2,1,2);
-plot( note_x, '.');
-
-base_array = cellfun(@length,note_tx);
-base_max = max (base_array(:,kmax));
-base = [1:base_max];
-
-% plot note_periodicity
-data = nan(base_max,kmax);
-
-for i = 1 : kmax
-    
-    data(1:base_array(i,kmax),i) = note_tx{i,kmax};
-    figure(3);
-    tx_disp(i) = plot(base,data(:,i),'.');
-    hold on
-end
-
-Legend=cell(kmax,1);
-for iter=1:kmax
-    Legend{iter}=strcat('noteer ', num2str(iter),': T = ', num2str(note_periodicity{iter,kmax}(1)), '; eps = ', num2str(note_periodicity{iter,kmax}(2)), '; R = ', num2str(note_periodicity{iter,kmax}(3)));
-end
-legend(Legend);
-
-title('Linear regression of t_{x,k}');
-xlabel('k');
-ylabel('t_{x,k}, s');
 hold off

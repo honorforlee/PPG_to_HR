@@ -52,7 +52,7 @@ for k = 1:length(tx)                          % if minimum out of frame, take ne
     if tx(k) >= tx_N(k)
         delta(k) = sx(k) - sx_N(k);         
     else
-        delta(k)=sx(k) - sx_N(k+1);
+        delta(k) = sx(k) - sx_N(k+1);
     end
 end
 
