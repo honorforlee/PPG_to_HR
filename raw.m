@@ -1,9 +1,9 @@
 %Name = '3900679m';       % row 5
-Name = '3801060_0007m';  % row 1
+%Name = '3801060_0007m';  % row 1
 %Name = '3914288m';       % row 5
 %Name = '3919370m';       % row 5
 %Name = '3916979m (1)';     % row 6  
-%Name = '3916979m (3)';     % row 6  
+Name = '3916979m (3)';     % row 6  
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -16,7 +16,7 @@ dt0 = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 
 fclose(fid);
 
 t0 = (1:length(val)) * dt0;            % timeline
-s0 = val(1,1:length(val));
+s0 = val(6,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -26,7 +26,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,4);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,8);
     
 
 %  - Peaks identification -
@@ -171,7 +171,7 @@ for k = 1:L(2)
         end
         
         NOTE(k) = mean(clust_cell{k,3});
-        clust_note(k) = (0.5 * NOTE(k) + 0.3 * SIZE(k)) / (PER_eps(k)/0.2);             % cluster note EMPIRICAL
+        clust_note(k) = (0.6 * NOTE(k) + 0.2 * SIZE(k)) / (PER_eps(k)/0.2);             % cluster note EMPIRICAL
         
     else
         SIZE(k) = length(clust_cell{k,1});
@@ -214,13 +214,25 @@ clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
     if NOTE(k) > 0
-        if var([clust_note_major clust_note(k)],1) < 3*eps && k ~= major_idx   % EMPIRICAL
-            clust_note_major = clust_note(k) * ( L(2) - sum(isnan(X(:,k))) ) + clust_note_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+        if var([clust_note_major clust_note(k)],1) < 7*eps && k ~= major_idx       % EMPIRICAL
+            if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL
+                NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                clust_merge(:,k) = X(:,k);
+                NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); 
+            end
+        else
+            if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL
+            NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
             clust_merge(:,k) = X(:,k);
-            clust_note_major = clust_note_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+            NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); 
+            end
+           
         end
     end     
 end
+%             clust_note_major = clust_note(k) * ( L(2) - sum(isnan(X(:,k))) ) + clust_note_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+%             clust_merge(:,k) = X(:,k);
+%             clust_note_major = clust_note_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
 
 % for k = 1:L(2)
 %     if NOTE(k) > 0
@@ -279,28 +291,45 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
 end
 
 if find(kx_add==0)                      % one imaginary peak to create
-    zeros = find(kx_add==0);            % indexes to create peak
+    zeros = find(kx_add==0);            % indexes where create a peak
     tx_pos(isnan(tx_pos)) = [];         % remove nan values
-    T_temp = mean(tx_pos);              % peaks period omitting peak missing
+    T_temp = mean(tx_pos);              % peaks period (not considering missing peak)
     
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert: function to insert value in array
     
     for k = 1:length(zeros)
-        tx_major = insert(tx_major(zeros(k)) + T_temp, tx_major, zeros(k)); % insert tx_major
+        kx_major = insert(kx_major(zeros(k)), kx_major, zeros(k) );
+        kx_add = insert(kx_add(zeros(k)), kx_add, zeros(k));
+        tx_major = insert(tx_major(zeros(k)), tx_major, zeros(k)); % insert tx_major
         sx_major = insert(sx_major(zeros(k)), sx_major, zeros(k) );         % inset sx_major at added time 
         zeros = bsxfun(@plus , zeros, ones(1,length(zeros)));               % shift index of zeros when adding one element in tx_major, sx_major
     end
    
+    kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
+    kx_major(isnan(kx_major)) = [];             % remove NaN values
+    kx_major = unique(kx_major);                % sort
+    
+    for k = 1:length(kx_major)-1
+        if kx_major(k)~=kx_major(k+1)
+    tx_major(k+1) = td(kx_major(k)) + (td(kx_major(k)+1)-td(kx_major(k))) .* d(kx_major(k))./(d(kx_major(k))-d(kx_major(k)+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+        else
+    tx_major(k+1) = tx_major(k) + T_temp;
+        end
+    sx_major(k) = s_(kx_major(k)+1);                  % local maxima
+    end
 else
     kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
     kx_major(isnan(kx_major)) = [];             % remove NaN values
     kx_major = unique(kx_major);                % sort
     
-    tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-    sx_major = s_(kx_major+1);                  % local maxima
+    tx_major_ = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+    sx_major_ = s_(kx_major+1);                  % local maxima
+    
+    
 end
 
 T = mean(delta_tx(tx_major));
+
 
 % REMOVE PEAK FROM MAJOR CLUSTER
 tx_neg = delta_tx(tx_major);
@@ -317,7 +346,6 @@ tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_ma
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
 
-%%
 %   - Plots -
 figure(2);
 plot( tx , sx   , 'dr','MarkerSize',12);

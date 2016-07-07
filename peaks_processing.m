@@ -60,4 +60,4 @@ for k = 1:length(tx)                          % if minimum out of frame, take ne
     end
 end
 
-note_x = 0.1*note_1 + 0.2*note_2 + 0.7*delta;
+note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
