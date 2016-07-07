@@ -104,8 +104,8 @@ n = h.popupmenu_files.Value;
 h.dt0 = h.f_dt0{n};                         % timeline with the initial sampling time
 load([h.f_list{n} '.mat']);
 h.s0  = val(h.f_ppg_row{n}, :); %#ok<NODEF>
-k = find(h.s0 ~= h.s0(end),1,'last');       % index k: last non zero value
-h.s0  = h.s0(1:k);
+%k = find(h.s0 ~= h.s0(end),1,'last');       % index k: last non zero value
+%h.s0  = h.s0(1:k);
 h.s0  = (h.s0  - mean(h.s0 ))/sqrt(var(h.s0 ));
 if h.checkbox_ecg.Value
     h.ecg = val(h.f_ecg_row{n}, :);
@@ -734,20 +734,10 @@ else
 end
 
 function callback_sampling(h) %#ok<DEFNU>
-% h.frame_length = str2double(h.edit_frame_length.String);
-% h.slider_frame.Max = floor(60/h.frame_length); 
-% h.frame = h.slider_frame.Value;
-% h.value_frame.String = h.slider_frame.Value;
-
 h = quantize_input(h);
 guidata(h.output, h);
 
 function callback_t_int(h) %#ok<DEFNU>
-% h.frame_length = str2double(h.edit_frame_length.String);
-% h.slider_frame.Max = floor(60/h.frame_length); 
-% h.frame = h.slider_frame.Value;
-% h.value_frame.String = h.slider_frame.Value;
-
 h = quantize_input(h);
 h.value_t_int.String = h.slider_t_int.Value;
 guidata(h.output, h);

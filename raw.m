@@ -1,9 +1,9 @@
-%Name = '3900679m';       % row 5
+Name = '3900679m';       % row 5
 %Name = '3801060_0007m';  % row 1
 %Name = '3914288m';       % row 5
 %Name = '3919370m';       % row 5
 %Name = '3916979m (1)';     % row 6  
-Name = '3916979m (3)';     % row 6  
+%Name = '3916979m (3)';     % row 6  
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid);
@@ -25,8 +25,8 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,10,1);
-
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,10,6);
+    
 
 % %  - Peaks identification -
 % [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_); 
