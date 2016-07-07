@@ -28,13 +28,13 @@ end
 
 %   - Executes just before discrimination is made visible -
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
-scrsz = get(groot,'ScreenSize');
-set(gcf,'Units','pixels','Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]);
-set(0,'ScreenPixelsPerInch', 95);
-
 % scrsz = get(groot,'ScreenSize');
-% set(gcf,'Units','pixels','Position',[1 .5 scrsz(3)*0.8 scrsz(4)*0.9]);
-% set(0,'ScreenPixelsPerInch', 70);
+% set(gcf,'Units','pixels','Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]);
+% set(0,'ScreenPixelsPerInch', 95);
+
+scrsz = get(groot,'ScreenSize');
+set(gcf,'Units','pixels','Position',[1 .5 scrsz(3)*0.8 scrsz(4)*0.9]);
+set(0,'ScreenPixelsPerInch', 70);
 
 fl_ecg   = {}; ppg_ecg   = {}; ecg_ecg   = {}; dt0_ecg   = {};
 fl_noecg = {}; ppg_noecg = {}; ecg_noecg = {}; dt0_noecg = {};
@@ -222,16 +222,16 @@ end
 % [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 % if isempty(h.ft)
 %
-%     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t, h.s);
+%     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t, h.s);
 % else
-%     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
+%     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
 % end
 % [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 % if isempty(h.ft_)
 %
-%     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
+%     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ky_n,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
 % else
-%     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
+%     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ky_n,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
 % end
 
 function h = process_sig(h) %#ok<DEFNU>
@@ -240,21 +240,21 @@ function h = process_sig(h) %#ok<DEFNU>
 if isempty(h.ft)
     
     %   - Peaks identification -
-    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t_,h.s_);
+    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t_,h.s_);
     
     %   - Minimum variance algorithm -
     [h.kx_major,h.tx_major,h.sx_major, h.T] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, 0.1);
     
     
 else
-    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
+    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
 end
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
 if isempty(h.ft_)
     
-    [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
+    [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ky_n,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
 else
-    [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
+    [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ky_n,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
 end
 
 
@@ -275,7 +275,7 @@ else
 end
 
 
-function [kx,tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x] = signal_peaks(t,s)
+function [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);
 %td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
@@ -285,7 +285,7 @@ kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
 
 %   - Local maxima sx, maximum slope around sx -
-[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
+[tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
 
 %   - Hierarchical clustering (agglomerative) -
@@ -299,7 +299,7 @@ kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
 
 %   - Local maxima sx, maximum slope around sx -
-[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
+[tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
 % Initialization
 kmax_init = 6;
@@ -308,7 +308,7 @@ kmax_init = 6;
 % Remove oultiers
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
 
-[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
+[tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
 
 if diff(2,2) >= 1    % EMPIRICAL: no clustering if 2-clustering clusters are too close
     
@@ -792,8 +792,8 @@ end
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
 d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
-[kx,tx,sx, dhi, dlo,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
-[ky,ty,sy,d2hi,d2lo,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
+[kx,tx,sx, dhi, dlo,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
+[ky,ty,sy,d2hi,d2lo,~,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
 xl = h.axes.XLim;
 yl = h.axes.YLim;
 hold off
@@ -845,7 +845,7 @@ f = f/sum(f);
 f = [zeros(1,k) 1 zeros(1,k)] - f;
 ecg_hf = conv(h.ecg,f,'valid'); thf = h.t0(k+1:end-k);
 if sum(ecg_hf .^ 3) < 0; ecg_hf = -ecg_hf; secg = -1; else secg = 1; end
-[kx,tx,sx, dhi, dlo,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
+[kx,tx,sx, dhi, dlo,~,~,~,~,~,~] = signal_peaks(thf,ecg_hf);
 l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off

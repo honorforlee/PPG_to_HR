@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Local maxima sx, maximum slope around sx --
 
-function [tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx)
+function [tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx)
 
 d = s(2:end) -  s(1:end-1);
 %td = (  t(2:end) +  t(1:end-1) ) / 2;    % shift derivative timeline of t_spl/2
@@ -28,11 +28,15 @@ if kx_n(1) < kx(1)
     sx_N = s(kx_n( kx_index ) + 1);
     tx_N = td(kx_n( kx_index )) + (td(kx_n( kx_index )+1)-td(kx_n( kx_index ))) .* d(kx_n( kx_index ))./(d(kx_n( kx_index ))-d(kx_n( kx_index )+1));
 else
-    kx_index(1) = nan;
-    sx_N(1) = nan;
-    tx_N(1) = nan;
-    
-    for k = 2:length(kx)
+    j = 1;
+    while kx_n(1) > kx(j)                   % find first minima preceding maxima
+    kx_index(j) = nan;
+    sx_N(j) = nan;
+    tx_N(j) = nan;
+    j = j+1;
+    end
+        
+    for k = j:length(kx)
         kx_index(k) = max( find( kx_n < kx(k) ) );
         sx_N(k) = s(kx_n( kx_index(k) ) + 1);
         tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
