@@ -1,7 +1,7 @@
-%Name = '3900679m';         % row 5
-%Name = '3900497mB';         % row 6
+%Name = '3900497mB';        % row 6
+Name = '3900679m';         % row 5
 %Name = '3914288m';         % row 5
-Name = '3916979m (1)';     % row 6  
+%Name = '3916979m (1)';     % row 6  
 %Name = '3916979m (3)';     % row 6  
 %Name = '3919370m';         % row 5
 %Name = '3801060_0007m';    % row 1
@@ -17,7 +17,7 @@ dt0 = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 
 fclose(fid);
 
 t0 = (1:length(val)) * dt0;            % timeline
-s0 = val(6,1:length(val));
+s0 = val(5,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -27,9 +27,8 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,2);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,5);
     
-
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_); 
 
@@ -100,7 +99,6 @@ quant = 0.1;                         % LSB: vertical step
 % [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, 0.1);
 eps = 0.1;
 kx_ = kx;
-
 for i = 1:length(kx)
     if kx_(i) ~= 0
         
@@ -172,7 +170,7 @@ for k = 1:L(2)
         end
         
         NOTE(k) = mean(clust_cell{k,3});
-        clust_note(k) = (0.6 * NOTE(k) + 0.2 * SIZE(k)) / (PER_eps(k)/0.2);             % cluster note EMPIRICAL
+        clust_note(k) = (0.7 * NOTE(k) + 0.2 * SIZE(k)) / (PER_eps(k)/0.1);             % cluster note EMPIRICAL
         
     else
         SIZE(k) = length(clust_cell{k,1});
@@ -214,22 +212,22 @@ clust_merge = nan(Nrows(1),L(2));
 clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
-    if NOTE(k) > 1
+    if NOTE(k) > 1 && ~all(clust_note == 0)
         if var([clust_note_major clust_note(k)],1) < 7*eps && k ~= major_idx       % EMPIRICAL: compare cluter_note to max(cluster_note)
             if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster
                 NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                 clust_merge(:,k) = X(:,k);
                 NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); % new NOTE_major after merging
             end
-        elseif clust_note(k) == 0 
-            if var([NOTE_major NOTE(k)],1) < 10*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
+        end
+    elseif NOTE(k) > 1 
+        if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
             NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
             clust_merge(:,k) = X(:,k);
-            NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); 
-            end
-           
+            NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
         end
-    end     
+        
+    end
 end
 
 clust_merge(isnan(clust_merge)) = [];         % remove NaN values
@@ -244,10 +242,13 @@ T = mean(delta_tx(tx_major));
 
 %   - Modify cluster according to periodicity -
 % ADD PEAK TO MAJOR CLUSTER
+loop = 0;
+
+while loop < 2
 tx_pos = delta_tx(tx_major);
 kx_add = nan(1,length(kx_major));       % for horizontal concatenation
 
-for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
+    for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
     if tx_pos(k) > T + 0.5*T            % need enough large frame length to give weight to T
         left(k) = kx_major(k);
         right(k) = kx_major(k+1);
@@ -279,6 +280,8 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
 end
 
 [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,kx_add);
+loop = loop+1;
+end
 
 % REMOVE PEAK FROM MAJOR CLUSTER
 tx_neg = delta_tx(tx_major);
@@ -295,7 +298,6 @@ tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_ma
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
 
-%%
 %   - Plots -
 figure(2);
 plot( tx , sx   , 'dr','MarkerSize',12);
