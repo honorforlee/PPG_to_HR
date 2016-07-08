@@ -270,27 +270,28 @@ if find(kx_add==0)                      % one imaginary peak to create
     tx_pos(isnan(tx_pos)) = [];         % remove nan values
     T_temp = mean(tx_pos);              % peaks period (not considering missing peak)
     
-    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert: function to insert value in array
+    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
     
     for k = 1:length(zeros)
         kx_major = insert(kx_major(zeros(k)), kx_major, zeros(k) );
-        kx_add = insert(kx_add(zeros(k)), kx_add, zeros(k));
-        tx_major = insert(tx_major(zeros(k)), tx_major, zeros(k)); % insert tx_major
-        sx_major = insert(sx_major(zeros(k)), sx_major, zeros(k) );         % inset sx_major at added time 
+        kx_add(zeros(k)) = nan;
+        kx_add = insert(nan, kx_add, zeros(k));
+
         zeros = bsxfun(@plus , zeros, ones(1,length(zeros)));               % shift index of zeros when adding one element in tx_major, sx_major
     end
-   
+        
+    
     kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
     kx_major(isnan(kx_major)) = [];             % remove NaN values
-    kx_major = sort(kx_major);                   % sort
+    kx_major = sort(kx_major);                  % sort
     
-    for k = 1:length(kx_major)-1
-        if kx_major(k)~=kx_major(k+1)
+    for k = 1:length(kx_major)-1                % peak to add     
+        if kx_major(k)~=kx_major(k+1)           
     tx_major(k+1) = td(kx_major(k)) + (td(kx_major(k)+1)-td(kx_major(k))) .* d(kx_major(k))./(d(kx_major(k))-d(kx_major(k)+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-        else
+        else                                    % peak to create
     tx_major(k+1) = tx_major(k) + T_temp;
         end
-    sx_major(k) = s_(kx_major(k)+1);                  % local maxima
+    sx_major(k) = s_(kx_major(k)+1);            % local maxima
     end
 else
     kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
