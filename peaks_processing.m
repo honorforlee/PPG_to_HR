@@ -46,9 +46,6 @@ end
 
 %   - Peaks notation
 note_1 = sx;
-for k = 2:length(kx)-1
-    note_1(k) = sx(k) - ( sx(k+1) - sx(k-1) )/2;  % average peak value (doubled)
-end
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
@@ -58,6 +55,12 @@ for k = 1:length(tx)                          % if minimum out of frame, take ne
     else
         delta(k) = sx(k) - sx_N(k+1);
     end
+end
+note_3 = delta;
+
+for k = 2:length(kx)-1
+    note_1(k) = sx(k) - ( sx(k+1) - sx(k-1) )/2;  % average peak value (doubled)
+    note_3(k) = 2*delta(k) - ( delta(k+1) - delta(k-1) ); 
 end
 
 note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;

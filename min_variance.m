@@ -3,6 +3,7 @@
 
 function [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, eps)
 kx_ = kx;
+
 for i = 1:length(kx)
     if kx_(i) ~= 0
         
@@ -88,19 +89,27 @@ end
 tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','VariableNames',{'Cluster','Size','T','eps','R','Note_x','Cluster_note'})
 
 %   - Major cluster -
+if L(2) >= 2            % more than 1 cluster
 for k = 1:L(2)
-    if NOTE(k) > 0
+    if NOTE(k) > 1
         clust_note_pos(k) = clust_note(k);
     end
 end
-
-if all(clust_note == 0)      % all cluster have zero note (all size <= 2)
+if all(clust_note_pos == 0)      % all cluster have zero note (all size <= 2)
 [NOTE_major major_idx] = max(NOTE);
 kx_major = clust_cell{major_idx,1}'; 
-else
+else 
 [clust_note_major major_idx] = max(clust_note_pos);
 kx_major = clust_cell{major_idx,1}';
 NOTE_major = NOTE(major_idx);
+end
+
+else
+    major_idx=1;
+    clust_note_pos = clust_note;
+    clust_note_major = clust_note;
+    NOTE_major = NOTE;
+    kx_major = clust_cell{1,1}';
 end
 
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing) DEBUG
@@ -116,7 +125,7 @@ clust_merge = nan(Nrows(1),L(2));
 clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
-    if NOTE(k) > 1 && ~all(clust_note == 0)
+    if NOTE(k) > 1 && ~all(clust_note_pos == 0)
         if var([clust_note_major clust_note(k)],1) < 7*eps && k ~= major_idx       % EMPIRICAL: compare cluter_note to max(cluster_note)
             if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster
                 NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
@@ -149,12 +158,11 @@ kx_major(1,1:length(clust_merge)) = clust_merge;
 
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
-T = mean(delta_tx(tx_major));
 
 %   - Modify cluster according to periodicity -
 % ADD PEAK TO MAJOR CLUSTER
 loop = 0;
-
+T = mean(delta_tx(tx_major));
 while loop < 2
 tx_pos = delta_tx(tx_major);
 kx_add = nan(1,length(kx_major));       % for horizontal concatenation

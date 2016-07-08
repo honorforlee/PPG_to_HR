@@ -245,7 +245,6 @@ if isempty(h.ft)
     %   - Minimum variance algorithm -
     [h.kx_major,h.tx_major,h.sx_major, h.T] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, 0.1);
     
-    
 else
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
 end

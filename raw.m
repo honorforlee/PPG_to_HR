@@ -1,8 +1,7 @@
 %Name = '3900497mB';        % row 6
-Name = '3900679m';         % row 5
+%Name = '3900679m';         % row 5
 %Name = '3914288m';         % row 5
-%Name = '3916979m (1)';     % row 6  
-%Name = '3916979m (3)';     % row 6  
+Name = '3916979m (5)';     % row 6  (1 : 5)
 %Name = '3919370m';         % row 5
 %Name = '3801060_0007m';    % row 1
 
@@ -17,7 +16,7 @@ dt0 = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 
 fclose(fid);
 
 t0 = (1:length(val)) * dt0;            % timeline
-s0 = val(5,1:length(val));
+s0 = val(6,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -27,7 +26,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,5);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,1);
     
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_); 
@@ -184,20 +183,30 @@ end
 tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','VariableNames',{'Cluster','Size','T','eps','R','Note_x','Cluster_note'})
 
 %   - Major cluster -
+if L(2) >= 2            % more than 1 cluster
 for k = 1:L(2)
-    if NOTE(k) > 0
+    if NOTE(k) > 1
         clust_note_pos(k) = clust_note(k);
     end
 end
-
-if all(clust_note == 0)      % all cluster have zero note (all size <= 2)
+if all(clust_note_pos == 0)      % all cluster have zero note (all size <= 2)
 [NOTE_major major_idx] = max(NOTE);
 kx_major = clust_cell{major_idx,1}'; 
-else
+else 
 [clust_note_major major_idx] = max(clust_note_pos);
 kx_major = clust_cell{major_idx,1}';
 NOTE_major = NOTE(major_idx);
 end
+
+else
+    major_idx=1;
+    clust_note_pos = clust_note;
+    clust_note_major = clust_note;
+    NOTE_major = NOTE;
+    kx_major = clust_cell{1,1}';
+end
+
+
 
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing) DEBUG
 sx_major = s_(kx_major+1);                                                                                % DEBUG
@@ -212,15 +221,22 @@ clust_merge = nan(Nrows(1),L(2));
 clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
-    if NOTE(k) > 1 && ~all(clust_note == 0)
+    if NOTE(k) > 1 && ~all(clust_note_pos == 0)
         if var([clust_note_major clust_note(k)],1) < 7*eps && k ~= major_idx       % EMPIRICAL: compare cluter_note to max(cluster_note)
             if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster
                 NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                 clust_merge(:,k) = X(:,k);
                 NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); % new NOTE_major after merging
             end
+        else
+            if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
+                NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                clust_merge(:,k) = X(:,k);
+                NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+            end
+            
         end
-    elseif NOTE(k) > 1 
+    elseif  NOTE(k) > 1 && all(clust_note == 0)
         if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
             NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
             clust_merge(:,k) = X(:,k);
