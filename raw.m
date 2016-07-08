@@ -1,7 +1,7 @@
 %Name = '3900679m';         % row 5
-Name = '3900497mB';         % row 6
+%Name = '3900497mB';         % row 6
 %Name = '3914288m';         % row 5
-%Name = '3916979m (1)';     % row 6  
+Name = '3916979m (1)';     % row 6  
 %Name = '3916979m (3)';     % row 6  
 %Name = '3919370m';         % row 5
 %Name = '3801060_0007m';    % row 1
@@ -27,7 +27,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,1);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,2);
     
 
 %  - Peaks identification -
@@ -214,7 +214,7 @@ clust_merge = nan(Nrows(1),L(2));
 clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
-    if NOTE(k) > 0
+    if NOTE(k) > 1
         if var([clust_note_major clust_note(k)],1) < 7*eps && k ~= major_idx       % EMPIRICAL: compare cluter_note to max(cluster_note)
             if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster
                 NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
@@ -247,7 +247,6 @@ T = mean(delta_tx(tx_major));
 tx_pos = delta_tx(tx_major);
 kx_add = nan(1,length(kx_major));       % for horizontal concatenation
 
-while ~all(abs(normlist(tx_pos)) <=1)
 for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
     if tx_pos(k) > T + 0.5*T            % need enough large frame length to give weight to T
         left(k) = kx_major(k);
@@ -280,8 +279,6 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
 end
 
 [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,kx_add);
-tx_pos = delta_tx(tx_major);
-end
 
 % REMOVE PEAK FROM MAJOR CLUSTER
 tx_neg = delta_tx(tx_major);
@@ -297,6 +294,7 @@ kx_major = unique(kx_major);                % sort
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
+
 %%
 %   - Plots -
 figure(2);
