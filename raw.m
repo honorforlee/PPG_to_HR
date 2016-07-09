@@ -2,6 +2,7 @@
 %Name = '3900679m';         % row 5
 %Name = '3914288m';         % row 5
 Name = '3916979m (5)';     % row 6  (1 : 5)
+
 %Name = '3919370m';         % row 5
 %Name = '3801060_0007m';    % row 1
 
@@ -26,7 +27,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,7,1);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,1);
     
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_); 
@@ -185,7 +186,7 @@ tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','
 %   - Major cluster -
 if L(2) >= 2            % more than 1 cluster
 for k = 1:L(2)
-    if NOTE(k) > 1
+    if NOTE(k) > 0
         clust_note_pos(k) = clust_note(k);
     end
 end
@@ -221,7 +222,7 @@ clust_merge = nan(Nrows(1),L(2));
 clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
-    if NOTE(k) > 1 && ~all(clust_note_pos == 0)
+    if NOTE(k) > 0 && ~all(clust_note_pos == 0)
         if var([clust_note_major clust_note(k)],1) < 7*eps && k ~= major_idx       % EMPIRICAL: compare cluter_note to max(cluster_note)
             if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster
                 NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
@@ -236,7 +237,7 @@ for k = 1:L(2)
             end
             
         end
-    elseif  NOTE(k) > 1 && all(clust_note == 0)
+    elseif  NOTE(k) > 0 && all(clust_note == 0)
         if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
             NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
             clust_merge(:,k) = X(:,k);
@@ -295,7 +296,7 @@ kx_add = nan(1,length(kx_major));       % for horizontal concatenation
     
 end
 
-[kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,kx_add);
+[kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,kx_add);
 loop = loop+1;
 end
 
@@ -313,7 +314,7 @@ kx_major = unique(kx_major);                % sort
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
 T = mean(delta_tx(tx_major));
-
+%%
 %   - Plots -
 figure(2);
 plot( tx , sx   , 'dr','MarkerSize',12);

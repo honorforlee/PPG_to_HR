@@ -3,7 +3,6 @@
 
 function [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, eps)
 kx_ = kx;
-
 for i = 1:length(kx)
     if kx_(i) ~= 0
         
@@ -91,7 +90,7 @@ tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','
 %   - Major cluster -
 if L(2) >= 2            % more than 1 cluster
 for k = 1:L(2)
-    if NOTE(k) > 1
+    if NOTE(k) > 0
         clust_note_pos(k) = clust_note(k);
     end
 end
@@ -112,6 +111,8 @@ else
     kx_major = clust_cell{1,1}';
 end
 
+
+
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing) DEBUG
 sx_major = s_(kx_major+1);                                                                                % DEBUG
 
@@ -125,7 +126,7 @@ clust_merge = nan(Nrows(1),L(2));
 clust_merge(:,major_idx) = X(:,major_idx);
 
 for k = 1:L(2)
-    if NOTE(k) > 1 && ~all(clust_note_pos == 0)
+    if NOTE(k) > 0 && ~all(clust_note_pos == 0)
         if var([clust_note_major clust_note(k)],1) < 7*eps && k ~= major_idx       % EMPIRICAL: compare cluter_note to max(cluster_note)
             if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster
                 NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
@@ -140,7 +141,7 @@ for k = 1:L(2)
             end
             
         end
-    elseif  NOTE(k) > 1 && all(clust_note == 0)
+    elseif  NOTE(k) > 0 && all(clust_note == 0)
         if var([NOTE_major NOTE(k)],1) < 7*eps && k ~= major_idx               % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
             NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
             clust_merge(:,k) = X(:,k);
@@ -158,11 +159,12 @@ kx_major(1,1:length(clust_merge)) = clust_merge;
 
 tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 sx_major = s_(kx_major+1);          % local maxima
+T = mean(delta_tx(tx_major));
 
 %   - Modify cluster according to periodicity -
 % ADD PEAK TO MAJOR CLUSTER
 loop = 0;
-T = mean(delta_tx(tx_major));
+
 while loop < 2
 tx_pos = delta_tx(tx_major);
 kx_add = nan(1,length(kx_major));       % for horizontal concatenation
@@ -198,7 +200,7 @@ kx_add = nan(1,length(kx_major));       % for horizontal concatenation
     
 end
 
-[kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,kx_add);
+[kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,kx_add);
 loop = loop+1;
 end
 

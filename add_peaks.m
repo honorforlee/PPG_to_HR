@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- add peaks to major cluster --
 
-function [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,kx_add)
+function [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos, kx_major,tx_major, kx_add)
 
 if find(kx_add==0)                      % imaginary peak to create & peak to add
     zeros = find(kx_add==0);            % indexes where create a peak
