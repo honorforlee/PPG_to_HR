@@ -1,5 +1,5 @@
 % Ivan NY HANITRA - Master thesis
-%       -- add peaks to major cluster --
+%       -- Add peaks to major cluster --
 
 function [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos, kx_major,tx_major, kx_add)
 
@@ -28,7 +28,7 @@ if find(kx_add==0)                      % imaginary peak to create & peak to add
         else                                    % peak to create
     tx_major(k+1) = tx_major(k) + T_temp;
         end
-    sx_major(k) = s_(kx_major(k)+1);            % local maxima
+    sx_major(k+1) = s_(kx_major(k)+1);        % local maxima
     end
 else                                            % peak to add only
     kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
