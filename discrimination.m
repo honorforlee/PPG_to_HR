@@ -140,6 +140,10 @@ h.dNds = str2double(h.edit_dNdS.String);                         % apply vertica
 h.frame_length = str2double(h.edit_frame_length.String);
 h.frame = str2double(h.edit_frame.String);
 
+if h.frame > floor(h.t0(end)/h.frame_length)
+    h.frame = floor(h.t0(end)/h.frame_length);
+end
+
 [h.t0_ h.s0_ h.t_ h.s_] = time_div(h.t0,h.s0,h.dt0, h.t,h.s,h.dt, h.frame_length,h.frame);
 
 h = grids(h);

@@ -59,8 +59,8 @@ end
 note_3 = delta;
 
 for k = 2:length(kx)-1
-    note_1(k) = sx(k) - ( sx(k+1) - sx(k-1) )/2;  % average peak value (doubled)
-    note_3(k) = 2*delta(k) - ( delta(k+1) - delta(k-1) ); 
+    note_1(k) = sx(k) - ( sx(k+1) - sx(k-1) )/2;            % average peak value
+    note_3(k) = delta(k) - ( delta(k+1) - delta(k-1) )/2;   % average peak to peak value
 end
 
 note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;

@@ -142,7 +142,7 @@ if L(2) >= 2                                             % more than 1 cluster
                 NOTE_major = NOTE(major_idx);
                 
                 for k = 1:L(2)
-                    if clust_note(k)~= 0 && var([clust_note_major clust_note(k)],1) < 7*eps && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k) > 1      % EMPIRICAL: compare cluter_note to max(cluster_note)
+                    if clust_note(k) > 1 && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k) > 1      % EMPIRICAL: compare cluter_note to max(cluster_note)
                         NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                         clust_merge(:,k) = X(:,k);
                         NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
@@ -179,68 +179,100 @@ else                                                    % one cluster only
     NOTE_major = NOTE;
 end
 
-if length(kx_major) > 2
-%   - Major peaks -
-tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-sx_major = s_(kx_major+1);          % local maxima
-T = mean(delta_tx(tx_major));
-
-%   - Rectify major cluster considering peak periodicity -
-% Search for missing peaks
-loop = 0;
-while loop < 2
-    tx_pos = delta_tx(tx_major);
-    kx_add = nan(1,length(kx_major));       % for horizontal concatenation
+if length(kx_major) >= 2
+    %   - Major peaks -
+    tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+    sx_major = s_(kx_major+1);          % local maxima
+    T = mean(delta_tx(tx_major));
+   
+    %   - Rectify major cluster considering peak periodicity -
+    % Periodic peaks in row
+    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
+    tx_rect = delta_tx(tx);
     
-    for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
-        if tx_pos(k) > T + 0.5*T            % need enough large frame length to give weight to T
-            left(k) = kx_major(k);
-            right(k) = kx_major(k+1);
-            kx_add_ = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
-            
-            if length(kx_add_) == 1         % one peak present in the hole
-                kx_add(k) = kx_add_;
-                
-            elseif length(kx_add_) >= 2     % more than one peak present in the hole
-                for i = 1:length(kx_add_)
-                    kx_add_idx(i) = find(kx == kx_add_(i));
-                    kx_add_note(i) = note_x(kx_add_idx(i));
-                end
-                
-                [value kx_add_max] = max(kx_add_note);
-                kx_add(k) = kx_add_(kx_add_max);        % max note_x index added to major cluster
-                
-                clearvars kx_add_idx kx_add_note kx_add_max value ;
-                
-            else                            % no peak present in the hole => create peak
-                kx_add_ = nan;
-                tx_pos(k) = nan;            % to compute T not affected by missing tx_major
-                kx_add(k) = 0;
-                
+    for k = 1:length(tx_rect)-1
+       if abs( tx_rect(k) - T )/T < 0.5             % less than 50% relative error from T
+            if abs( note_x(k) - note_x(k+1) ) < 0.5 && ~any(kx_major == kx(k))          % similar note_x and kx not present in kx_major
+                kx_major = insert(kx(k), kx_major, k - 1 );
             end
-            clearvars kx_add_;
+       end
+    end
+    
+    
+    % Search for missing peaks
+    loop = 0;
+    while loop < 2
+        tx_pos = delta_tx(tx_major);
+        kx_add = nan(1,length(kx_major));       % for horizontal concatenation
+        
+        for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
+            if tx_pos(k) > T + 0.5*T            % need enough large frame length to give weight to T
+                left(k) = kx_major(k);
+                right(k) = kx_major(k+1);
+                kx_add_ = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
+                
+                if length(kx_add_) == 1         % one peak present in the hole
+                    if var([NOTE_major note_x(kx==kx_add_)],1) < 7*eps
+                        kx_add(k) = kx_add_;
+                    else
+                        kx_add(k) = nan;
+                    end
+                elseif length(kx_add_) >= 2     % more than one peak present in the hole
+                    for i = 1:length(kx_add_)
+                        kx_add_idx(i) = find(kx == kx_add_(i));
+                        kx_add_note(i) = note_x(kx_add_idx(i));
+                    end
+                    
+                    [value kx_add_max] = max(kx_add_note);
+                    if var([NOTE_major note_x(kx==kx_add_max)],1) < 7*eps
+                        kx_add(k) = kx_add_(kx_add_max);        % max note_x index added to major cluster
+                    else
+                        kx_add(k) = nan;
+                    end
+                    clearvars kx_add_idx kx_add_note kx_add_max value ;
+                    
+                else                            % no peak present in the hole => create peak
+                    kx_add_ = nan;
+                    tx_pos(k) = nan;            % to compute T not affected by missing tx_major
+                    kx_add(k) = 0;
+                    
+                end
+                clearvars kx_add_;
+            end
+            
         end
         
+        % Add/create peak to major cluster
+        [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,sx_major,kx_add);
+        loop = loop+1;
     end
     
-    % Add/create peak to major cluster
-    [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,sx_major,kx_add);
-    loop = loop+1;
-end
+    % Remove peak from major cluster
+    loop = 0;
+    tx_neg = delta_tx(tx_major);
+    loop_ = length(tx_neg);
+    i=1;
+    
+    while loop < loop_
+        for k = i:length(tx_neg)-1
+            if tx_neg(k) < T - T*0.5     
+                kx_major(k+1) = [];
+                tx_major(k+1) = [];
+                sx_major(k+1) = [];  
+                
+                tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
+                T = mean(delta_tx(tx_major));
+                i=k;                                % start after peak removal
+                break
+            end
+                        
+        end
 
-% Remove peak from major cluster
-tx_neg = delta_tx(tx_major);
-for k = 1:length(tx_neg)-1
-    if tx_neg(k) < T - T*0.5 && tx_neg(k+1) <  T - T*0.5     % remove peaks - another loop because of matrix size inconsistency
-        kx_major(k+1) = [];
-        tx_major(k+1) = [];
-        sx_major(k+1) = [];
-        
+        loop = loop +1;
     end
-end
-
-T = mean(delta_tx(tx_major));
-
+    
+    clearvars i;
+    
 else
     display('Not enough points');
     tx_major = nan;
