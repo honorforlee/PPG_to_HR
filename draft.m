@@ -281,29 +281,52 @@ if length(kx_major) >= 2
     tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
     sx_major = s_(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
-   
+    
     %   - Rectify major cluster considering peak periodicity -
     % Periodic peaks in row
-    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
     tx_rect = delta_tx(tx);
-    kx_major_ = nan(1,length(kx)); 
-    kx_major_(1:length(kx_major)) = kx_major;
+    
+    kx_major_ = nan(1,length(kx)+length(kx_major));
+    kx_major_(1:length(kx_major)) = kx_major;        % length(kx_major) < length(kx)
     
     for k = 1:length(tx_rect)
         if abs( tx_rect(k) - T )/T < 0.5             % less than 50% relative error from T
-            if abs( note_x(k) - note_x(k+1) ) < 0.5 && ~any(kx_major == kx(k))          % similar note_x and kx not present in kx_major
-                kx_major_ = insert(kx(k), kx_major_, k - 1 );              
+            if abs( note_x(k) - note_x(k+1) )/note_x(k) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
+                kx_major_(length(kx_major)+k) = kx(k);
+                kx_major_(length(kx_major)+k+1) = kx(k+1);
             end
         end
     end
     
     kx_major_(isnan(kx_major_))=[];
-    kx_major = kx_major_;
+    kx_major = unique(kx_major_);
     
     tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
     sx_major = s_(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
     
+        % Periodic peaks separated by minor peak
+    tx_rect2 = delta_tx(tx,2);
+    
+    kx_major_ = nan(1,length(kx)+length(kx_major));
+    kx_major_(1:length(kx_major)) = kx_major;        % length(kx_major) < length(kx)
+    
+    for k = 1:length(tx_rect2)
+        if abs( tx_rect2(k) - T )/T < 0.5             % less than 50% relative error from T
+            if abs( note_x(k) - note_x(k+2) )/note_x(k) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )          % similar note_x and kx not present in kx_major
+                kx_major_(length(kx_major)+k) = kx(k);
+                kx_major_(length(kx_major)+k+1) = kx(k+2);
+            end
+        end
+    end
+    
+    kx_major_(isnan(kx_major_))=[];
+    kx_major = unique(kx_major_);
+    
+    tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+    sx_major = s_(kx_major+1);          % local maxima
+    T = mean(delta_tx(tx_major));
+            
     % Search for missing peaks
     loop = 0;
     while loop < 2
@@ -360,19 +383,19 @@ if length(kx_major) >= 2
     
     while loop < loop_
         for k = i:length(tx_neg)-1
-            if tx_neg(k) < T - T*0.5     
+            if tx_neg(k) < T - T*0.5
                 kx_major(k+1) = [];
                 tx_major(k+1) = [];
-                sx_major(k+1) = [];  
+                sx_major(k+1) = [];
                 
                 tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
                 T = mean(delta_tx(tx_major));
                 i=k;                                % start after peak removal
                 break
             end
-                        
+            
         end
-
+        
         loop = loop +1;
     end
     
