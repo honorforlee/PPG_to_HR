@@ -194,7 +194,7 @@ if length(kx_major) >= 2
     
     for k = 1:length(tx_rect)
         if abs( tx_rect(k) - T )/T < 0.5             % less than 50% relative error from T
-            if abs( note_x(k) - note_x(k+1) )/note_x(k) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
+            if abs( (note_x(k) - note_x(k+1))/note_x(k) ) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+1);
             end
@@ -216,7 +216,7 @@ if length(kx_major) >= 2
     
     for k = 1:length(tx_rect2)
         if abs( tx_rect2(k) - T )/T < 0.5             % less than 50% relative error from T
-            if abs( note_x(k) - note_x(k+2) )/note_x(k) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )          % similar note_x and kx not present in kx_major
+            if abs( (note_x(k) - note_x(k+2)) /note_x(k)) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )          % similar note_x and kx not present in kx_major
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+2);
             end
@@ -287,9 +287,16 @@ if length(kx_major) >= 2
     while loop < loop_
         for k = i:length(tx_neg)-1
             if tx_neg(k) < T - T*0.5
+                
+                if note_x(k) > note_x(k+1)
                 kx_major(k+1) = [];
                 tx_major(k+1) = [];
                 sx_major(k+1) = [];
+                else 
+                kx_major(k) = [];
+                tx_major(k) = [];
+                sx_major(k) = [];
+                end
                 
                 tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
                 T = mean(delta_tx(tx_major));

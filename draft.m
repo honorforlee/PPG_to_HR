@@ -29,7 +29,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,4);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,12);
 
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
@@ -291,7 +291,7 @@ if length(kx_major) >= 2
     
     for k = 1:length(tx_rect)
         if abs( tx_rect(k) - T )/T < 0.5             % less than 50% relative error from T
-            if abs( note_x(k) - note_x(k+1) )/note_x(k) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
+            if abs( (note_x(k) - note_x(k+1))/note_x(k) ) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+1);
             end
@@ -312,8 +312,8 @@ if length(kx_major) >= 2
     kx_major_(1:length(kx_major)) = kx_major;        % length(kx_major) < length(kx)
     
     for k = 1:length(tx_rect2)
-        if abs( tx_rect2(k) - T )/T < 0.5             % less than 50% relative error from T
-            if abs( note_x(k) - note_x(k+2) )/note_x(k) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )          % similar note_x and kx not present in kx_major
+        if abs( tx_rect2(k) - T )/T < 0.5             % less than 50% relative error from T and avoid periodic minor peaks
+            if abs( (note_x(k) - note_x(k+2)) /note_x(k)) < 0.5 && abs( (note_x(k) - mean(note_x)) /mean(note_x) ) < 0.5 && abs( (note_x(k+2) - mean(note_x)) /mean(note_x) ) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )          % similar note_x and kx not present in kx_major
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+2);
             end
@@ -384,9 +384,16 @@ if length(kx_major) >= 2
     while loop < loop_
         for k = i:length(tx_neg)-1
             if tx_neg(k) < T - T*0.5
+                
+                if note_x(k) > note_x(k+1)
                 kx_major(k+1) = [];
                 tx_major(k+1) = [];
                 sx_major(k+1) = [];
+                else 
+                kx_major(k) = [];
+                tx_major(k) = [];
+                sx_major(k) = [];
+                end
                 
                 tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
                 T = mean(delta_tx(tx_major));
