@@ -41,7 +41,7 @@ else
         sx_N(k) = s(kx_n( kx_index(k) ) + 1);
         tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
     end
-    
+  clearvars j;  
 end
 
 %   - Peaks notation
@@ -49,11 +49,16 @@ note_1 = sx;
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-for k = 1:length(tx)                          % if minimum out of frame, take next min for delta 
+for k = 1:length(tx)                          
     if tx(k) >= tx_N(k)
-        delta(k) = sx(k) - sx_N(k);         
-    else
-        delta(k) = sx(k) - sx_N(k+1);
+        delta(k) = sx(k) - sx_N(k);
+    else                                     % if minimum out of frame, take first min in the frame 
+        j = k;  
+        while isnan(sx_N(j))                
+            j = j+1;
+        end
+        delta(k) = sx(k) - sx_N(j);
+        clearvars j; 
     end
 end
 note_3 = delta;
