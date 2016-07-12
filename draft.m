@@ -6,8 +6,10 @@
 %Name = '3919370m (1)';     % row 5
 %Name = '3919370m';         % row 5
 %Name = '3801060_0007m';    % row 1
-Name = '3899985_0005m';    % row 1
-%Name = 'a02m';               % row 1
+%Name = '3899985_0005m';    % row 1
+%Name = 'a02m';             % row 1
+
+Name = 'Ivan_100m';           % row 1
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -19,18 +21,20 @@ dt0 = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 
 
 fclose(fid);
 
+val(isnan(val)) = [];
 t0 = (1:length(val)) * dt0;            % timeline
 s0 = val(1,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
+
 %   - Timeline, noise, integration, quantization -
-dt = 1/20;                           % sampling time: dt >> dt0
+dt = 1/200;                           % sampling time: dt >> dt0
 t_int = dt * (1/3);                  % integration time: dt0 <= t_int < dt
 quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,4);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,1);
 
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
@@ -419,7 +423,8 @@ end
 figure(2);
 plot( tx , sx   , 'dr','MarkerSize',12);
 hold on
-plot(t_,s_,'-k','LineWidth',.2);
+plot(t_,s_,'ok','LineWidth',.2);
+plot(t0_,s0_,'-k');
 plot(tx, dhi,'c^','MarkerSize',12);
 plot(tx, dlo,'cv','MarkerSize',12);
 plot( kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]), '-c');       % link note_2
