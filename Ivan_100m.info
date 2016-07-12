@@ -1,0 +1,9 @@
+Source: Measurement of PPG signal on 31.05.2016 with f_PWM = 8.1 kHz, PWM_DC = 100%
+val has 1 row (signal) and 50000 columns (samples/signal)
+Duration:     1:00
+Sampling frequency: 1.694e3 Hz  Sampling interval: 0.0059 sec
+Row	Signal	Gain	Base	Units
+1	PLETH	1023	0	NU
+
+To convert from raw units to the physical units shown
+above, subtract 'base' and divide by 'gain'.
