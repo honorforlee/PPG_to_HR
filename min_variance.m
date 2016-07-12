@@ -185,6 +185,9 @@ if length(kx_major) >= 2
     sx_major = s_(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
     
+    % - Remove some merged peaks -
+    [kx_major,tx_major,sx_major,T] = remove_peaks(kx_major,tx_major,sx_major, T, kx,note_x);
+    
     %   - Add peaks to major cluster considering peaks periodicity -
     % Periodic peaks in row
     tx_rect = delta_tx(tx);
@@ -220,7 +223,7 @@ if length(kx_major) >= 2
     
     for k = 1:length(tx_rect2)
         if abs( tx_rect2(k) - T )/T < 0.5             % less than 50% relative error from T and avoid periodic minor peaks
-            if abs( (note_x(k) - note_x(k+2)) /note_x(k)) < 0.5 && abs( note_x(k) - NOTE_major )/ NOTE_major < 0.2 && ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2))
+            if abs( (note_x(k) - note_x(k+2)) /note_x(k)) < 0.5 && abs( note_x(k) - NOTE_major )/ NOTE_major < 0.2 && ( ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+2);
             end
@@ -236,11 +239,12 @@ if length(kx_major) >= 2
     
     % Search for missing peaks
     
+    % Miss peaks inside the frame
     tx_pos = delta_tx(tx_major);
     kx_add = nan(1,length(kx_major));       % for horizontal concatenation
     
     for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
-        if tx_pos(k) > T + 0.5*T            % need enough large frame length to give weight to T
+        if tx_pos(k) > T + T/3            % need enough large frame length to give weight to T
             left(k) = kx_major(k);
             right(k) = kx_major(k+1);
             kx_add_ = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
@@ -282,40 +286,28 @@ if length(kx_major) >= 2
     end
     
     % Add/create peak to major cluster
-    [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,sx_major,kx_add);   
+    [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,sx_major,kx_add);
     
-    %   - Remove peaks from major cluster -
-    loop = 0;
-    tx_neg = delta_tx(tx_major);
-    loop_ = length(tx_neg);
-    i=1;
+    % Miss first peak
+    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
     
-    while loop < loop_                                 
-        for k = i:length(tx_neg)
-            if tx_neg(k) < T - T*0.5
-                
-                if note_x(kx==kx_major(k)) > note_x(kx==kx_major(k+1))      % compare which peak is more relevant
-                    kx_major(k+1) = [];
-                    tx_major(k+1) = [];
-                    sx_major(k+1) = [];
-                else
-                    kx_major(k) = [];
-                    tx_major(k) = [];
-                    sx_major(k) = [];
-                end
-                
-                tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
-                T = mean(delta_tx(tx_major));
-                i=k;                                % start after peak removal
-                break                               % exit for loop
-            end 
-            loop = loop +1;
-        end
-        
-        loop = loop +1;
+    if abs( tx(1) - tx_major(1) ) > T + T/5
+        kx_major = insert(kx(1),kx_major,0);
+        tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+        sx_major = insert(sx_major(1),sx_major,0);                                                                % for visibility
+        T = mean(delta_tx(tx_major));
     end
     
-    clearvars i;
+    % Miss last peak
+    if abs( tx(end) - tx_major(end) ) > T + T/5
+        kx_major = insert(kx(end),kx_major,length(kx_major));
+        tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+        sx_major = insert(sx_major(end),sx_major,length(sx_major));                                               % for visibility
+        T = mean(delta_tx(tx_major));
+    end
+    
+    %   - Remove peaks from major cluster -
+    [kx_major,tx_major,sx_major,T] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
     
 else
     display('Not enough points');
