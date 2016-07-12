@@ -75,7 +75,7 @@ for k = 1:L(2)
             PER_eps(k) = 0.1;
         end
         
-        NOTE(k) = mean(clust_cell{k,3});                                   % average note_x
+        NOTE(k) = mean(clust_cell{k,3});                                             % average note_x
         clust_note(k) = (0.7 * NOTE(k) + 0.2 * SIZE(k)) / (PER_eps(k)/0.1);          % cluster note EMPIRICAL
         
     else
@@ -89,7 +89,7 @@ end
 
 tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','VariableNames',{'Cluster','Size','T','eps','R','Note_x','Cluster_note'});
 
-%   - Major cluster + merge sub-major cluster -
+%   - Select major cluster + merge sub-major clusters -
 Nrows = max(cellfun(@numel,clust_cell));
 X = nan(Nrows(1),L(2));
 for iCol = 1:L(2)
@@ -104,18 +104,18 @@ if L(2) >= 2                                             % more than 1 cluster
         
         if all(NOTE <= 1)
             for k = 1:L(2)
-                if var([NOTE_major NOTE(k)],1) < 7*eps             % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
+                if var([NOTE_major NOTE(k)],1) < 7*eps                                            % EMPIRICAL: compare NOTE to NOTE of major cluster
                     NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-                    clust_merge(:,k) = X(:,k);
-                    NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                    clust_merge(:,k) = X(:,k);                                                    % merge cluster to major cluster
+                    NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );   % recompute NOTE_major
                 end
             end
         else
             for k = 1:L(2)
-                if var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k)>1                % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
+                if var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k)>1                                 % EMPIRICAL: compare NOTE to NOTE of major cluster
                     NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-                    clust_merge(:,k) = X(:,k);
-                    NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                    clust_merge(:,k) = X(:,k);                                                      % merge cluster to major cluster
+                    NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major
                 end
             end
         end
@@ -125,10 +125,10 @@ if L(2) >= 2                                             % more than 1 cluster
             kx_major = clust_cell{major_idx,1}';
             
             for k = 1:L(2)
-                if var([NOTE_major NOTE(k)],1) < 7*eps               % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
+                if var([NOTE_major NOTE(k)],1) < 7*eps                                               % EMPIRICAL: compare NOTE to NOTE of major cluster
                     NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-                    clust_merge(:,k) = X(:,k);
-                    NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                    clust_merge(:,k) = X(:,k);                                                       % merge cluster to major cluster
+                    NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );      % recompute NOTE_major
                 end
             end
             
@@ -142,14 +142,14 @@ if L(2) >= 2                                             % more than 1 cluster
                 NOTE_major = NOTE(major_idx);
                 
                 for k = 1:L(2)
-                    if clust_note(k) > 1 && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k) > 1      % EMPIRICAL: compare cluter_note to max(cluster_note)
+                    if clust_note(k) > 1 && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k) > 1      % EMPIRICAL: compare NOTE to NOTE of major cluster
                         NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-                        clust_merge(:,k) = X(:,k);
-                        NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                        clust_merge(:,k) = X(:,k);                                                  % merge cluster to major cluster
+                        NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); % recompute NOTE_major
                     elseif clust_note(k) == 0 && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k)>1
-                        NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-                        clust_merge(:,k) = X(:,k);
-                        NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                        NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); % EMPIRICAL: compare NOTE to NOTE of major cluster (that have max clust_note)
+                        clust_merge(:,k) = X(:,k);                                                  % merge cluster to major cluster
+                        NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); % recompute NOTE_major
                     end
                 end
                 
@@ -158,10 +158,10 @@ if L(2) >= 2                                             % more than 1 cluster
                 kx_major = clust_cell{major_idx,1}';
                 
                 for k = 1:L(2)
-                    if var([NOTE_major NOTE(k)],1) < 7*eps  && NOTE(k) > 1           % EMPIRICAL: compare NOTE to NOTE of major cluster - case cluster of 1/2 elements containing major peaks
+                    if var([NOTE_major NOTE(k)],1) < 7*eps  && NOTE(k) > 1                              % EMPIRICAL: compare NOTE to NOTE of major cluster
                         NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-                        clust_merge(:,k) = X(:,k);
-                        NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                        clust_merge(:,k) = X(:,k);                                                      % merge cluster to major cluster
+                        NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major
                     end
                 end
             end
@@ -185,7 +185,7 @@ if length(kx_major) >= 2
     sx_major = s_(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
     
-    %   - Rectify major cluster considering peak periodicity -
+    %   - Add peaks to major cluster considering peaks periodicity -
     % Periodic peaks in row
     tx_rect = delta_tx(tx);
     
@@ -220,11 +220,9 @@ if length(kx_major) >= 2
     
     for k = 1:length(tx_rect2)
         if abs( tx_rect2(k) - T )/T < 0.5             % less than 50% relative error from T and avoid periodic minor peaks
-            if abs( (note_x(k) - note_x(k+2)) /note_x(k)) < 0.5 && abs( note_x(k) - NOTE_major )/ NOTE_major < 0.2
-                if ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2))           % similar note_x and kx not present in kx_major
-                    kx_major_(length(kx_major)+k) = kx(k);
-                    kx_major_(length(kx_major)+k+1) = kx(k+2);
-                end
+            if abs( (note_x(k) - note_x(k+2)) /note_x(k)) < 0.5 && abs( note_x(k) - NOTE_major )/ NOTE_major < 0.2 && ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2))
+                kx_major_(length(kx_major)+k) = kx(k);
+                kx_major_(length(kx_major)+k+1) = kx(k+2);
             end
         end
     end
@@ -252,6 +250,7 @@ if length(kx_major) >= 2
                 if var([NOTE_major note_x(kx==kx_add_)],1) < 5*eps || note_x(kx==kx_add_) > NOTE_major || abs (tx_pos_temp/T) < 0.1
                     kx_add(k) = kx_add_;
                 else
+                    tx_pos(k) = nan;            % to compute T not affected by missing tx_major
                     kx_add(k) = 0;
                 end
                 clearvars kx_add_ tx_pos_temp;
@@ -263,11 +262,12 @@ if length(kx_major) >= 2
                 end
                 
                 [value kx_add_max] = max(kx_add_note);
-                tx_pos_temp = tx(kx==kx_add_max) - tx_major(k);
+                tx_pos_temp = tx(kx_add_idx(kx_add_max)) - tx_major(k);         % delta_tx from major peak to added peak
                 
-                if var([NOTE_major note_x(kx==kx_add_max)],1) < 5*eps || note_x(kx==kx_add_max) > NOTE_major || abs (tx_pos_temp/T) < 0.1
+                if var([NOTE_major value],1) < 5*eps || value > NOTE_major || abs (tx_pos_temp/T) < 0.1
                     kx_add(k) = kx_add_(kx_add_max);        % max note_x index added to major cluster
                 else
+                    tx_pos(k) = nan;            % to compute T not affected by missing tx_major
                     kx_add(k) = 0;
                 end
                 clearvars kx_add_ kx_add_idx kx_add_note kx_add_max value tx_pos_temp ;
@@ -282,16 +282,15 @@ if length(kx_major) >= 2
     end
     
     % Add/create peak to major cluster
-    [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,sx_major,kx_add);
+    [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,sx_major,kx_add);   
     
-    
-    % Remove peak from major cluster
+    %   - Remove peaks from major cluster -
     loop = 0;
     tx_neg = delta_tx(tx_major);
     loop_ = length(tx_neg);
     i=1;
     
-    while loop < loop_                                  % several minor peaks between major peaks
+    while loop < loop_                                 
         for k = i:length(tx_neg)
             if tx_neg(k) < T - T*0.5
                 
@@ -308,9 +307,9 @@ if length(kx_major) >= 2
                 tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
                 T = mean(delta_tx(tx_major));
                 i=k;                                % start after peak removal
-                break
-            end
-            
+                break                               % exit for loop
+            end 
+            loop = loop +1;
         end
         
         loop = loop +1;

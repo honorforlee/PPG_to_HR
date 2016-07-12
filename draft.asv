@@ -388,7 +388,7 @@ if length(kx_major) >= 2
     loop_ = length(tx_neg);
     i=1;
     
-    while loop < loop_                                 
+    while loop < loop_                                  % several minor peaks between major peaks
         for k = i:length(tx_neg)
             if tx_neg(k) < T - T*0.5
                 
@@ -405,9 +405,9 @@ if length(kx_major) >= 2
                 tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
                 T = mean(delta_tx(tx_major));
                 i=k;                                % start after peak removal
-                break                               % exit for loop
-            end 
-            loop = loop +1;
+                break
+            end
+            
         end
         
         loop = loop +1;
