@@ -1,4 +1,4 @@
- % Ivan NY HANITRA - Master thesis
+% Ivan NY HANITRA - Master thesis
 %       -- Add peaks to major cluster --
 
 function [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos, kx_major,tx_major,sx_major, kx_add)
