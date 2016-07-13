@@ -471,8 +471,8 @@ else
                     plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
                     plot(h.tx_major,h.sx_major, 'pr','MarkerSize',20);
                     
-                    plot( h.tx , h.dhi  , '^c');
-                    plot( h.tx , h.dlo  , 'vc');
+                    plot( h.tx , h.dhi  , '^b');
+                    plot( h.tx , h.dlo  , 'vb');
                     
                     plot(h.xgrid,h.ygrid , ':k');
                     legend({'Signal','Sampled signal','First derivative','Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
