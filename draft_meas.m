@@ -1,13 +1,4 @@
-%Name = '3900497mB';        % row 6
-%Name = '3900679m';         % row 5
-%Name = '3914288m';         % row 5
-%Name = '3916979m (5)';     % row 6  (1 : 5)
-%Name = '3916979m';         % row 6
-%Name = '3919370m (1)';     % row 5
-%Name = '3919370m';         % row 5
-%Name = '3801060_0007m';    % row 1
-%Name = '3899985_0005m';    % row 1
-Name = 'a02m';             % row 1
+Name = 'meas2_test1-1';           
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -19,19 +10,19 @@ dt0 = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 
 
 fclose(fid);
 
-val(isnan(val)) = [];
-t0 = (1:length(val)) * dt0;            % timeline
-s0 = val(1,1:length(val));
+Vout(isnan(Vout)) = [];
+t0 = (1:length(Vout)) * dt0;            % timeline
+s0 = Vout(1:length(Vout),1)';
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
-dt = 1/10;                           % sampling time: dt >> dt0
+dt = 1/20;                           % sampling time: dt >> dt0
 t_int = dt * (1/3);                  % integration time: dt0 <= t_int < dt
 quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,1);
+[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,3);
 
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
@@ -415,7 +406,6 @@ else
     T = nan;
     
 end
-
 %%
 %   - Plots -
 figure(2);
