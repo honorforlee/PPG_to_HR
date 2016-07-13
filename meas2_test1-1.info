@@ -1,0 +1,9 @@
+Source: Measurement of PPG signal on 20.05.2016 with f_PWM = 8.1 kHz, PWM_DC = 100% at 11.00 am on sunny day
+Vout has 1 column (signal) and 50000 rows (samples/signal)
+Duration:     1:00
+Sampling frequency: 1694 Hz  Sampling interval: 0.59e-3 sec
+Row	Signal	Gain	Base	Units
+1	MEAS	1023	0	NU
+
+To convert from raw units to the physical units shown
+above, subtract 'base' and divide by 'gain'.
