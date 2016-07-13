@@ -1,4 +1,4 @@
-Source: Measurement of PPG signal on 31.05.2016 with f_PWM = 8.1 kHz, PWM_DC = 100%
+Source: Measurement of PPG signal on 31.05.2016 with f_PWM = 8.1 kHz, PWM_DC = 15%
 val has 1 row (signal) and 50000 columns (samples/signal)
 Duration:     1:00
 Sampling frequency: 10 Hz  Sampling interval: 0.1 sec

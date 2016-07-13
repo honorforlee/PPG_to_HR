@@ -38,6 +38,7 @@ set(0,'ScreenPixelsPerInch', 95);
 
 fl_ecg   = {}; ppg_ecg   = {}; ecg_ecg   = {}; dt0_ecg   = {};
 fl_noecg = {}; ppg_noecg = {}; ecg_noecg = {}; dt0_noecg = {};
+fl_meas = {}; ppg_meas = {}; dt0_meas = {};
 fl = what;
 for f = fl.mat'
     f = f{1}; %#ok<FXSET>
@@ -47,11 +48,12 @@ for f = fl.mat'
         dt0 = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
         dt0 = dt0(2);
         fgetl(fid); s = fgetl(fid);
-        ppg = 0; ecg = 0;
+        ppg = 0; ecg = 0; meas = 0;
         while s
             [k,signal,~,~,~] = strread(s,'%d%s%f%f%s','delimiter','\t'); %#ok<DSTRRD>
             if strcmp(signal,'II');    ecg = k; end
             if strcmp(signal,'PLETH'); ppg = k; end
+            if strcmp(signal,'MEAS'); meas = k; end
             s = fgetl(fid);
         end
         fclose(fid);
@@ -67,14 +69,25 @@ for f = fl.mat'
                 ecg_noecg = [ecg_noecg 0];          %#ok<AGROW>
                 dt0_noecg = [dt0_noecg dt0];        %#ok<AGROW>
             end
+        elseif meas
+            fl_meas = [fl_meas f(1:end-4)];
+            ppg_meas = meas;
+            dt0_meas = dt0;
         end
     end
 end
-h.f_list    = [fl_ecg  fl_noecg];
+
+
+h.f_list_database    = [fl_ecg  fl_noecg];
 h.f_ppg_row = [ppg_ecg ppg_noecg];
-h.f_ecg_row = [ecg_ecg ecg_noecg];
-h.f_dt0     = [dt0_ecg dt0_noecg];
+h.f_ecg_row = [ecg_ecg ecg_noecg ];
+h.f_dt0_database     = [dt0_ecg dt0_noecg];
 h.nf_ecg    = length(fl_ecg);
+
+h.f_list_meas = [fl_meas];
+h.f_dt0_meas = [dt0_meas];
+h.nf_meas = length(fl_meas);
+
 update_filelist(h);
 h.popupmenu_files.Value = 1;
 h.ft = []; h.ft_ = []; h.fs = []; h.fs_ = [];
@@ -93,27 +106,44 @@ if h.checkbox_ecg.Value
         h.popupmenu_files.Value = 1;
         file_chgd = 1;
     end
-    h.popupmenu_files.String = h.f_list(1:h.nf_ecg);
+    h.popupmenu_files.String = h.f_list_database(1:h.nf_ecg);
+    
+elseif h.checkbox_ppg_meas.Value
+    if h.popupmenu_files.Value > h.nf_meas
+        h.popupmenu_files.Value = 1;
+        file_chgd = 1;
+    end
+    h.popupmenu_files.String = h.f_list_meas(1:h.nf_meas);
 else
-    h.popupmenu_files.String = h.f_list;
+    h.popupmenu_files.String = h.f_list_database;
 end
 
 function h = update_infile(h)
 n = h.popupmenu_files.Value;
 % Read data
-h.dt0 = h.f_dt0{n};                         % timeline with the initial sampling time
-load([h.f_list{n} '.mat']);
-h.s0  = val(h.f_ppg_row{n}, :); %#ok<NODEF>
-%k = find(h.s0 ~= h.s0(end),1,'last');       % index k: last non zero value
-%h.s0  = h.s0(1:k);
-h.s0  = (h.s0  - mean(h.s0 ))/sqrt(var(h.s0 ));
-if h.checkbox_ecg.Value
-    h.ecg = val(h.f_ecg_row{n}, :);
-    h.ecg = h.ecg(1:k);
-    h.ecg = (h.ecg - mean(h.ecg))/sqrt(var(h.ecg));
-    h.s0 = h.ecg;
+if h.checkbox_ppg_meas.Value
+    h.dt0 = h.f_dt0_meas{n};
+    load([h.f_list_meas{n} '.mat']);
+%     Vout(isnan(Vout)) = [];
+    h.s0  = Vout';
+    h.s0  = (h.s0  - mean(h.s0 ))/sqrt(var(h.s0 ));
+    
 else
-    h.ecg = [];
+    h.dt0 = h.f_dt0_database{n};                         % timeline with the initial sampling time
+    load([h.f_list_database{n} '.mat']);
+    h.s0  = val(h.f_ppg_row{n}, :); %#ok<NODEF>
+    %k = find(h.s0 ~= h.s0(end),1,'last');       % index k: last non zero value
+    %h.s0  = h.s0(1:k);
+    h.s0  = (h.s0  - mean(h.s0 ))/sqrt(var(h.s0 ));
+    if h.checkbox_ecg.Value
+        h.ecg = val(h.f_ecg_row{n}, :);
+        h.ecg = h.ecg(1:k);
+        h.ecg = (h.ecg - mean(h.ecg))/sqrt(var(h.ecg));
+        h.s0 = h.ecg;
+    else
+        h.ecg = [];
+    end
+    
 end
 
 % Define timeline
