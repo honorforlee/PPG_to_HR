@@ -5,9 +5,9 @@
 %Name = '3916979m';         % row 6
 %Name = '3919370m (1)';     % row 5
 %Name = '3919370m';         % row 5
-%Name = '3801060_0007m';    % row 1
+Name = '3801060_0007m';    % row 1
 %Name = '3899985_0005m';    % row 1
-Name = 'a02m';             % row 1
+%Name = 'a02m';             % row 1
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -25,19 +25,16 @@ s0 = val(1,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
-dt = 1/10;                           % sampling time: dt >> dt0
+dt = 1/20;                           % sampling time: dt >> dt0
 t_int = dt * (1/3);                  % integration time: dt0 <= t_int < dt
 quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,1);
+[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,6);
 
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
-
-%  - Local maxima sx, maximum slope around sx -
-[tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t_,s_,kx);
 
 % d = s_(2:end) -  s_(1:end-1);
 % td = t_(2:end);
@@ -201,54 +198,70 @@ if L(2) >= 2                                             % more than 1 cluster
         [NOTE_major major_idx] = max(NOTE);
         kx_major = clust_cell{major_idx,1}';
         
-        if all(NOTE <= 1)
+        NOTE_comp = NOTE_major;                    % EMP
+        
+        if all(NOTE <= 1)                % EMP
             for k = 1:L(2)
                 if var([NOTE_major NOTE(k)],1) < 7*eps                                            % EMPIRICAL: compare NOTE to NOTE of major cluster
                     NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                     clust_merge(:,k) = X(:,k);                                                    % merge cluster to major cluster
                     NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );   % recompute NOTE_major
+                   
+                    NOTE_comp = NOTE_major;        % EMP
                 end
             end
         else
             for k = 1:L(2)
-                if var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k)>1                                 % EMPIRICAL: compare NOTE to NOTE of major cluster
+                if var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k) > 1 %EMP                                % EMPIRICAL: compare NOTE to NOTE of major cluster
                     NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                     clust_merge(:,k) = X(:,k);                                                      % merge cluster to major cluster
                     NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major
+                   
+                    NOTE_comp = NOTE_major;       % EMP
                 end
             end
         end
     else
-        if all(NOTE <= 1)
+        if all(NOTE <= 1)               % EMP
             [NOTE_major major_idx] = max(NOTE);
             kx_major = clust_cell{major_idx,1}';
+            
+            NOTE_comp = NOTE_major;               % EMP
             
             for k = 1:L(2)
                 if var([NOTE_major NOTE(k)],1) < 7*eps                                               % EMPIRICAL: compare NOTE to NOTE of major cluster
                     NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                     clust_merge(:,k) = X(:,k);                                                       % merge cluster to major cluster
                     NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );      % recompute NOTE_major
+                    
+                    NOTE_comp = NOTE_major;       % EMP
                 end
             end
             
         else
             [clust_note_temp idx_temp] = max(clust_note);
             
-            if NOTE(idx_temp)  > 1
+            if NOTE(idx_temp)  > 1     % EMP
                 major_idx = idx_temp;
                 kx_major = clust_cell{major_idx,1}';
                 clust_note_major = clust_note_temp;
                 NOTE_major = NOTE(major_idx);
                 
+                NOTE_comp = NOTE_major;           % EMP
+                
                 for k = 1:L(2)
-                    if clust_note(k) > 1 && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k) > 1      % EMPIRICAL: compare NOTE to NOTE of major cluster
+                    if clust_note(k) > 1 && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k) > 1     % EMPIRICAL: compare NOTE to NOTE of major cluster
                         NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                         clust_merge(:,k) = X(:,k);                                                  % merge cluster to major cluster
                         NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); % recompute NOTE_major
-                    elseif clust_note(k) == 0 && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k)>1
+                        
+                        NOTE_comp = NOTE_major;           % EMP
+                    elseif clust_note(k) == 0 && var([NOTE_major NOTE(k)],1) < 7*eps && NOTE(k) > 1
                         NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); % EMPIRICAL: compare NOTE to NOTE of major cluster (that have max clust_note)
                         clust_merge(:,k) = X(:,k);                                                  % merge cluster to major cluster
                         NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) ); % recompute NOTE_major
+                        
+                        NOTE_comp = NOTE_major;           % EMP
                     end
                 end
                 
@@ -256,11 +269,15 @@ if L(2) >= 2                                             % more than 1 cluster
                 [NOTE_major major_idx] = max(NOTE);
                 kx_major = clust_cell{major_idx,1}';
                 
+                NOTE_comp = NOTE_major;           % EMP
+                
                 for k = 1:L(2)
-                    if var([NOTE_major NOTE(k)],1) < 7*eps  && NOTE(k) > 1                              % EMPIRICAL: compare NOTE to NOTE of major cluster
+                    if var([NOTE_major NOTE(k)],1) < 7*eps  && NOTE(k) > 1                             % EMPIRICAL: compare NOTE to NOTE of major cluster
                         NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                         clust_merge(:,k) = X(:,k);                                                      % merge cluster to major cluster
                         NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major
+                        
+                        NOTE_comp = NOTE_major;           % EMP
                     end
                 end
             end
@@ -279,7 +296,9 @@ else                                                    % one cluster only
 end
 
 if length(kx_major) >= 2
+    
     %   - Major peaks -
+    kx_major = unique(kx_major);
     tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
     sx_major = s_(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
@@ -336,8 +355,7 @@ if length(kx_major) >= 2
     sx_major = s_(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
     
-    % Search for missing peaks
-    
+    %       - Search for missing peaks -
     % Miss peaks inside the frame
     tx_pos = delta_tx(tx_major);
     kx_add = nan(1,length(kx_major));       % for horizontal concatenation
@@ -416,7 +434,6 @@ else
     
 end
 
-%%
 %   - Plots -
 figure(2);
 plot( tx , sx   , 'dc','MarkerSize',12);

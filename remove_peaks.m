@@ -24,7 +24,7 @@ function [kx_major,tx_major,sx_major,T] = remove_peaks(kx_major,tx_major,sx_majo
                 tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
                 T = mean(delta_tx(tx_major));
                 i=k;                                % start after peak removal
-                break                               % exit for loop
+                break                               % exit from for loop
             end 
             loop = loop +1;
         end

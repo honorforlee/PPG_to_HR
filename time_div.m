@@ -1,4 +1,5 @@
-function [t0_ s0_ t_ s_ ] = time_div(t0,s0,dt0, t,s,dt, frame_length,frame)
+function [t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt, frame_length,frame)
+%   - Processed signal frame -
 range0 = (1 : (frame_length/dt0)) * dt0;
 range = (1 : (frame_length/dt)) * dt;
 
@@ -17,4 +18,5 @@ for k = 0 : (length(s) / length(range)) - 1
     s_div(k+1,:)= s(  k*(length(range)) + 1 : (k+1)*(length(range)) ) ;
     
 end
-t_ = t_div(frame,:);    s_ = s_div(frame,:);    
+t_ = t_div(frame,:);    s_ = s_div(frame,:);
+

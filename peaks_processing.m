@@ -44,8 +44,35 @@ else
   clearvars j;  
 end
 
+% %   - Peaks notation
+% sx_norm = sx * (2/max(sx));                   % normalize amplitude
+% note_1 = sx_norm;                     
+% 
+% note_2 = dhi - dlo;                           % maximum slope difference around peak
+% 
+% for k = 1:length(tx)                          
+%     if tx(k) >= tx_N(k)
+%         delta(k) = sx_norm(k) - sx_N(k);
+%     else                                     % if minimum out of frame, take first min in the frame 
+%         j = k;  
+%         while isnan(sx_N(j))                
+%             j = j+1;
+%         end
+%         delta(k) = sx_norm(k) - sx_N(j);
+%         clearvars j; 
+%     end
+% end
+% note_3 = delta;
+% 
+% for k = 2:length(kx)-1
+%     note_1(k) = sx_norm(k) - ( sx_norm(k+1) - sx_norm(k-1) )/2;            % average peak value
+%     note_3(k) = delta(k) - ( delta(k+1) - delta(k-1) )/2;                  % average peak to peak value
+% end
+% 
+% note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
+
 %   - Peaks notation
-note_1 = sx;
+note_1 = sx;                     
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
@@ -64,8 +91,8 @@ end
 note_3 = delta;
 
 for k = 2:length(kx)-1
-    note_1(k) = sx(k) - ( sx(k+1) - sx(k-1) )/2;            % average peak value
-    note_3(k) = delta(k) - ( delta(k+1) - delta(k-1) )/2;   % average peak to peak value
+    note_1(k) = sx(k) - ( sx(k+1) - sx(k-1) )/2;                           % average peak value
+    note_3(k) = delta(k) - ( delta(k+1) - delta(k-1) )/2;                  % average peak to peak value
 end
 
 note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;

@@ -1,4 +1,4 @@
-Name = 'meas2_test1-1';           
+Name = 'meas1_test1-0.15';           
 
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
@@ -22,13 +22,10 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt,5,3);
+[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,3);
 
-%  - Peaks identification -
+%  - Peaks identification - Local maxima sx, maximum slope around sx -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
-
-%  - Local maxima sx, maximum slope around sx -
-[tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t_,s_,kx);
 
 % d = s_(2:end) -  s_(1:end-1);
 % td = t_(2:end);
@@ -91,6 +88,7 @@ quant = 0.1;                         % LSB: vertical step
 
 %       -- Minimum variance algorithm --
 % [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, 0.1);
+
 eps = 0.1;
 kx_ = kx;
 
@@ -399,6 +397,7 @@ if length(kx_major) >= 2
     %   - Remove peaks from major cluster -
     [kx_major,tx_major,sx_major,T] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
     
+            
 else
     display('Not enough points');
     tx_major = nan;
@@ -406,7 +405,7 @@ else
     T = nan;
     
 end
-%%
+
 %   - Plots -
 figure(2);
 plot( tx , sx   , 'dc','MarkerSize',12);

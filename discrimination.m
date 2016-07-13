@@ -137,7 +137,7 @@ else
     h.s0  = (h.s0  - mean(h.s0 ))/sqrt(var(h.s0 ));
     if h.checkbox_ecg.Value
         h.ecg = val(h.f_ecg_row{n}, :);
-        h.ecg = h.ecg(1:k);
+        h.ecg = h.ecg(1:end);
         h.ecg = (h.ecg - mean(h.ecg))/sqrt(var(h.ecg));
         h.s0 = h.ecg;
     else
@@ -887,6 +887,4 @@ plot( h.axes ...
     , tx(k), sx(k), 'or' ...
     , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
     , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
-    );
-
-
+    ); 
