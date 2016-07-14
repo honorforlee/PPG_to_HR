@@ -30,54 +30,54 @@ if kx_n(1) < kx(1)
 else
     j = 1;
     while kx_n(1) > kx(j)                   % find first minima preceding maxima
-        kx_index(j) = nan;
-        sx_N(j) = nan;
-        tx_N(j) = nan;
-        j = j+1;
+    kx_index(j) = nan;
+    sx_N(j) = nan;
+    tx_N(j) = nan;
+    j = j+1;
     end
-    
+        
     for k = j:length(kx)
         kx_index(k) = max( find( kx_n < kx(k) ) );
         sx_N(k) = s(kx_n( kx_index(k) ) + 1);
         tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
     end
-    clearvars j;
+  clearvars j;  
 end
 
 %   - Peaks notation  -
 sorted = sort(sx);
-norm = sorted(floor(0.8*length(sx)));   % 8/10 rank in sorted sx array (avoid maxima artifact)
+norm = sorted(floor(0.8*length(sx)));   % 8/10 rank in sorted sx array (avoid maxima artifact) 
 
 sorted_N = sort(sx_N);
-norm_N = sorted_N(floor(0.2*length(sx_N)));
+norm_N = sorted_N(floor(0.8*length(sx_N)));
 
 sx_norm = sx * (2.5/norm);                   % normalize amplitude
-sx_N_norm = - abs( sx_N * (0.5/norm_N) );
+sx_N_norm = - abs( sx_N * (1/norm_N) );
 
 note_1 = sx;
-note_1_norm = sx_norm;
+note_1_norm = sx_norm;                     
 
 note_2 = dhi - dlo;                           % maximum slope difference around peak
 
-for k = 1:length(tx)
+for k = 1:length(tx)                          
     if tx(k) >= tx_N(k)
         delta(k) = sx(k) - sx_N(k);
         delta_norm(k) = sx_norm(k) - sx_N_norm(k);
-    else                                     % if minimum out of frame, take first min in the frame
-        j = k;
-        while isnan(sx_N(j))
+    else                                     % if minimum out of frame, take first min in the frame 
+        j = k;  
+        while isnan(sx_N(j))                
             j = j+1;
         end
         delta(k) = sx(k) - sx_N(j);
         delta_norm(k) = sx_norm(k) - sx_N_norm(j);
-        clearvars j;
+        clearvars j; 
     end
 end
 note_3 = delta;
 note_3_norm = delta_norm;
 
 for k = 2:length(kx)-1
-    note_1(k) = sx(k) - ( sx(k+1) + sx(k-1) )/2;
+    note_1(k) = sx(k) - ( sx(k+1) + sx(k-1) )/2; 
     note_1_norm(k) = sx_norm(k) - ( sx_norm(k+1) + sx_norm(k-1) )/2;            % average peak value
     
     note_3(k) = delta(k) - ( delta(k+1) + delta(k-1) )/2;
@@ -88,17 +88,11 @@ note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
 note_x_norm = 0.1*note_1_norm + 0.1*note_2 + 0.8*delta_norm;
 
 %   - Remove artifact peak -
-sorted_note = sort(note_x);
-sorted_note_norm = sort(note_x_norm);
+sorted_note = sort(note_x_norm);
+note_threshold = sorted_note(floor(0.8*length(note_x_norm)));
 
-note_threshold = sorted_note(floor(0.9*length(note_x)));
-note_threshold_norm = sorted_note_norm(floor(0.9*length(note_x_norm)));
-
-for k = 1:length(note_x)
-    if note_x(k) > 3*note_threshold
-        note_x(k) = min(note_x);
-    end
-    if note_x_norm(k) > 3*note_threshold_norm
-        note_x_norm(k) = min(note_x_norm);
+for k = 1:length(note_x_norm)
+    if note_x_norm(k) > 3*note_threshold
+        note_x_norm(k) = min(note_x_norm);  
     end
 end
