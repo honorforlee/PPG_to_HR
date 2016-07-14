@@ -31,7 +31,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,10);
+[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,5);
 
 %  - Peaks identification -
 %[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
@@ -123,7 +123,7 @@ note_x_norm = 0.1*note_1_norm + 0.1*note_2 + 0.8*delta_norm;
 
 %   - Remove artifact peak -
 sorted_note = sort(note_x);
-note_threshold = sorted_note(floor(0.9*length(note_x)));
+note_threshold = sorted_note(floor(0.7*length(note_x)));
 
 for k = 1:length(note_x)
     if note_x(k) > 3*note_threshold
@@ -132,7 +132,7 @@ for k = 1:length(note_x)
 end
 
 sorted_note_norm = sort(note_x_norm);
-note_threshold_norm = sorted_note(floor(0.9*length(note_x_norm)));
+note_threshold_norm = sorted_note(floor(0.7*length(note_x_norm)));
 
 for k = 1:length(note_x_norm)
     if note_x_norm(k) > 3*note_threshold_norm
@@ -365,8 +365,8 @@ if length(kx_major) >= 2
     
     for k = 1:length(tx_rect)
         if abs( tx_rect(k) - T )/T < 0.5             % less than 50% relative error from T
-            if abs( (note_x(k) - note_x(k+1))/note_x(k) ) < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
-                kx_major_(length(kx_major)+k) = kx(k);
+            if abs( note_x(k) - note_x(k+1) ) < 0.3 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
+                kx_major_(length(kx_major)+k) = kx( k);
                 kx_major_(length(kx_major)+k+1) = kx(k+1);
                 
                 %             elseif abs( tx_rect(k) - T )/T < 0.2  && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )
@@ -406,102 +406,18 @@ if length(kx_major) >= 2
     T = mean(delta_tx(tx_major));
     
     %       - Search for missing peaks -
-    % Miss peaks inside the frame
-    loop = 0;       % two loops in case big hole
+    % Miss peaks inside the frame: add/create 2 peaks max in a hole
+    loop = 0;
     
     while loop < 2
         tx_pos = delta_tx(tx_major);
-        kx_add = nan(1,length(kx_major));       % for horizontal concatenation
         
-        for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
-            if tx_pos(k) > T + T/3            % need enough large frame length to give weight to T
-                left(k) = kx_major(k);
-                right(k) = kx_major(k+1);
-                kx_add_ = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
-                
-                if length(kx_add_) == 1         % one peak present in the hole
-                    tx_pos_temp_left = tx(kx==kx_add_) - tx_major(k);
-                    tx_pos_temp_right = tx_major(k+1) - tx(kx==kx_add_);
-                    if var([NOTE_major note_x(kx==kx_add_)],1) < 5*eps || note_x(kx==kx_add_) > NOTE_major || (abs (tx_pos_temp_left/T) < 0.1 && abs (tx_pos_temp_right/T) < 0.1 )
-                        if tx_pos_temp_left > T - T/3 && tx_pos_temp_right > T - T/3
-                            kx_add(k) = kx_add_;
-                        end
-                    else
-                        tx_pos(k) = nan;            % to compute T not affected by missing tx_major
-                        kx_add(k) = 0;
-                    end
-                    clearvars kx_add_ tx_pos_temp;
-                    
-                elseif length(kx_add_) >= 2     % more than one peak present in the hole
-                    for i = 1:length(kx_add_)
-                        kx_add_idx(i) = find(kx == kx_add_(i));
-                        kx_add_note(i) = note_x(kx_add_idx(i));
-                    end
-                    
-                    [value kx_add_max] = max(kx_add_note);
-                    tx_pos_temp_left = tx(kx_add_idx(kx_add_max)) - tx_major(k);         % delta_tx from major peak to added peak
-                    tx_pos_temp_right = tx_major(k+1) - tx(kx_add_idx(kx_add_max));
-                    
-                    if var([NOTE_major value],1) < 5*eps || value > NOTE_major || (abs (tx_pos_temp_left/T) < 0.1 && abs (tx_pos_temp_right/T) < 0.1 )
-                        if tx_pos_temp_left > T - T/3 && tx_pos_temp_right > T - T/3
-                            kx_add(k) = kx_add_(kx_add_max);        % max note_x index added to major cluster
-                        end
-                    else
-                        tx_pos(k) = nan;            % to compute T not affected by missing tx_major
-                        kx_add(k) = 0;
-                    end
-                    clearvars kx_add_ kx_add_idx kx_add_note kx_add_max value tx_pos_temp ;
-                    
-                else                            % no peak present in the hole => create peak
-                    tx_pos(k) = nan;            % to compute T not affected by missing tx_major
-                    kx_add(k) = 0;
-                    
-                end
-            end
-            
-        end
+        % Search for missing peaks inside the frame
+        [kx_add,tx_pos] = missing_peaks(kx,tx, kx_major,tx_major, tx_pos,T, note_x,NOTE_major);
+     
         
         % Add/create peak to major cluster
-        %[kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, tx_pos,kx_major,tx_major,sx_major,kx_add);
-        
-        if find(kx_add==0)                      % imaginary peak to create & peak to add
-            zeros = find(kx_add==0);            % indexes where create a peak
-            tx_pos(isnan(tx_pos)) = [];         % remove nan values
-            T_temp = mean(tx_pos);              % peaks period (not considering missing peak)
-            
-            insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
-            
-            for k = 1:length(zeros)
-                kx_major = insert(kx_major(zeros(k)), kx_major, zeros(k) );
-                kx_add(zeros(k)) = nan;
-                kx_add = insert(nan, kx_add, zeros(k));                             % for concatenation with kx_major
-                
-                zeros = bsxfun(@plus , zeros, ones(1,length(zeros)));               % shift index of zeros when adding one element in tx_major, sx_major
-            end
-            
-            kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
-            kx_major(isnan(kx_major)) = [];             % remove NaN values
-            kx_major = sort(kx_major);                  % sort
-            
-            for k = 1:length(kx_major)-1                % peak to add
-                if kx_major(k)~=kx_major(k+1)
-                    tx_major(k+1) = td(kx_major(k+1)) + (td(kx_major(k+1)+1)-td(kx_major(k+1))) .* d(kx_major(k+1))./(d(kx_major(k+1))-d(kx_major(k+1)+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-                else                                    % peak to create
-                    tx_major(k+1) = tx_major(k) + T_temp;
-                end
-                sx_major(k+1) = s_(kx_major(k+1)+1);        % local maxima
-            end
-        else                                            % peak to add only
-            kx_major = horzcat(kx_major,kx_add);        % add peak to major cluster
-            kx_major(isnan(kx_major)) = [];             % remove NaN values
-            kx_major = unique(kx_major);                % sort
-            
-            tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-            sx_major = s_(kx_major+1);                  % local maxima
-            
-        end
-        
-        T = mean(delta_tx(tx_major));
+        [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, kx_major,tx_major,sx_major, kx_add,tx_pos);
         
         clearvars tx_pos kx_add;
         loop = loop+1;

@@ -7,25 +7,26 @@ function [kx_major,tx_major,sx_major,T] = remove_peaks(kx_major,tx_major,sx_majo
     loop_ = length(tx_neg);
     i=1;
     
-    while loop < loop_                                 
+    while loop < loop_
         for k = i:length(tx_neg)
             if tx_neg(k) < T - T/3
-                
-                if note_x(kx==kx_major(k)) > note_x(kx==kx_major(k+1))      % compare which peak is more relevant
-                    kx_major(k+1) = [];
-                    tx_major(k+1) = [];
-                    sx_major(k+1) = [];
-                else
-                    kx_major(k) = [];
-                    tx_major(k) = [];
-                    sx_major(k) = [];
-                end
-                
-                tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
-                T = mean(delta_tx(tx_major));
-                i=k;                                % start after peak removal
-                break                               % exit from for loop
-            end 
+                if abs( (note_x(k) - note_x(k+1))/note_x(k)) > 0.2              % 20% note_x tolerance to suppress peak
+                    
+                    if note_x(kx==kx_major(k)) > note_x(kx==kx_major(k+1))      % compare which peak is more relevant
+                        kx_major(k+1) = [];
+                        tx_major(k+1) = [];
+                        sx_major(k+1) = [];
+                    else
+                        kx_major(k) = [];
+                        tx_major(k) = [];
+                        sx_major(k) = [];
+                    end             
+                    tx_neg = delta_tx(tx_major);        % recompute tx_neg and T
+                    T = mean(delta_tx(tx_major));
+                    i=k;                                % start after peak removal
+                    break                               % exit from for loop
+                end               
+            end
             loop = loop +1;
         end
         

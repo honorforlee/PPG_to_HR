@@ -44,7 +44,7 @@ else
     clearvars j;
 end
 
-%   - Peaks notation  -
+%   - Peaks notation
 sorted = sort(sx);
 norm = sorted(floor(0.8*length(sx)));   % 8/10 rank in sorted sx array (avoid maxima artifact)
 
@@ -87,17 +87,21 @@ end
 note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
 note_x_norm = 0.1*note_1_norm + 0.1*note_2 + 0.8*delta_norm;
 
+
 %   - Remove artifact peak -
 sorted_note = sort(note_x);
-sorted_note_norm = sort(note_x_norm);
-
-note_threshold = sorted_note(floor(0.9*length(note_x)));
-note_threshold_norm = sorted_note_norm(floor(0.9*length(note_x_norm)));
+note_threshold = sorted_note(floor(0.7*length(note_x)));
 
 for k = 1:length(note_x)
     if note_x(k) > 3*note_threshold
         note_x(k) = min(note_x);
     end
+end
+
+sorted_note_norm = sort(note_x_norm);
+note_threshold_norm = sorted_note(floor(0.7*length(note_x_norm)));
+
+for k = 1:length(note_x_norm)
     if note_x_norm(k) > 3*note_threshold_norm
         note_x_norm(k) = min(note_x_norm);
     end
