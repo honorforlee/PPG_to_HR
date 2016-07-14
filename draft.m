@@ -397,7 +397,6 @@ if length(kx_major) >= 2
         % Search for missing peaks inside the frame
         [kx_add,tx_pos] = missing_peaks(kx,tx, kx_major,tx_major, tx_pos,T, note_x,NOTE_major);
         
-        
         % Add/create peak to major cluster
         [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, kx_major,tx_major,sx_major, kx_add,tx_pos);
         
