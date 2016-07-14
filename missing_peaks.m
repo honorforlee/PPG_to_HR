@@ -13,13 +13,11 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
         if length(kx_add_) == 1         % one peak present in the hole
             tx_pos_temp_left = tx(kx==kx_add_) - tx_major(k);
             tx_pos_temp_right = tx_major(k+1) - tx(kx==kx_add_);
-            if var([NOTE_major note_x(kx==kx_add_)],1) < 5*eps || note_x(kx==kx_add_) > NOTE_major || (abs (tx_pos_temp_left/T) < 0.1 && abs (tx_pos_temp_right/T) < 0.1 )
-                if tx_pos_temp_left > T - T/3 && tx_pos_temp_right > T - T/3
-                    kx_add(k) = kx_add_;
-                else
-                    tx_pos(k) = nan;            % to compute T not affected by missing tx_major
-                    kx_add(k) = 0;
-                end
+            
+            if similarity(NOTE_major, note_x(kx==kx_add_), 'variance') < 5*eps || note_x(kx==kx_add_) > NOTE_major || (similarity(T,tx_pos_temp_left,'relative') < 0.1 && similarity(T,tx_pos_temp_right,'relative') < 0.1)
+                
+                kx_add(k) = kx_add_;
+                
             else
                 tx_pos(k) = nan;            % to compute T not affected by missing tx_major
                 kx_add(k) = 0;
@@ -36,14 +34,10 @@ for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
             tx_pos_temp_left = tx(kx_add_idx(kx_add_max)) - tx_major(k);         % delta_tx from major peak to added peak
             tx_pos_temp_right = tx_major(k+1) - tx(kx_add_idx(kx_add_max));
             
-            if var([NOTE_major value],1) < 5*eps || value > NOTE_major || (abs (tx_pos_temp_left/T) < 0.1 && abs (tx_pos_temp_right/T) < 0.1 )
-                if tx_pos_temp_left > T - T/3 && tx_pos_temp_right > T - T/3
-                    kx_add(k) = kx_add_(kx_add_max);        % max note_x index added to major cluster
-                else
-                    tx_pos(k) = nan;            % to compute T not affected by missing tx_major
-                    kx_add(k) = 0;
-                    
-                end
+            if similarity(NOTE_major, value, 'variance') < 5*eps || value > NOTE_major || (similarity(T,tx_pos_temp_left,'relative') < 0.1 && similarity(T,tx_pos_temp_right,'relative') < 0.1)
+                
+                kx_add(k) = kx_add_(kx_add_max);        % max note_x index added to major cluster
+                
             else
                 tx_pos(k) = nan;            % to compute T not affected by missing tx_major
                 kx_add(k) = 0;
