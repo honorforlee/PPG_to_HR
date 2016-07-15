@@ -1,116 +1,7 @@
-%Name = '3900497mB';        % row 6
-%Name = '3900679m';         % row 5
-%Name = '3914288m';         % row 5
-%Name = '3916979m (4)';     % row 6  (1 : 5)
-%Name = '3916979m';         % row 6
-Name = '3919370m (1)';     % row 5
-%Name = '3919370m';         % row 5
-%Name = '3801060_0007m';    % row 1
-%Name = '3899985_0005m';    % row 1
-%Name = 'a02m';             % row 1
-
-load(strcat(Name, '.mat'));
-fid = fopen(strcat(Name, '.info'), 'rt');
-fgetl(fid);
-fgetl(fid);
-fgetl(fid);
-[interval] = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
-dt0 = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 0.5903 ms in practice)
-
-fclose(fid);
-
-val(isnan(val)) = [];
-t0 = (1:length(val)) * dt0;            % timeline
-s0 = val(5,1:length(val));
-s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
-
-%   - Timeline, noise, integration, quantization -
-dt = 1/20;                           % sampling time: dt >> dt0
-t_int = dt * (1/3);                  % integration time: dt0 <= t_int < dt
-quant = 0.1;                         % LSB: vertical step
-
-[t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
-
-[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,7);
-
-%  - Peaks identification -
-%[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
-
-d = s_(2:end) -  s_(1:end-1);
-td = t_(2:end);
-kx = d > 0;
-kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d(k(x) > 0; d( k(x) + 1 ) <= 0
-
-sx = s_(kx+1);                          % local maxima
-tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-
-dhi = d(kx);
-dlo = d(kx+1);
-
-for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0             && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx-
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
-end
-
-kx_n = d < 0;                               % search for local minima
-kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
-
-if kx_n(1) < kx(1)
-    for k = 1:length(kx)
-        kx_index(k) = max( find( kx_n < kx(k) ) );
-    end
-    sx_N = s_(kx_n( kx_index ) + 1);
-    tx_N = td(kx_n( kx_index )) + (td(kx_n( kx_index )+1)-td(kx_n( kx_index ))) .* d(kx_n( kx_index ))./(d(kx_n( kx_index ))-d(kx_n( kx_index )+1));
-else
-    j = 1;
-    while kx_n(1) > kx(j)                   % find first minima preceding maxima
-        kx_index(j) = nan;
-        sx_N(j) = nan;
-        tx_N(j) = nan;
-        j = j+1;
-    end
-    for k = j:length(kx)
-        kx_index(k) = max( find( kx_n < kx(k) ) );
-        sx_N(k) = s_(kx_n( kx_index(k) ) + 1);
-        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
-    end
-    
-end
-
-%   - Peaks notation -
-note_1 = sx;
-note_2 = dhi - dlo;                           % maximum slope difference around peak
-
-for k = 1:length(tx)
-    if tx(k) >= tx_N(k)
-       delta(k) = sx(k) - sx_N(k);       
-    else                                     % if minimum out of frame, take first min in the frame
-        j = k;
-        while isnan(sx_N(j))
-               j = j+1;
-        end
-        
-        delta(k) = sx(k) - sx_N(j);
-        clearvars j;
-    end
-end
-note_3 = delta;
-
-for k = 2:length(kx)-1
-    note_1(k) = sx(k) - ( sx(k+1) + sx(k-1) )/2;                                % average peak value
-    note_3(k) = delta(k) - ( delta(k+1) + delta(k-1) )/2;                       % average peak to peak value
-end
-
-note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
-
-%       -- Minimum variance algorithm --
-% [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, 0.1);
-
-eps = 0.1;
 % Ivan NY HANITRA - Master thesis
 %       -- Clustering according to minimum variance of note_x  --
 
-eps = 0.1;
+function [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, eps)
 kx_ = kx;
 
 %   - Clustering according to minimum variance of note_x -
@@ -370,18 +261,18 @@ if length(kx_major) >= 2
     % Miss first peak
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
     
-    if similarity(T,abs( tx(1) - tx_major(1) ), 'relative') < 0.2 || abs( tx(1) - tx_major(1) ) > T + T/5             % 20% relative error or more than 20% error above T
+    if similarity(T,abs( tx(1) - tx_major(1) ), 'relative') < 0.2 || abs( tx(1) - tx_major(1) ) > T + T/5         % 20% relative error or more than 20% error above T
         kx_major = insert(kx(1),kx_major,0);
-        tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));          % linear interpolation of dhi and dho to get tx (@zero crossing)
-        sx_major = insert(sx_major(1),sx_major,0);                                                                    % for visibility
+        tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+        sx_major = insert(sx_major(1),sx_major,0);                                                                % for visibility
         T = mean(delta_tx(tx_major));
     end
     
     % Miss last peak
     if similarity(T,abs( tx(end) - tx_major(end) ), 'relative') < 0.2  || abs( tx(end) - tx_major(end) ) > T + T/5    % 20% relative error or more than 20% error above T
         kx_major = insert(kx(end),kx_major,length(kx_major));
-        tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));          % linear interpolation of dhi and dho to get tx (@zero crossing)
-        sx_major = insert(sx_major(end),sx_major,length(sx_major));                                                   % for visibility
+        tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+        sx_major = insert(sx_major(end),sx_major,length(sx_major));                                               % for visibility
         T = mean(delta_tx(tx_major));
     end
     
@@ -395,17 +286,3 @@ else
     T = nan;
     
 end
-%%
-%   - Plots -
-figure(2);
-plot( tx , sx   , 'dc','MarkerSize',12);
-hold on
-plot(t_,s_,'ok','LineWidth',.2);
-plot(t0_,s0_,'-k');
-plot(tx, dhi,'^b','MarkerSize',10);
-plot(tx, dlo,'vb','MarkerSize',10);
-plot( kron(tx,[1 1 1]) , kron(dlo,[1 0 nan]) + kron(dhi,[0 1 nan]), '-b');       % link note_2
-plot( tx_major , sx_major, 'pr','MarkerSize',20);
-plot( tx,sx_N, 'dc','MarkerSize',10);
-plot(kron(tx,[1 1 1]), kron(sx_N,[1 0 nan]) + kron(sx,[0 1 nan]),'-c');
-hold off
