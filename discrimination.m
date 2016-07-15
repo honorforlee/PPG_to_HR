@@ -184,6 +184,7 @@ if h.t_int ~= 0
         plot_cluster(h);
         plot_cluster_distribution(h);
     else
+        h.eps = str2double(h.edit_eps.String); 
         h = process_sig(h);
         plot_(h);
     end
@@ -277,7 +278,7 @@ if isempty(h.ft)
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t_,h.s_);
     
     %   - Minimum variance algorithm -
-    [h.kx_major,h.tx_major,h.sx_major, h.T] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, 0.1);
+    [h.kx_major,h.tx_major,h.sx_major, h.T] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, h.eps);
     
 else
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
@@ -888,3 +889,5 @@ plot( h.axes ...
     , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
     , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
     ); 
+
+

@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Search for missing peaks inside major cluster --
 
-function [kx_add,tx_pos] = missing_peaks(kx,tx, kx_major,tx_major, tx_pos,T, note_x,NOTE_major)
+function [kx_add,tx_pos] = missing_peaks(kx,tx, kx_major,tx_major, tx_pos,T, note_x,NOTE_major, eps)
 kx_add = nan(1,length(kx_major));       % for horizontal concatenation
 
 for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
