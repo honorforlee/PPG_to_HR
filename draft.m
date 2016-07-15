@@ -3,10 +3,10 @@
 %Name = '3914288m';         % row 5
 %Name = '3916979m (4)';     % row 6  (1 : 5)
 %Name = '3916979m';         % row 6
-Name = '3919370m (1)';     % row 5
+%Name = '3919370m (1)';     % row 5
 %Name = '3919370m';         % row 5
 %Name = '3801060_0007m';    % row 1
-%Name = '3899985_0005m';    % row 1
+Name = '3899985_0005m';    % row 1
 %Name = 'a02m';             % row 1
 
 load(strcat(Name, '.mat'));
@@ -21,7 +21,7 @@ fclose(fid);
 
 val(isnan(val)) = [];
 t0 = (1:length(val)) * dt0;            % timeline
-s0 = val(5,1:length(val));
+s0 = val(1,1:length(val));
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -31,7 +31,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,7);
+[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,9);
 
 %  - Peaks identification -
 %[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
@@ -83,11 +83,11 @@ note_2 = dhi - dlo;                           % maximum slope difference around 
 
 for k = 1:length(tx)
     if tx(k) >= tx_N(k)
-       delta(k) = sx(k) - sx_N(k);       
+        delta(k) = sx(k) - sx_N(k);
     else                                     % if minimum out of frame, take first min in the frame
         j = k;
         while isnan(sx_N(j))
-               j = j+1;
+            j = j+1;
         end
         
         delta(k) = sx(k) - sx_N(j);
@@ -105,10 +105,6 @@ note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
 
 %       -- Minimum variance algorithm --
 % [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, 0.1);
-
-eps = 0.1;
-% Ivan NY HANITRA - Master thesis
-%       -- Clustering according to minimum variance of note_x  --
 
 eps = 0.1;
 kx_ = kx;
@@ -180,8 +176,8 @@ for k = 1:L(2)
         SIZE(k) = length(clust_cell{k,1});                                 % size
         [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(clust_cell{k,2});    % tx periodicity
         
-        if PER_eps(k) <= 0.1            % best periodicity note set to 0.1 otherwise increase too much the cluster note
-            PER_eps(k) = 0.1;
+        if PER_eps(k) <= 0.01            % best periodicity note set to 0.1 otherwise increase too much the cluster note
+            PER_eps(k) = 0.01;
         end
         
         NOTE(k) = mean(clust_cell{k,3});                                             % average note_x
@@ -210,7 +206,7 @@ if L(2) >= 2                                             % more than 1 cluster
     if all(clust_note == 0)
         [NOTE_major major_idx] = max(NOTE);
         kx_major = clust_cell{major_idx,1}';
-                
+        
         if all(NOTE <= 1)                                                                         % EMP
             for k = 1:L(2)
                 if similarity(NOTE_major, NOTE(k),'variance') < 7*eps                             % EMPIRICAL: compare NOTE to NOTE of major cluster
@@ -224,7 +220,7 @@ if L(2) >= 2                                             % more than 1 cluster
                 if similarity(NOTE_major, NOTE(k),'variance') < 7*eps && NOTE(k) > 1                % EMPIRICAL: compare NOTE to NOTE of major cluster
                     NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                     clust_merge(:,k) = X(:,k);                                                      % merge cluster to major cluster
-                    NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major                  
+                    NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major
                 end
             end
         end
@@ -252,12 +248,7 @@ if L(2) >= 2                                             % more than 1 cluster
                 NOTE_major = NOTE(major_idx);
                 
                 for k = 1:L(2)
-                    if similarity(NOTE_major, NOTE(k),'variance') < 7*eps && clust_note(k) > 1 && NOTE(k) > 1           % EMPIRICAL: compare NOTE to NOTE of major cluster
-                        NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-                        clust_merge(:,k) = X(:,k);                                                                      % merge cluster to major cluster
-                        NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );                     % recompute NOTE_major
-
-                    elseif similarity(NOTE_major, NOTE(k),'variance') < 7*eps && clust_note(k) == 0 && NOTE(k) > 1      % EMPIRICAL
+                    if similarity(NOTE_major, NOTE(k),'variance') < 7*eps  && NOTE(k) > 1           % EMPIRICAL: compare NOTE to NOTE of major cluster
                         NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
                         clust_merge(:,k) = X(:,k);                                                                      % merge cluster to major cluster
                         NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );                     % recompute NOTE_major
@@ -265,19 +256,36 @@ if L(2) >= 2                                             % more than 1 cluster
                 end
                 
             else
-                [NOTE_major major_idx] = max(NOTE);
-                kx_major = clust_cell{major_idx,1}';
-                
-                for k = 1:L(2)
-                    if similarity(NOTE_major, NOTE(k),'variance') < 7*eps && NOTE(k) > 1                             % EMPIRICAL: compare NOTE to NOTE of major cluster
-                        NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-                        clust_merge(:,k) = X(:,k);                                                      % merge cluster to major cluster
-                        NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major
+                if numel(find(clust_note)) == 1                 % only clust_major_temp is non zero
+                    major_idx = idx_temp;
+                    kx_major = clust_cell{major_idx,1}';
+                    clust_note_major = clust_note_temp;
+                    NOTE_major = NOTE(major_idx);
+                    
+                    for k = 1:L(2)
+                        if  NOTE(k) > NOTE(idx_temp)           % EMPIRICAL: compare NOTE to NOTE of major cluster
+                            NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                            clust_merge(:,k) = X(:,k);                                                                      % merge cluster to major cluster
+                            NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );                     % recompute NOTE_major
+                        end
+                    end
+                    
+                else                    
+                    [NOTE_major major_idx] = max(NOTE);
+                    kx_major = clust_cell{major_idx,1}';
+                    
+                    for k = 1:L(2)
+                        if similarity(NOTE_major, NOTE(k),'variance') < 7*eps && NOTE(k) > 1                             % EMPIRICAL: compare NOTE to NOTE of major cluster
+                            NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
+                            clust_merge(:,k) = X(:,k);                                                      % merge cluster to major cluster
+                            NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major
+                        end
                     end
                 end
             end
         end
     end
+    
     
     clust_merge(isnan(clust_merge)) = [];         % remove NaN values
     clust_merge = unique(clust_merge);            % remove repeated elements ans sort array
@@ -304,12 +312,13 @@ if length(kx_major) >= 2
     %   - Add peaks to major cluster considering peaks periodicity -
     % Periodic peaks in row
     tx_rect = delta_tx(tx);
+    T_rect = mean(tx_rect);
     
     kx_major_ = nan(1,length(kx)+length(kx_major));
     kx_major_(1:length(kx_major)) = kx_major;        % length(kx_major) < length(kx)
     
     for k = 1:length(tx_rect)
-        if similarity(T,tx_rect(k), 'relative') < 0.5             % less than 50% relative error from T
+        if similarity(T_rect,tx_rect(k), 'relative') < 0.2
             if similarity(note_x(k), note_x(k+1), 'relative') < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+1);
@@ -330,13 +339,14 @@ if length(kx_major) >= 2
     
     % Periodic peaks separated by minor peak
     tx_rect2 = delta_tx(tx,2);
+    T_rect2 = mean(tx_rect2);
     
     kx_major_ = nan(1,length(kx)+length(kx_major));
     kx_major_(1:length(kx_major)) = kx_major;        % length(kx_major) < length(kx)
     
     for k = 1:length(tx_rect2)
-        if similarity(T, tx_rect2(k), 'relative') < 0.5            % less than 50% relative error from T and avoid periodic minor peaks
-            if similarity(note_x(k), note_x(k+2), 'relative') < 0.5 && similarity(NOTE_major, note_x(k), 'relative') < 0.2 && ( ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )
+        if similarity(T_rect2, tx_rect2(k), 'relative') < 0.2            % less than 50% relative error from T and avoid periodic minor peaks
+            if similarity(note_x(k), note_x(k+2), 'relative') < 0.5  && sx(k) > sx(k+1) && sx(k+2) > sx(k+1) && ( ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+2);
             end
@@ -395,6 +405,8 @@ else
     T = nan;
     
 end
+
+
 %%
 %   - Plots -
 figure(2);
