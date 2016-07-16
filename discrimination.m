@@ -101,21 +101,24 @@ varargout{1} = handles.output;
 
 function file_chgd = update_filelist(h)
 file_chgd = 0;
-if h.checkbox_ecg.Value
+if h.checkbox_ecg.Value && ~h.checkbox_ppg_meas.Value
     if h.popupmenu_files.Value > h.nf_ecg
         h.popupmenu_files.Value = 1;
         file_chgd = 1;
     end
     h.popupmenu_files.String = h.f_list_database(1:h.nf_ecg);
     
-elseif h.checkbox_ppg_meas.Value
+elseif h.checkbox_ppg_meas.Value && ~h.checkbox_ecg.Value
     if h.popupmenu_files.Value > h.nf_meas
         h.popupmenu_files.Value = 1;
         file_chgd = 1;
     end
     h.popupmenu_files.String = h.f_list_meas(1:h.nf_meas);
-else
+elseif ~h.checkbox_ppg_meas.Value && ~h.checkbox_ecg.Value
     h.popupmenu_files.String = h.f_list_database;
+    
+else
+    uiwait(msgbox('Select one database or default','Error','error'));
 end
 
 function h = update_infile(h)
@@ -191,7 +194,11 @@ if h.t_int ~= 0
     else
         h.eps = str2double(h.edit_eps.String);
         h = process_sig(h);
+        if h.warning == 0
         plot_(h);
+        else
+           uiwait(msgbox('No peaks detected','Warning','warn'));
+        end
     end
 else
     plot_(h);
@@ -283,7 +290,7 @@ if isempty(h.ft)
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t_,h.s_);
     
     %   - Minimum variance algorithm -
-    [h.kx_major,h.tx_major,h.sx_major, h.T] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, h.eps);
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, h.eps);
     
 else
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative

@@ -106,7 +106,7 @@ note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
 %       -- Minimum variance algorithm --
 % [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, 0.1);
 
-eps = 0.1;
+eps = 0.01;
 kx_ = kx;
 
 %   - Clustering according to minimum variance of note_x -
@@ -203,6 +203,8 @@ end
 
 tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','VariableNames',{'Cluster','Size','T','eps','R','Note_x','Cluster_note'});
 
+
+%%
 %   - Select major cluster + merge sub-major clusters -
 Nrows = max(cellfun(@numel,clust_cell));
 X = nan(Nrows(1),L(2));
@@ -265,8 +267,7 @@ if L(2) >= 2                                             % more than 1 cluster
                     end
                 end
             else
-                clearvars clust_note_temp idx_temp major_idx;
-                clust_note_temp_ = max(   clust_note(clust_note < max(clust_note))    );          % second max clust_note
+                clust_note_temp2 = max(   clust_note(clust_note < max(clust_note))    );          % second max clust_note
                 idx_temp_ = find(clust_note == clust_note_temp_);
                 NOTE_temp_ = NOTE(idx_temp_);
                 
@@ -275,9 +276,9 @@ if L(2) >= 2                                             % more than 1 cluster
                 
                 if NOTE(idx_temp) > 10*eps                                                                  % EMP
                     major_idx = idx_temp;
-                    NOTE_major = NOTE(major_idx);
                     kx_major = clust_cell{major_idx,1}';
-                                       
+                    NOTE_major = NOTE(major_idx);
+                    
                     for k = 1:L(2)
                         if similarity(NOTE_major, NOTE(k),'variance') < 7*eps  && NOTE(k) > 10*eps           % EMPIRICAL: compare NOTE to NOTE of major cluster
                             NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
@@ -287,8 +288,8 @@ if L(2) >= 2                                             % more than 1 cluster
                     end
                     
                 else
-                    major_idx = 1;
-                    NOTE_major = NOTE(major_idx);
+                    
+                    [NOTE_major major_idx] = max(NOTE);
                     kx_major = clust_cell{major_idx,1}';
                     
                     for k = 1:L(2)
@@ -434,7 +435,7 @@ else
     T = nan;
     
 end
-%%
+
 %   - Plots -
 figure(2);
 plot( tx , sx   , 'dc','MarkerSize',12);

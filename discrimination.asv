@@ -172,8 +172,14 @@ end
 [h.t0_ h.s0_ h.t_ h.s_] = time_div(h.t0,h.s0,h.dt0, h.t,h.s,h.dt, h.frame_length,h.frame);
 
 % Timeline grids
+if h.toggle_FF.Value == 0
 h.axes.XLim = [h.t0_(1) h.t0_(end)];
 h.axes.YLim = [min(h.s0_)-1 max(h.s0_)+1];
+
+elseif h.toggle_FF.Value == 1
+h.axes.XLim = [h.t0(1) h.t0(end)];
+h.axes.YLim = [min(h.s0) max(h.s0)];
+end
 
 h = grids(h);
 
@@ -185,6 +191,7 @@ if h.t_int ~= 0
     else
         h.eps = str2double(h.edit_eps.String);
         h = process_sig(h);
+        if 
         plot_(h);
     end
 else
@@ -277,7 +284,7 @@ if isempty(h.ft)
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t_,h.s_);
     
     %   - Minimum variance algorithm -
-    [h.kx_major,h.tx_major,h.sx_major, h.T] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, h.eps);
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, h.eps);
     
 else
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
@@ -432,8 +439,6 @@ else
                     
                 end
             elseif h.toggle_FF.Value == 1
-                h.axes.XLim = [h.t0(1) h.t0(end)];
-                h.axes.YLim = [min(h.s0) max(h.s0)];
                 
                 if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
                     plot( h.axes ...

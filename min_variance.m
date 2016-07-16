@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Clustering according to minimum variance of note_x  --
 
-function [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, eps)
+function [kx_major,tx_major,sx_major, T, warning] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, eps)
 kx_ = kx;
 
 %   - Clustering according to minimum variance of note_x -
@@ -56,13 +56,25 @@ for k = 1:L(2)
     idx_ = NAN_idx(find(NAN_idx));     % extract non zero value of idx, per, note
     per_ = NAN_per(find(NAN_per));
     note_ = NAN_note(find(NAN_note));
-    
-    clust_cell{k,1} = idx_;            % kx
-    clust_cell{k,2} = per_;            % tx
-    clust_cell{k,3} = note_;           % note_x
+     
+    clust_cell_temp{k,1} = idx_;            % kx
+    clust_cell_temp{k,2} = per_;            % tx
+    clust_cell_temp{k,3} = note_;           % note_x
+    NOTE_mean(k) = mean(clust_cell_temp{k,3}); 
     
     clear NAN_ NAN_idx NAN_per NAN_note idx_ per_ note_
 end
+
+% Sort clusters by NOTE
+NOTE = sort(NOTE_mean,'descend');                               % average of cluster note_x sorted 
+
+for k = 1:L(2)
+    
+clust_cell{k,1} = clust_cell_temp{NOTE_mean == NOTE(k),1};      % kx sorted
+clust_cell{k,2} = clust_cell_temp{NOTE_mean == NOTE(k),2};      % tx sorted
+clust_cell{k,3} = clust_cell_temp{NOTE_mean == NOTE(k),3};      % note_x sorted    
+
+end  
 
 %   - Cluster notation: size, tx periodicity, note_x -
 for k = 1:L(2)
@@ -74,14 +86,11 @@ for k = 1:L(2)
         if PER_eps(k) <= 0.1            % best periodicity note set to 0.1 otherwise increase too much the cluster note
             PER_eps(k) = 0.1;
         end
-        
-        NOTE(k) = mean(clust_cell{k,3});                                             % average note_x
         clust_note(k) = (0.7 * NOTE(k) + 0.2 * SIZE(k)) / (PER_eps(k)/0.1);          % cluster note EMPIRICAL
         
     else
         SIZE(k) = length(clust_cell{k,1});
         PER_T(k) = 0; PER_eps(k) = 0; PER_R(k) = 0;
-        NOTE(k) = mean(clust_cell{k,3});
         clust_note(k) = 0;
         
     end
@@ -99,7 +108,8 @@ clust_merge = nan(Nrows(1),L(2));
 
 if L(2) >= 2                                             % more than 1 cluster
     if all(clust_note == 0)
-        [NOTE_major major_idx] = max(NOTE);
+        major_idx = 1;
+        NOTE_major = NOTE(major_idx);
         kx_major = clust_cell{major_idx,1}';
         
         if all(NOTE <= 10*eps)                                                                         % EMP
@@ -122,7 +132,8 @@ if L(2) >= 2                                             % more than 1 cluster
         
     else
         if all(NOTE <= 10*eps)                                                                            % EMP
-            [NOTE_major major_idx] = max(NOTE);
+            major_idx = 1;
+            NOTE_major = NOTE(major_idx);
             kx_major = clust_cell{major_idx,1}';
             
             for k = 1:L(2)
@@ -138,8 +149,8 @@ if L(2) >= 2                                             % more than 1 cluster
             
             if NOTE(idx_temp) > 10*eps                                                                  % EMP
                 major_idx = idx_temp;
-                kx_major = clust_cell{major_idx,1}';
                 NOTE_major = NOTE(major_idx);
+                kx_major = clust_cell{major_idx,1}';
                 
                 for k = 1:L(2)
                     if similarity(NOTE_major, NOTE(k),'variance') < 7*eps && NOTE(k) > 10*eps           % EMPIRICAL: compare NOTE to NOTE of major cluster
@@ -159,9 +170,9 @@ if L(2) >= 2                                             % more than 1 cluster
                 
                 if NOTE(idx_temp) > 10*eps                                                                  % EMP
                     major_idx = idx_temp;
-                    kx_major = clust_cell{major_idx,1}';
                     NOTE_major = NOTE(major_idx);
-                    
+                    kx_major = clust_cell{major_idx,1}';
+                                       
                     for k = 1:L(2)
                         if similarity(NOTE_major, NOTE(k),'variance') < 7*eps  && NOTE(k) > 10*eps           % EMPIRICAL: compare NOTE to NOTE of major cluster
                             NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
@@ -171,8 +182,8 @@ if L(2) >= 2                                             % more than 1 cluster
                     end
                     
                 else
-                    
-                    [NOTE_major major_idx] = max(NOTE);
+                    major_idx = 1;
+                    NOTE_major = NOTE(major_idx);
                     kx_major = clust_cell{major_idx,1}';
                     
                     for k = 1:L(2)
@@ -212,6 +223,7 @@ else                                              % one cluster only
 end
 
 if length(kx_major) >= 2
+    warning = 0;
     
     %   - Major peaks -
     kx_major = unique(kx_major);
@@ -312,9 +324,9 @@ if length(kx_major) >= 2
     [kx_major,tx_major,sx_major,T] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
     
 else
-    display('Not enough points');
+    warning = 1;
     tx_major = nan;
     sx_major = nan;
     T = nan;
-    
+    display('Not enough points')
 end
