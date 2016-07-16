@@ -71,8 +71,8 @@ for k = 1:L(2)
         SIZE(k) = length(clust_cell{k,1});                                 % size
         [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(clust_cell{k,2});    % tx periodicity
         
-        if PER_eps(k) <= 0.01            % best periodicity note set to 0.1 otherwise increase too much the cluster note
-            PER_eps(k) = 0.01;
+        if PER_eps(k) <= 0.1            % best periodicity note set to 0.1 otherwise increase too much the cluster note
+            PER_eps(k) = 0.1;
         end
         
         NOTE(k) = mean(clust_cell{k,3});                                             % average note_x

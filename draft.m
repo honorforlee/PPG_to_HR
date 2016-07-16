@@ -5,8 +5,8 @@
 %Name = '3916979m';         % row 6
 %Name = '3919370m (1)';     % row 5
 %Name = '3919370m';         % row 5
-%Name = '3801060_0007m';    % row 1
-Name = '3899985_0005m';    % row 1
+Name = '3801060_0007m';    % row 1
+%Name = '3899985_0005m';    % row 1
 %Name = 'a02m';             % row 1
 
 load(strcat(Name, '.mat'));
@@ -31,7 +31,7 @@ quant = 0.1;                         % LSB: vertical step
 
 [t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
 
-[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,11);
+[t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,5);
 
 %  - Peaks identification -
 %[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
@@ -106,7 +106,7 @@ note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
 %       -- Minimum variance algorithm --
 % [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, 0.1);
 
-eps = 0.1;
+eps = 0.01;
 kx_ = kx;
 
 %   - Clustering according to minimum variance of note_x -
@@ -176,7 +176,7 @@ for k = 1:L(2)
         SIZE(k) = length(clust_cell{k,1});                                 % size
         [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(clust_cell{k,2});    % tx periodicity
         
-        if PER_eps(k) <= 0.01            % best periodicity note set to 0.1 otherwise increase too much the cluster note
+        if PER_eps(k) <= 0.1            % best periodicity note set to 0.1 otherwise increase too much the cluster note
             PER_eps(k) = 0.01;
         end
         

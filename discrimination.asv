@@ -172,14 +172,8 @@ end
 [h.t0_ h.s0_ h.t_ h.s_] = time_div(h.t0,h.s0,h.dt0, h.t,h.s,h.dt, h.frame_length,h.frame);
 
 % Timeline grids
-if h.toggle_FF.Value == 0
 h.axes.XLim = [h.t0_(1) h.t0_(end)];
 h.axes.YLim = [min(h.s0_)-1 max(h.s0_)+1];
-
-elseif h.toggle_FF.Value == 1
-h.axes.XLim = [h.t0(1) h.t0(end)];
-h.axes.YLim = [min(h.s0) max(h.s0)];
-end
 
 h = grids(h);
 
@@ -438,6 +432,8 @@ else
                     
                 end
             elseif h.toggle_FF.Value == 1
+                h.axes.XLim = [h.t0(1) h.t0(end)];
+                h.axes.YLim = [min(h.s0) max(h.s0)];
                 
                 if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
                     plot( h.axes ...
