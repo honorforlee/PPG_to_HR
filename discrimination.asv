@@ -101,21 +101,24 @@ varargout{1} = handles.output;
 
 function file_chgd = update_filelist(h)
 file_chgd = 0;
-if h.checkbox_ecg.Value
+if h.checkbox_ecg.Value && ~h.checkbox_ppg_meas.Value
     if h.popupmenu_files.Value > h.nf_ecg
         h.popupmenu_files.Value = 1;
         file_chgd = 1;
     end
     h.popupmenu_files.String = h.f_list_database(1:h.nf_ecg);
     
-elseif h.checkbox_ppg_meas.Value
+elseif h.checkbox_ppg_meas.Value && ~h.checkbox_ecg.Value
     if h.popupmenu_files.Value > h.nf_meas
         h.popupmenu_files.Value = 1;
         file_chgd = 1;
     end
     h.popupmenu_files.String = h.f_list_meas(1:h.nf_meas);
-else
+elseif ~h.checkbox_ppg_meas.Value && ~h.checkbox_ecg.Value
     h.popupmenu_files.String = h.f_list_database;
+    
+else
+    uiwait(msgbox('Select one database or default','Error','error'));
 end
 
 function h = update_infile(h)
@@ -191,8 +194,11 @@ if h.t_int ~= 0
     else
         h.eps = str2double(h.edit_eps.String);
         h = process_sig(h);
-        if 
+        if h.warning == 0
         plot_(h);
+        else
+           uiwait(msgbox('No peaks detected','Warning','warn'));
+        end
     end
 else
     plot_(h);
@@ -392,6 +398,7 @@ else
         if isempty(h.ft_)
             if h.toggle_FF.Value == 0
                 if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
+                    if h.checkbox_samples_Value 
                     plot( h.axes ...
                         ,h.t0_ , h.s0_ , '-k','LineWidth',.5);
                     hold on
