@@ -328,5 +328,5 @@ else
     tx_major = nan;
     sx_major = nan;
     T = nan;
-    display('Not enough points')
+    display('No peaks detected')
 end
