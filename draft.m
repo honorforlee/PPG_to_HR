@@ -1,27 +1,25 @@
-%Name = '3900497mB';        % row 6
-%Name = '3900679m';         % row 5
-%Name = '3914288m';         % row 5
-%Name = '3916979m (4)';     % row 6  (1 : 5)
-%Name = '3916979m';         % row 6
-%Name = '3919370m (1)';     % row 5
-%Name = '3919370m';         % row 5
-%Name = '3801060_0007m';    % row 1
-Name = '3899985_0005m';    % row 1
-%Name = 'a02m';             % row 1
-
+Name = '3900497m';
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
-fgetl(fid);
-fgetl(fid);
-fgetl(fid);
-[interval] = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
-dt0 = interval(2);              % data acquisition rate (interval = 1/f_spl_u = 0.5903 ms in practice)
+fgetl(fid); fgetl(fid); fgetl(fid);
+dt0 = sscanf(fgetl(fid), 'Sampling frequency: %f Hz  Sampling interval: %f sec');
+dt0 = dt0(2);
+fgetl(fid); sig = fgetl(fid);
 
+ppg = 0; ecg = 0; meas = 0;
+while sig
+    [k,signal,~,~,~] = strread(sig,'%d%s%f%f%s','delimiter','\t'); %#ok<DSTRRD>
+    if strcmp(signal,'II');    ecg = k; end
+    if strcmp(signal,'PLETH'); ppg = k; end
+    if strcmp(signal,'MEAS'); meas = k; end
+    sig = fgetl(fid);
+end
 fclose(fid);
 
 val(isnan(val)) = [];
 t0 = (1:length(val)) * dt0;            % timeline
-s0 = val(1,1:length(val));
+s0 = val(ecg,1:length(val));
+
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
@@ -34,74 +32,74 @@ quant = 0.1;                         % LSB: vertical step
 [t0_, s0_, t_, s_] = time_div(t0,s0,dt0, t,s,dt,5,3);
 
 %  - Peaks identification -
-%[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
+[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t_,s_);
 
-d = s_(2:end) -  s_(1:end-1);
-td = t_(2:end);
-kx = d > 0;
-kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d(k(x) > 0; d( k(x) + 1 ) <= 0
-
-sx = s_(kx+1);                          % local maxima
-tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-
-dhi = d(kx);
-dlo = d(kx+1);
-
-for k = 1:length(kx)
-    i = kx(k)-1;   while i > 0             && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx-
-    i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
-end
-
-kx_n = d < 0;                               % search for local minima
-kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
-
-if kx_n(1) < kx(1)
-    for k = 1:length(kx)
-        kx_index(k) = max( find( kx_n < kx(k) ) );
-    end
-    sx_N = s_(kx_n( kx_index ) + 1);
-    tx_N = td(kx_n( kx_index )) + (td(kx_n( kx_index )+1)-td(kx_n( kx_index ))) .* d(kx_n( kx_index ))./(d(kx_n( kx_index ))-d(kx_n( kx_index )+1));
-else
-    j = 1;
-    while kx_n(1) > kx(j)                   % find first minima preceding maxima
-        kx_index(j) = nan;
-        sx_N(j) = nan;
-        tx_N(j) = nan;
-        j = j+1;
-    end
-    for k = j:length(kx)
-        kx_index(k) = max( find( kx_n < kx(k) ) );
-        sx_N(k) = s_(kx_n( kx_index(k) ) + 1);
-        tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
-    end
-    
-end
-
-%   - Peaks notation -
-note_1 = sx;
-note_2 = dhi - dlo;                           % maximum slope difference around peak
-
-for k = 1:length(tx)
-    if tx(k) >= tx_N(k)
-        delta(k) = sx(k) - sx_N(k);
-    else                                     % if minimum out of frame, take first min in the frame
-        j = k;
-        while isnan(sx_N(j))
-            j = j+1;
-        end
-        
-        delta(k) = sx(k) - sx_N(j);
-        clearvars j;
-    end
-end
-note_3 = delta;
-
-for k = 2:length(kx)-1
-    note_1(k) = sx(k) - ( sx(k+1) + sx(k-1) )/2;                                % average peak value
-    note_3(k) = delta(k) - ( delta(k+1) + delta(k-1) )/2;                       % average peak to peak value
-end
-
-note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
+% d = s_(2:end) -  s_(1:end-1);
+% td = t_(2:end);
+% kx = d > 0;
+% kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d(k(x) > 0; d( k(x) + 1 ) <= 0
+% 
+% sx = s_(kx+1);                          % local maxima
+% tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+% 
+% dhi = d(kx);
+% dlo = d(kx+1);
+% 
+% for k = 1:length(kx)
+%     i = kx(k)-1;   while i > 0             && d(i) >= dhi(k); dhi(k) = d(i); i = i-1; end    % search for maximum positive slope at kx-
+%     i = kx(k)+2;   while i < length(d) && d(i) <= dlo(k); dlo(k) = d(i); i = i+1; end    % search for maximmum negative slope at kx+
+% end
+% 
+% kx_n = d < 0;                               % search for local minima
+% kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
+% 
+% if kx_n(1) < kx(1)
+%     for k = 1:length(kx)
+%         kx_index(k) = max( find( kx_n < kx(k) ) );
+%     end
+%     sx_N = s_(kx_n( kx_index ) + 1);
+%     tx_N = td(kx_n( kx_index )) + (td(kx_n( kx_index )+1)-td(kx_n( kx_index ))) .* d(kx_n( kx_index ))./(d(kx_n( kx_index ))-d(kx_n( kx_index )+1));
+% else
+%     j = 1;
+%     while kx_n(1) > kx(j)                   % find first minima preceding maxima
+%         kx_index(j) = nan;
+%         sx_N(j) = nan;
+%         tx_N(j) = nan;
+%         j = j+1;
+%     end
+%     for k = j:length(kx)
+%         kx_index(k) = max( find( kx_n < kx(k) ) );
+%         sx_N(k) = s_(kx_n( kx_index(k) ) + 1);
+%         tx_N(k) = td(kx_n( kx_index(k) )) + (td(kx_n( kx_index(k) )+1)-td(kx_n( kx_index(k) ))) .* d(kx_n( kx_index(k) ))./(d(kx_n( kx_index(k) ))-d(kx_n( kx_index(k) )+1));
+%     end
+%     
+% end
+% 
+% %   - Peaks notation -
+% note_1 = sx;
+% note_2 = dhi - dlo;                           % maximum slope difference around peak
+% 
+% for k = 1:length(tx)
+%     if tx(k) >= tx_N(k)
+%         delta(k) = sx(k) - sx_N(k);
+%     else                                     % if minimum out of frame, take first min in the frame
+%         j = k;
+%         while isnan(sx_N(j))
+%             j = j+1;
+%         end
+%         
+%         delta(k) = sx(k) - sx_N(j);
+%         clearvars j;
+%     end
+% end
+% note_3 = delta;
+% 
+% for k = 2:length(kx)-1
+%     note_1(k) = sx(k) - ( sx(k+1) + sx(k-1) )/2;                                % average peak value
+%     note_3(k) = delta(k) - ( delta(k+1) + delta(k-1) )/2;                       % average peak to peak value
+% end
+% 
+% note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
 
 %       -- Minimum variance algorithm --
 % [kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, 0.1);
@@ -161,25 +159,25 @@ for k = 1:L(2)
     idx_ = NAN_idx(find(NAN_idx));     % extract non zero value of idx, per, note
     per_ = NAN_per(find(NAN_per));
     note_ = NAN_note(find(NAN_note));
-     
+    
     clust_cell_temp{k,1} = idx_;            % kx
     clust_cell_temp{k,2} = per_;            % tx
     clust_cell_temp{k,3} = note_;           % note_x
-    NOTE_mean(k) = mean(clust_cell_temp{k,3}); 
+    NOTE_mean(k) = mean(clust_cell_temp{k,3});
     
     clear NAN_ NAN_idx NAN_per NAN_note idx_ per_ note_
 end
 
 % Sort clusters by NOTE
-NOTE = sort(NOTE_mean,'descend');                               % average of cluster note_x sorted 
+NOTE = sort(NOTE_mean,'descend');                               % average of cluster note_x sorted
 
 for k = 1:L(2)
     
-clust_cell{k,1} = clust_cell_temp{NOTE_mean == NOTE(k),1};      % kx sorted
-clust_cell{k,2} = clust_cell_temp{NOTE_mean == NOTE(k),2};      % tx sorted
-clust_cell{k,3} = clust_cell_temp{NOTE_mean == NOTE(k),3};      % note_x sorted    
-
-end  
+    clust_cell{k,1} = clust_cell_temp{NOTE_mean == NOTE(k),1};      % kx sorted
+    clust_cell{k,2} = clust_cell_temp{NOTE_mean == NOTE(k),2};      % tx sorted
+    clust_cell{k,3} = clust_cell_temp{NOTE_mean == NOTE(k),3};      % note_x sorted
+    
+end
 
 %   - Cluster notation: size, tx periodicity, note_x -
 for k = 1:L(2)
@@ -277,7 +275,7 @@ if L(2) >= 2                                             % more than 1 cluster
                     major_idx = idx_temp;
                     NOTE_major = NOTE(major_idx);
                     kx_major = clust_cell{major_idx,1}';
-                                       
+                    
                     for k = 1:L(2)
                         if similarity(NOTE_major, NOTE(k),'variance') < 7*eps  && NOTE(k) > 10*eps           % EMPIRICAL: compare NOTE to NOTE of major cluster
                             NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
