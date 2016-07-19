@@ -56,25 +56,25 @@ for k = 1:L(2)
     idx_ = NAN_idx(find(NAN_idx));     % extract non zero value of idx, per, note
     per_ = NAN_per(find(NAN_per));
     note_ = NAN_note(find(NAN_note));
-     
+    
     clust_cell_temp{k,1} = idx_;            % kx
     clust_cell_temp{k,2} = per_;            % tx
     clust_cell_temp{k,3} = note_;           % note_x
-    NOTE_mean(k) = mean(clust_cell_temp{k,3}); 
+    NOTE_mean(k) = mean(clust_cell_temp{k,3});
     
     clear NAN_ NAN_idx NAN_per NAN_note idx_ per_ note_
 end
 
 % Sort clusters by NOTE
-NOTE = sort(NOTE_mean,'descend');                               % average of cluster note_x sorted 
+NOTE = sort(NOTE_mean,'descend');                               % average of cluster note_x sorted
 
 for k = 1:L(2)
     
-clust_cell{k,1} = clust_cell_temp{NOTE_mean == NOTE(k),1};      % kx sorted
-clust_cell{k,2} = clust_cell_temp{NOTE_mean == NOTE(k),2};      % tx sorted
-clust_cell{k,3} = clust_cell_temp{NOTE_mean == NOTE(k),3};      % note_x sorted    
-
-end  
+    clust_cell{k,1} = clust_cell_temp{NOTE_mean == NOTE(k),1};      % kx sorted
+    clust_cell{k,2} = clust_cell_temp{NOTE_mean == NOTE(k),2};      % tx sorted
+    clust_cell{k,3} = clust_cell_temp{NOTE_mean == NOTE(k),3};      % note_x sorted
+    
+end
 
 %   - Cluster notation: size, tx periodicity, note_x -
 for k = 1:L(2)
@@ -172,7 +172,7 @@ if L(2) >= 2                                             % more than 1 cluster
                     major_idx = idx_temp;
                     NOTE_major = NOTE(major_idx);
                     kx_major = clust_cell{major_idx,1}';
-                                       
+                    
                     for k = 1:L(2)
                         if similarity(NOTE_major, NOTE(k),'variance') < 7*eps  && NOTE(k) > 10*eps           % EMPIRICAL: compare NOTE to NOTE of major cluster
                             NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
@@ -232,7 +232,11 @@ if length(kx_major) >= 2
     T = mean(delta_tx(tx_major));
     
     % - Remove some merged peaks -
-    [kx_major,tx_major,sx_major,T] = remove_peaks(kx_major,tx_major,sx_major, T, kx,note_x);
+    [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx,note_x);
+    if warning == 1
+        display('No peaks detected')
+        return
+    end
     
     %   - Add peaks to major cluster considering peaks periodicity -
     % Periodic peaks in row
@@ -285,6 +289,12 @@ if length(kx_major) >= 2
     sx_major = s_(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
     
+    [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
+    if warning == 1
+        display('No peaks detected')
+        return
+    end
+    
     %       - Search for missing peaks -
     % Miss peaks inside the frame: add/create 2 peaks max in a hole
     loop = 0;
@@ -321,7 +331,11 @@ if length(kx_major) >= 2
     end
     
     %   - Remove peaks from major cluster -
-    [kx_major,tx_major,sx_major,T] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
+    [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
+    if warning == 1
+        display('No peaks detected')
+        return
+    end
     
 else
     warning = 1;

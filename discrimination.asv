@@ -154,19 +154,10 @@ h = quantize_input(h);
 
 %   - Timeline, noise, integration, quantization -
 function h = quantize_input(h)
-if isempty(h.edit_f_sample.String)
-    uiwait(msgbox('Fill f_sample.','Warning','warn'));
-else
+if isempty (h.edit_f_sample.String
 h.dt   = 1/str2double(h.edit_f_sample.String);                   % apply t_sample
-end
-
 h.t_int = h.dt * h.slider_t_int.Value;
-
-if isempty(h.edit_dNdS.String)
-    uiwait(msgbox('Fill dN/dS.','Warning','warn'));
-else
 h.dNds = str2double(h.edit_dNdS.String);                         % apply vertical precision (delta_samp)
-end
 
 % Define timeline
 h.t0 = (1:length(h.s0)) * h.dt0;
@@ -176,9 +167,9 @@ h.t0 = (1:length(h.s0)) * h.dt0;
 
 % Divide timeline
 if isempty(h.edit_frame_length.String) 
-    uiwait(msgbox('Fill Frame length.','Warning','warn'));
+    uiwait(msgbox('Fill frame length','Warning','warn'));
 elseif isempty(h.edit_frame.String)
-    uiwait(msgbox('Fill Frame.','Warning','warn'));
+    uiwait(msgbox('Fill frame number','Warning','warn'));
 else
 h.frame_length = str2double(h.edit_frame_length.String);
 h.frame = str2double(h.edit_frame.String);
@@ -209,16 +200,15 @@ if h.t_int ~= 0
         plot_cluster_distribution(h);
     else
         if isempty(h.edit_eps.String)
-            uiwait(msgbox('Fill eps.','Warning','warn'));
+            uiwait(msgbox('Fill eps','Warning','warn'));
         else    
         h.eps = str2double(h.edit_eps.String);
         end
-        
         h = process_sig(h);
         if h.warning == 0
             plot_(h);
         else
-            uiwait(msgbox('No peaks detected.','Warning','warn'));
+            uiwait(msgbox('No peaks detected','Warning','warn'));
         end
     end
 else
@@ -309,13 +299,9 @@ if isempty(h.ft)
     
     %   - Peaks identification -
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t_,h.s_);
-  
-    if ~h.checkbox_ecg.Value
+    
     %   - Minimum variance algorithm -
     [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(h.t_,h.s_, h.td,h.d, h.kx,h.tx,h.sx,h.note_x, h.eps);
-    else
-        h.tx_major = nan; h.sx_major = nan;             % no ecg algorithm yet
-    end
     
 else
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative

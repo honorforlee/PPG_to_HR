@@ -33,16 +33,12 @@ if length(kx_major) > 2
         loop = loop +1;
     end
     if length(kx_major) > 2
-        warning = 0;
-    else
-        warning = 1;
-        tx_major = nan;
-        sx_major = nan;
-        T = nan;
-    end
+    warning = 0;
+    el
 else
     warning = 1;
     tx_major = nan;
     sx_major = nan;
     T = nan;
+    display('No peaks detected')
 end

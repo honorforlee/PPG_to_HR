@@ -5,7 +5,7 @@ function [kx_add,tx_pos] = missing_peaks(kx,tx, kx_major,tx_major, tx_pos,T, not
 kx_add = nan(1,length(kx_major));       % for horizontal concatenation
 
 for k = 1:length(tx_pos)                % assume ONE missing/skipped peak
-    if tx_pos(k) > T + T/3            % need enough large frame length to give weight to T
+    if tx_pos(k) > T + T/3    || tx_pos(k) > 1/0.33           % need enough large frame length to give weight to T
         left(k) = kx_major(k);
         right(k) = kx_major(k+1);
         kx_add_ = kx( kx(1,:) > left(k) & kx(1,:) < right(k));
