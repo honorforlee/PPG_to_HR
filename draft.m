@@ -1,4 +1,4 @@
-Name = 'meas3_pwm100';
+Name = '3899985_0005m';
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid); fgetl(fid); fgetl(fid);
@@ -19,7 +19,7 @@ fclose(fid);
 if meas == 0
     val(isnan(val)) = [];
     t0 = (1:length(val)) * dt0;            % timeline
-    s0 = val(meas,1:length(val));
+    s0 = val(ppg,1:length(val));
     
 else
     Vout(isnan(Vout)) = [];
@@ -39,7 +39,7 @@ quant = 0.1;                         % LSB: vertical step
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
 
-frame_init = 5; frame_end = 10;
+frame_init = 50; frame_end = 55;
 
 index_x = find(tx >= frame_init & tx <= frame_end);
 sx_N_frame = sx_N(index_x);
@@ -348,7 +348,7 @@ if length(kx_major) >= 2
     end
     
     
-    
+        
 else
     warning = 1;
     tx_major = nan;
