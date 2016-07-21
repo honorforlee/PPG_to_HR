@@ -1,3 +1,6 @@
+% Ivan NY HANITRA - Master thesis
+%       -- Divide timeline in frames  --
+
 function [t0_ s0_ t_ s_] = time_div(t0,s0,dt0, t,s,dt, frame_length,frame)
 %   - Processed signal frame -
 range0 = (1 : (frame_length/dt0)) * dt0;

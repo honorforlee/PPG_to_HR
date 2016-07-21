@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Clustering according to minimum variance of note_x  --
 
-function [kx_major,tx_major,sx_major, T, warning] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, eps)
+function [kx_major,tx_major,sx_major, T, warning] = min_variance(t,s, td,d, kx,tx,sx,note_x, eps)
 kx_ = kx;
 
 %   - Clustering according to minimum variance of note_x -
@@ -228,7 +228,7 @@ if length(kx_major) >= 2
     %   - Major peaks -
     kx_major = unique(kx_major);
     tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-    sx_major = s_(kx_major+1);          % local maxima
+    sx_major = s(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
     
     % - Remove some merged peaks -
@@ -263,7 +263,7 @@ if length(kx_major) >= 2
     kx_major = unique(kx_major_);
     
     tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-    sx_major = s_(kx_major+1);          % local maxima
+    sx_major = s(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
     
     % Periodic peaks separated by minor peak
@@ -286,7 +286,7 @@ if length(kx_major) >= 2
     kx_major = unique(kx_major_);
     
     tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-    sx_major = s_(kx_major+1);          % local maxima
+    sx_major = s(kx_major+1);          % local maxima
     T = mean(delta_tx(tx_major));
     
     [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
@@ -306,7 +306,7 @@ if length(kx_major) >= 2
         [kx_add,tx_pos] = missing_peaks(kx,tx, kx_major,tx_major, tx_pos,T, note_x,NOTE_major,eps);
         
         % Add/create peak to major cluster
-        [kx_major, tx_major, sx_major, T] = add_peaks(t_,s_,td,d, kx_major,tx_major,sx_major, kx_add,tx_pos);
+        [kx_major, tx_major, sx_major, T] = add_peaks(t,s,td,d, kx_major,tx_major,sx_major, kx_add,tx_pos);
         
         clearvars tx_pos kx_add;
         loop = loop+1;
