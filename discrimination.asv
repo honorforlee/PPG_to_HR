@@ -207,7 +207,6 @@ else
 end
 
 h.slider_frame.Max = floor( h.t0(end)/frame_length );
-h.slider_frame.SliderStep = [1/(h.slider_frame.Max - h.slider_frame.Min) 1];
 k = h.slider_frame.Value;
 
 h.frame_init =  (k-1) * frame_length;
@@ -846,6 +845,7 @@ guidata(h.output, h);
 
 function callback_frame(h) %#ok<DEFNU>
 h = quantize_input(h);
+h.slider_frame.SliderStep = [1/(h.slider_frame.Max - h.slider_frame
 h.value_frame.String = h.slider_frame.Value;
 guidata(h.output, h);
 

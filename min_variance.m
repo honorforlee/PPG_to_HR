@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Clustering according to minimum variance of note_x  --
 
-function [kx_major,tx_major,sx_major, T, warning] = min_variance(t,s, td,d, kx,tx,sx,note_x, eps)
+function [kx_major,tx_major,sx_major, T, warning] = min_variance(kx,tx,sx, note_x, eps)
 kx_ = kx;
 
 %   - Clustering according to minimum variance of note_x -
@@ -227,10 +227,12 @@ if length(kx_major) >= 2
     
     %   - Major peaks -
     kx_major = unique(kx_major);
-    tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-    sx_major = s(kx_major+1);          % local maxima
-    T = mean(delta_tx(tx_major));
+    idxs = arrayfun(@(x)find(kx==x,1),kx_major);
+    tx_major = tx(idxs);
+    sx_major = sx(idxs);
     
+    T = mean(delta_tx(tx_major));
+    clearvars idxs;
     % - Remove some merged peaks -
     [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx,note_x);
     if warning == 1
@@ -262,9 +264,12 @@ if length(kx_major) >= 2
     kx_major_(isnan(kx_major_))=[];
     kx_major = unique(kx_major_);
     
-    tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-    sx_major = s(kx_major+1);          % local maxima
+    idxs = arrayfun(@(x)find(kx==x,1),kx_major);
+    tx_major = tx(idxs);
+    sx_major = sx(idxs);
+
     T = mean(delta_tx(tx_major));
+    clearvars idxs;
     
     % Periodic peaks separated by minor peak
     tx_rect2 = delta_tx(tx,2);
@@ -285,9 +290,12 @@ if length(kx_major) >= 2
     kx_major_(isnan(kx_major_))=[];
     kx_major = unique(kx_major_);
     
-    tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
-    sx_major = s(kx_major+1);          % local maxima
+    idxs = arrayfun(@(x)find(kx==x,1),kx_major);
+    tx_major = tx(idxs);
+    sx_major = sx(idxs);
+
     T = mean(delta_tx(tx_major));
+    clearvars idxs;
     
     [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
     if warning == 1
@@ -306,29 +314,29 @@ if length(kx_major) >= 2
         [kx_add,tx_pos] = missing_peaks(kx,tx, kx_major,tx_major, tx_pos,T, note_x,NOTE_major,eps);
         
         % Add/create peak to major cluster
-        [kx_major, tx_major, sx_major, T] = add_peaks(t,s,td,d, kx_major,tx_major,sx_major, kx_add,tx_pos);
-        
+        [kx_major, tx_major, sx_major, T] = add_peaks(kx,sx,tx, kx_major, kx_add,tx_pos);
+       
         clearvars tx_pos kx_add;
         loop = loop+1;
     end
     
-    % Miss first peak
-    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
-    
-    if similarity(T,abs( tx(1) - tx_major(1) ), 'relative') < 0.2 || abs( tx(1) - tx_major(1) ) > T + T/5             % 20% relative error or more than 20% error above T
-        kx_major = insert(kx(1),kx_major,0);
-        tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));          % linear interpolation of dhi and dho to get tx (@zero crossing)
-        sx_major = insert(sx_major(1),sx_major,0);                                                                    % for visibility
-        T = mean(delta_tx(tx_major));
-    end
-    
-    % Miss last peak
-    if similarity(T,abs( tx(end) - tx_major(end) ), 'relative') < 0.2  || abs( tx(end) - tx_major(end) ) > T + T/5    % 20% relative error or more than 20% error above T
-        kx_major = insert(kx(end),kx_major,length(kx_major));
-        tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));          % linear interpolation of dhi and dho to get tx (@zero crossing)
-        sx_major = insert(sx_major(end),sx_major,length(sx_major));                                                   % for visibility
-        T = mean(delta_tx(tx_major));
-    end
+%     % Miss first peak
+%     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
+%     
+%     if similarity(T,abs( tx(1) - tx_major(1) ), 'relative') < 0.2 || abs( tx(1) - tx_major(1) ) > T + T/5             % 20% relative error or more than 20% error above T
+%         kx_major = insert(kx(1),kx_major,0);
+%         tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));          % linear interpolation of dhi and dho to get tx (@zero crossing)
+%         sx_major = insert(sx_major(1),sx_major,0);                                                                    % for visibility
+%         T = mean(delta_tx(tx_major));
+%     end
+%     
+%     % Miss last peak
+%     if similarity(T,abs( tx(end) - tx_major(end) ), 'relative') < 0.2  || abs( tx(end) - tx_major(end) ) > T + T/5    % 20% relative error or more than 20% error above T
+%         kx_major = insert(kx(end),kx_major,length(kx_major));
+%         tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));          % linear interpolation of dhi and dho to get tx (@zero crossing)
+%         sx_major = insert(sx_major(end),sx_major,length(sx_major));                                                   % for visibility
+%         T = mean(delta_tx(tx_major));
+%     end
     
     %   - Remove peaks from major cluster -
     [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
