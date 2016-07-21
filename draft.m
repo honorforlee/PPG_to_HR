@@ -39,7 +39,7 @@ quant = 0.1;                         % LSB: vertical step
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
 
-frame_init = 50; frame_end = 55;
+frame_init = 50; frame_end = 60;
 
 index_x = find(tx >= frame_init & tx <= frame_end);
 sx_N_frame = sx_N(index_x);
@@ -272,20 +272,12 @@ if length(kx_major) >= 2
     kx_major = unique(kx_major);
     idxs = arrayfun(@(x)find(kx==x,1),kx_major);
     tx_major = tx(idxs);
-    sx_major = sx(idxs);
-    
-    T = delta_tx(tx_major);
+    sx_major = sx(idxs);  
     clearvars idxs;
 
-%    % - Remove some merged peaks -
-    %[kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx,note_x);
-%     if warning == 1
-%         display('No peaks detected')
-%         return
-%     end
-    
-    %   - Add peaks to major cluster considering peaks periodicity -
-    % Periodic peaks in row
+    %       -- Add peaks to major cluster considering peaks periodicity --
+   
+    %   - Periodic peaks in row -
     tx_rect = delta_tx(tx);
     T_rect = mean(tx_rect);
     
@@ -311,11 +303,9 @@ if length(kx_major) >= 2
     idxs = arrayfun(@(x)find(kx==x,1),kx_major);
     tx_major = tx(idxs);
     sx_major = sx(idxs);
-
-    T = mean(delta_tx(tx_major));
     clearvars idxs;
     
-    % Periodic peaks separated by minor peak
+    %   - Periodic peaks separated by minor peak -
     tx_rect2 = delta_tx(tx,2);
     T_rect2 = mean(tx_rect2);
     
@@ -337,18 +327,52 @@ if length(kx_major) >= 2
     idxs = arrayfun(@(x)find(kx==x,1),kx_major);
     tx_major = tx(idxs);
     sx_major = sx(idxs);
-
-    T = mean(delta_tx(tx_major));
-    clearvars idxs;
+    clearvars idxs;  
     
-    [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
-    if warning == 1
-        display('No peaks detected')
-        return
+    %   - Inside frame -
+    insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
+    interval = delta_tx(tx_major);
+    T = median(interval);
+
+    i=1;
+    for k = i:length(interval)
+        
+        if interval(k) >= (1.5)*T || interval(k) > 1/0.33
+            kx_major = insert(kx_major(k),  kx_major,   k);
+            tx_major = insert(tx_major(k) + T,  tx_major,   k);
+            sx_major = insert(sx_major(k),  sx_major,   k);
+            
+            interval = delta_tx(tx_major);
+            T = median(interval);
+            %i = k;
+            i = 1;
+            break
+            
+        elseif interval(k) <= 0.5*T || interval(k) < 1/3.17
+            j = k+1;
+            tx_sum = 0;
+            
+            while ( ~(0.8*T < tx_sum < 1.2*T)  && tx_sum < 2*T ) || tx_sum == 0
+                tx_sum = sum(interval(k:j));
+                j = j+1;
+            end
+            idx_init = find(kx==kx_major(k)); idx_end = find(kx==kx_major(j));
+           
+            [~,keep] = max( note_x(idx_init:idx_end) );
+            
+            
+            if note_x(kx==kx_major(k)) > note_x(kx==kx_major(k+1))      % compare which peak is more relevant
+                kx_major(k+1) = [];
+                tx_major(k+1) = [];
+                sx_major(k+1) = [];
+            else
+                kx_major(k) = [];
+                tx_major(k) = [];
+                sx_major(k) = [];
+            end
+        end
     end
     
-    
-        
 else
     warning = 1;
     tx_major = nan;
