@@ -1,4 +1,4 @@
-Name = '3899985_0005m';
+Name = '3801060_0007m';
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid); fgetl(fid); fgetl(fid);
@@ -39,7 +39,7 @@ quant = 0.1;                         % LSB: vertical step
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
 
-frame_init = 50; frame_end = 60;
+frame_init = 0; frame_end = 5;
 
 index_x = find(tx >= frame_init & tx <= frame_end);
 sx_N_frame = sx_N(index_x);
@@ -286,7 +286,7 @@ if length(kx_major) >= 2
     
     for k = 1:length(tx_rect)
         if similarity(T_rect,tx_rect(k), 'relative') < 0.2
-            if similarity(note_x(k), note_x(k+1), 'relative') < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
+            if similarity(note_x(k), note_x(k+1), 'variance') < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+1);
                 
@@ -314,7 +314,7 @@ if length(kx_major) >= 2
     
     for k = 1:length(tx_rect2)
         if similarity(T_rect2, tx_rect2(k), 'relative') < 0.2            % less than 50% relative error from T and avoid periodic minor peaks
-            if similarity(note_x(k), note_x(k+2), 'relative') < 0.5  && sx(k) > sx(k+1) && sx(k+2) > sx(k+1) && ( ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )
+            if similarity(note_x(k), note_x(k+2), 'variance') < 0.5  && sx(k) > sx(k+1) && sx(k+2) > sx(k+1) && ( ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )
                 kx_major_(length(kx_major)+k) = kx(k);
                 kx_major_(length(kx_major)+k+1) = kx(k+2);
             end
@@ -334,7 +334,12 @@ if length(kx_major) >= 2
     interval = delta_tx(tx_major);
     T = median(interval);
 
+    loop = 0;
+    loop_ = length(interval);
     i=1;
+    
+    while loop < loop_ && length(tx_major) > 2
+    
     for k = i:length(interval)
         
         if interval(k) >= (1.5)*T || interval(k) > 1/0.33
@@ -344,8 +349,7 @@ if length(kx_major) >= 2
             
             interval = delta_tx(tx_major);
             T = median(interval);
-            %i = k;
-            i = 1;
+            i = k;
             break
             
         elseif interval(k) <= 0.5*T || interval(k) < 1/3.17
@@ -360,17 +364,23 @@ if length(kx_major) >= 2
            
             [~,keep] = max( note_x(idx_init:idx_end) );
             
-            
-            if note_x(kx==kx_major(k)) > note_x(kx==kx_major(k+1))      % compare which peak is more relevant
-                kx_major(k+1) = [];
-                tx_major(k+1) = [];
-                sx_major(k+1) = [];
-            else
-                kx_major(k) = [];
-                tx_major(k) = [];
-                sx_major(k) = [];
+            for l = 1 : j-k+1
+                if l ~= keep
+                kx_major(l) = [];
+                tx_major(l) = [];
+                sx_major(l) = [];
+                end
             end
+            interval = delta_tx(tx_major);
+            T = median(interval);
+            i = k;
+            
+            clearvars keep tx_sum idx_init idx_end j;
+            break
         end
+        loop = loop + 1;
+    end
+   loop = loop + 1;
     end
     
 else
