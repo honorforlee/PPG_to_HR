@@ -197,21 +197,7 @@ if L(2) >= 2                                             % more than 1 cluster
             end
         end
     end
-    
-    %                 [NOTE_major major_idx] = max(NOTE);
-    %                 kx_major = clust_cell{major_idx,1}';
-    %
-    %                 for k = 1:L(2)
-    %                     if similarity(NOTE_major, NOTE(k),'variance') < 7*eps && NOTE(k) > 1                             % EMPIRICAL: compare NOTE to NOTE of major cluster
-    %                         NOTE_major = NOTE(k) * ( Nrows(1) - sum(isnan(X(:,k))) ) + NOTE_major * ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );
-    %                         clust_merge(:,k) = X(:,k);                                                      % merge cluster to major cluster
-    %                         NOTE_major = NOTE_major / ( L(2)*Nrows(1) - sum(sum(isnan(clust_merge))) );     % recompute NOTE_major
-    %                     end
-    %                 end
-    %             end
-    %         end
-    %     end
-    
+       
     clust_merge(isnan(clust_merge)) = [];         % remove NaN values
     clust_merge = unique(clust_merge);            % remove repeated elements ans sort array
     kx_major(1,1:length(clust_merge)) = clust_merge;
@@ -233,14 +219,8 @@ if length(kx_major) >= 2
     
     T = mean(delta_tx(tx_major));
     clearvars idxs;
-    % - Remove some merged peaks -
-    [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx,note_x);
-    if warning == 1
-        display('No peaks detected')
-        return
-    end
-    
-    %   - Add peaks to major cluster considering peaks periodicity -
+   
+ %   - Add peaks to major cluster considering peaks periodicity -
     % Periodic peaks in row
     tx_rect = delta_tx(tx);
     T_rect = mean(tx_rect);
@@ -297,48 +277,6 @@ if length(kx_major) >= 2
     T = mean(delta_tx(tx_major));
     clearvars idxs;
     
-    [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
-    if warning == 1
-        display('No peaks detected')
-        return
-    end
-    
-    %       - Search for missing peaks -
-    % Miss peaks inside the frame: add/create 2 peaks max in a hole
-    loop = 0;
-    
-    while loop < 2
-        tx_pos = delta_tx(tx_major);
-        
-        % Search for missing peaks inside the frame
-        [kx_add,tx_pos] = missing_peaks(kx,tx, kx_major,tx_major, tx_pos,T, note_x,NOTE_major,eps);
-        
-        % Add/create peak to major cluster
-        [kx_major, tx_major, sx_major, T] = add_peaks(kx,sx,tx, kx_major, kx_add,tx_pos);
-       
-        clearvars tx_pos kx_add;
-        loop = loop+1;
-    end
-    
-%     % Miss first peak
-%     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
-%     
-%     if similarity(T,abs( tx(1) - tx_major(1) ), 'relative') < 0.2 || abs( tx(1) - tx_major(1) ) > T + T/5             % 20% relative error or more than 20% error above T
-%         kx_major = insert(kx(1),kx_major,0);
-%         tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));          % linear interpolation of dhi and dho to get tx (@zero crossing)
-%         sx_major = insert(sx_major(1),sx_major,0);                                                                    % for visibility
-%         T = mean(delta_tx(tx_major));
-%     end
-%     
-%     % Miss last peak
-%     if similarity(T,abs( tx(end) - tx_major(end) ), 'relative') < 0.2  || abs( tx(end) - tx_major(end) ) > T + T/5    % 20% relative error or more than 20% error above T
-%         kx_major = insert(kx(end),kx_major,length(kx_major));
-%         tx_major = td(kx_major) + (td(kx_major+1)-td(kx_major)) .* d(kx_major)./(d(kx_major)-d(kx_major+1));          % linear interpolation of dhi and dho to get tx (@zero crossing)
-%         sx_major = insert(sx_major(end),sx_major,length(sx_major));                                                   % for visibility
-%         T = mean(delta_tx(tx_major));
-%     end
-    
-    %   - Remove peaks from major cluster -
     [kx_major,tx_major,sx_major,T,warning] = remove_peaks(kx_major,tx_major,sx_major, T, kx, note_x);
     if warning == 1
         display('No peaks detected')

@@ -149,8 +149,11 @@ else
     
 end
 
-guidata(h.output, h);
+% h.slider_frame.Min = 1;
+% h.slider_frame.Max = floor( h.t0(end)/h.frame_length );
+% h.slider_frame.SliderStep = [1/(h.slider_frame.Max - h.slider_frame.Min) 1/(h.slider_frame.Max - h.slider_frame.Min)];
 h = quantize_input(h);
+guidata(h.output, h);
 
 %   - Timeline, noise, integration, quantization -
 function h = quantize_input(h)
@@ -171,47 +174,22 @@ end
 % Define timeline
 h.t0 = (1:length(h.s0)) * h.dt0;
 
-% Integration of all signal
+% Integration 
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNds,0);
-
-% % Divide timeline
-% if isempty(h.edit_frame_length.String)
-%     uiwait(msgbox('Fill Frame length.','Warning','warn'));
-% elseif isempty(h.edit_frame.String)
-%     uiwait(msgbox('Fill Frame.','Warning','warn'));
-% else
-% h.frame_length = str2double(h.edit_frame_length.String);
-% h.frame = str2double(h.edit_frame.String);
-% end
-%
-% if h.frame > floor(h.t0(end)/h.frame_length)
-%     h.frame = floor(h.t0(end)/h.frame_length);
-% end
-%
-% [h.t0_ h.s0_ h.t_ h.s_] = time_div(h.t0,h.s0,h.dt0, h.t,h.s,h.dt, h.frame_length,h.frame);
-
-% % Timeline grids
-% if h.toggle_FF.Value == 0
-%     h.axes.XLim = [h.t0_(1) h.t0_(end)];
-%     h.axes.YLim = [min(h.s0_)-1 max(h.s0_)+1];
-%
-% elseif h.toggle_FF.Value == 1
-%     h.axes.XLim = [h.t0(1) h.t0(end)];
-%     h.axes.YLim = [min(h.s0) max(h.s0)];
-% end
 
 if isempty(h.edit_frame_length.String)
     uiwait(msgbox('Fill Frame length.','Warning','warn'));
 else
-    frame_length = str2double(h.edit_frame_length.String);
+    h.frame_length = str2double(h.edit_frame_length.String);
 end
 
-h.slider_frame.Max = floor( h.t0(end)/frame_length );
-h.slider_frame.SliderStep = [1/(h.slider_frame.Max - h.slider_frame.Min) 1];
+h.slider_frame.Min = 1;
+h.slider_frame.Max = round( h.t0(end)/h.frame_length );
+h.slider_frame.SliderStep = [1/(h.slider_frame.Max - h.slider_frame.Min) 1/(h.slider_frame.Max - h.slider_frame.Min)];
 k = h.slider_frame.Value;
 
-h.frame_init =  (k-1) * frame_length;
-h.frame_end =  k * frame_length;
+h.frame_init =  (k-1) * h.frame_length;
+h.frame_end =  k * h.frame_length;
 
 index0 = find(h.t0 >= h.frame_init & h.t0 <= h.frame_end);
 h.t0_frame = h.t0(index0);
@@ -846,7 +824,7 @@ guidata(h.output, h);
 
 function callback_frame(h) %#ok<DEFNU>
 h = quantize_input(h);
-h.value_frame.String = h.slider_frame.Value;
+h.value_frame.String = floor(h.slider_frame.Value);
 guidata(h.output, h);
 
 function callback_filters(h) %#ok<DEFNU>
