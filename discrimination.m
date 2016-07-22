@@ -321,8 +321,12 @@ if isempty(h.ft)
         % Select events in the frame
         [kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
         
-        %   - Minimum variance algorithm -
-        [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+        if ~isempty(kx_frame)
+            %   - Minimum variance algorithm -
+            [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+        else
+            h.warning = 1;
+        end
     else
         h.tx_major = nan; h.sx_major = nan;             % no ecg algorithm yet
     end
