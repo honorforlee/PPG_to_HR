@@ -1,4 +1,4 @@
-Name = '3916979m (5)';
+Name = 'meas2_test1-0.25';
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid); fgetl(fid); fgetl(fid);
@@ -19,7 +19,7 @@ fclose(fid);
 if meas == 0
     val(isnan(val)) = [];
     t0 = (1:length(val)) * dt0;            % timeline
-    s0 = val(ppg,1:length(val));
+    s0 = val(meas,1:length(val));
     
 else
     Vout(isnan(Vout)) = [];
@@ -39,7 +39,7 @@ quant = 0.1;                         % LSB: vertical step
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
 
-frame_init = 21; frame_end = 28;
+frame_init = 10; frame_end = t0(end);
 
 index_x = find(tx >= frame_init & tx <= frame_end);
 sx_N_frame = sx_N(index_x);
@@ -338,7 +338,7 @@ if length(kx_major) >= 2
     
     loop = 0;
     loop_ = length(interval);
-    i=5;
+    i=1;
     
     while loop < loop_ && length(kx_major) > 2
         

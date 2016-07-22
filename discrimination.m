@@ -149,29 +149,30 @@ else
     
 end
 
-h = quantize_input(h);
-guidata(h.output, h);
-
-%   - Timeline, noise, integration, quantization -
-function h = quantize_input(h)
 if isempty(h.edit_f_sample.String)
     uiwait(msgbox('Fill f_sample.','Warning','warn'));
 else
-    h.dt   = 1/str2double(h.edit_f_sample.String);                   % apply t_sample
+    h.dt = 1/str2double(h.edit_f_sample.String);                   % t_sample
 end
 
-h.t_int = h.dt * h.slider_t_int.Value;
+h.t_int = h.dt * h.slider_t_int.Value;                             % t_int
 
 if isempty(h.edit_dNdS.String)
     uiwait(msgbox('Fill dN/dS.','Warning','warn'));
 else
-    h.dNds = str2double(h.edit_dNdS.String);                         % apply vertical precision (delta_samp)
+    h.dNds = str2double(h.edit_dNdS.String);                         % LSB
 end
 
+h = quantize_input(h);
+guidata(h.output, h);
+
+
+%   - Timeline, noise, integration, quantization -
+function h = quantize_input(h)
 % Define timeline
 h.t0 = (1:length(h.s0)) * h.dt0;
 
-% Integration 
+% Integration
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNds,0);
 
 if isempty(h.edit_frame_length.String)
@@ -222,11 +223,15 @@ if h.t_int ~= 0
         end
         
         h = process_sig(h);
+        
         if h.warning == 0
             plot_(h);
         else
             uiwait(msgbox('No peaks detected.','Warning','warn'));
         end
+        
+%         if length(h.kx_major) >= floor( h.frame_length / 0.35)   % Max BPM = 171
+%             h.t_
     end
 else
     plot_(h);
@@ -234,12 +239,6 @@ end
 
 function [t,s] = integration(t0,s0,dt0,dt,t_int,quant,add_noise)
 t = t0(1):dt:t0(end);                                   % timeline with new sampling frequency
-
-% Noise
-for k = 1:length(t)-1
-    frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
-end
-noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
 
 % Integration
 if t_int ~=0
@@ -253,8 +252,15 @@ if t_int ~=0
         frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
     end
     
-    if add_noise == 'noise'                               % add Gaussian noise before integration
+    if add_noise == 1                               % add Gaussian noise before integration
+        % Noise
+        for k = 1:length(t)-1
+            frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
+        end
+        noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
+        
         frameInteg_ = vertcat(frameInteg_,noise);
+        
     elseif add_noise == 0
         frameInteg_ = frameInteg_;
     end
@@ -293,21 +299,33 @@ else
     fs = []; ft = [];
 end
 
-% function h = process_sig(h) %#ok<DEFNU>
-% [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
-% if isempty(h.ft)
-%
-%     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t, h.s);
-% else
-%     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] =  signal_peaks(h.ft, h.fs);      %   filter applied before derivative
-% end
-% [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
-% if isempty(h.ft_)
-%
-%     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ky_n,h.ty_N,h.sy_N,~] = signal_peaks(h.td, h.d  );
-% else
-%     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ky_n,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
-% end
+function [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s)
+%   - Derivative -
+d = s(2:end) -  s(1:end-1);
+%td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
+td = t(2:end);
+
+kx = d > 0;
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
+
+%   - Local maxima sx, maximum slope around sx -
+[tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
+
+function h = discrimination_algorithm(h)
+%   - Select events in the frame -
+[kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
+
+if ~isempty(kx_frame)
+    if 0.5 <= mean(sx_frame) && mean(sx_frame) <= 1
+        h.eps = 0.1*h.eps;
+    elseif mean(sx_frame) < 0.5
+        h.eps = 0.01*h.eps;
+    end
+    %   - Minimum variance algorithm -
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);   
+else
+    h.warning = 1;
+end
 
 function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
@@ -318,15 +336,7 @@ if isempty(h.ft)
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t,h.s);
     
     if ~h.checkbox_ecg.Value
-        % Select events in the frame
-        [kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
-        
-        if ~isempty(kx_frame)
-            %   - Minimum variance algorithm -
-            [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
-        else
-            h.warning = 1;
-        end
+        h = discrimination_algorithm(h);
     else
         h.tx_major = nan; h.sx_major = nan;             % no ecg algorithm yet
     end
@@ -358,20 +368,6 @@ if isempty(h.ft_)
 else
     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~,~] = events_clustering(h.ft_, h.fs_);
 end
-
-
-function [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s)
-%   - Derivative -
-d = s(2:end) -  s(1:end-1);
-%td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
-td = t(2:end);
-
-kx = d > 0;
-kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
-
-%   - Local maxima sx, maximum slope around sx -
-[tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
-
 
 %   - Hierarchical clustering (agglomerative) -
 function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust_note_x, clust_tx, clust_periodicity, kmax, tx_major,sx_major ] = events_clustering(t,s)
@@ -820,16 +816,16 @@ else
 end
 
 function callback_sampling(h) %#ok<DEFNU>
-h = quantize_input(h);
+h = update_infile(h);
 guidata(h.output, h);
 
 function callback_t_int(h) %#ok<DEFNU>
-h = quantize_input(h);
+h = update_infile(h);
 h.value_t_int.String = h.slider_t_int.Value;
 guidata(h.output, h);
 
 function callback_frame(h) %#ok<DEFNU>
-h = quantize_input(h);
+h = update_infile(h);
 h.value_frame.String = floor(h.slider_frame.Value);
 guidata(h.output, h);
 
@@ -876,8 +872,8 @@ end
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
 d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
-[kx,tx,sx, dhi, dlo,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                        % detect peaks of signal
-[ky,ty,sy,d2hi,d2lo,~,~,~,~,~,~] = signal_peaks( td,  d);                                        % detect peaks of first derivative
+[kx,tx,sx, dhi, dlo,~,~,~,~,~,~] = signal_peaks(h.t,h.s);                                   % detect peaks of signal
+[ky,ty,sy,d2hi,d2lo,~,~,~,~,~,~] = signal_peaks( td,  d);                                   % detect peaks of first derivative
 xl = h.axes.XLim;
 yl = h.axes.YLim;
 hold off

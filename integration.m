@@ -1,14 +1,8 @@
 % Ivan Ny Hanitra - Master thesis
-%       -- Simulate integrating ADC: add thermal noise, integrate during t_int (share of t_sample), quantize the output --
+%       -- Simulate integrator-based ADC: add thermal noise, integrate during t_int (share of t_sample), quantize the output --
 
 function [t,s] = integration(t0,s0,dt0,dt,t_int,quant,add_noise)
 t = t0(1):dt:t0(end);                                   % timeline with new sampling frequency
-
-% Noise
-for k = 1:length(t)-1
-    frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
-end
-noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
 
 % Integration
 if t_int ~=0
@@ -22,12 +16,18 @@ if t_int ~=0
         frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
     end
     
-    if add_noise == 'noise'                               % add Gaussian noise before integration
-        frameInteg_ = vertcat(frameInteg_,noise);      
+    if add_noise == 1                               % add Gaussian noise before integration
+        % Noise
+        for k = 1:length(t)-1
+            frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
+        end
+        noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
+        
+        frameInteg_ = vertcat(frameInteg_,noise);
     elseif add_noise == 0
         frameInteg_ = frameInteg_;
     end
-   
+    
     s(1) = s0(1);
     for k = 2:length(t)
         s(k) = mean(frameInteg_(:,k-1));           % sampled signal = average of Nint last values + noise during dt
