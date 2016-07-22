@@ -175,6 +175,7 @@ h.t0 = (1:length(h.s0)) * h.dt0;
 % Integration
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNds,0);
 
+% Frame definition to apply discrimination_algorithm
 if isempty(h.edit_frame_length.String)
     uiwait(msgbox('Fill Frame length.','Warning','warn'));
 else
@@ -198,24 +199,20 @@ index0 = find(h.t0 >= h.frame_init & h.t0 <= h.frame_end);
 h.t0_frame = h.t0(index0);
 h.s0_frame = h.s0(index0);
 
-% Timeline grids
-if h.toggle_FF.Value == 0
-    h.axes.XLim = [h.t0_frame(1) h.t0_frame(end)];
-    h.axes.YLim = [min(h.s0_frame)-1 max(h.s0_frame)+1];
-    
-elseif h.toggle_FF.Value == 1
-    h.axes.XLim = [h.t0(1) h.t0(end)];
-    h.axes.YLim = [min(h.s0) max(h.s0)];
-end
+h = algorithm_output(h);
 
+function h = algorithm_output(h)
+% Display grids on GUI
 h = grids(h);
 
+% algorithm output
 if h.t_int ~= 0
     if h.checkbox_clustering.Value
         h = process_clustering(h);
         plot_cluster(h);
         plot_cluster_distribution(h);
     else
+        % eps: clustering precision
         if isempty(h.edit_eps.String)
             uiwait(msgbox('Fill eps.','Warning','warn'));
         else
@@ -229,9 +226,13 @@ if h.t_int ~= 0
         else
             uiwait(msgbox('No peaks detected.','Warning','warn'));
         end
+        % Feedback t_sample
+        if length(h.kx_major) >= floor( h.frame_length / 0.35)               % Max BPM = 171
+            h.dt = h.dt * 2;
+            [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNds,0);
+            h = algorithm_output(h);
+        end
         
-%         if length(h.kx_major) >= floor( h.frame_length / 0.35)   % Max BPM = 171
-%             h.t_
     end
 else
     plot_(h);
@@ -277,6 +278,16 @@ end
 s = quant * floor( s / quant );                % quantization
 
 function h = grids(h)
+% Timeline grids
+if h.toggle_FF.Value == 0
+    h.axes.XLim = [h.t0_frame(1) h.t0_frame(end)];
+    h.axes.YLim = [min(h.s0_frame)-1 max(h.s0_frame)+1];
+    
+elseif h.toggle_FF.Value == 1
+    h.axes.XLim = [h.t0(1) h.t0(end)];
+    h.axes.YLim = [min(h.s0) max(h.s0)];
+end
+
 h.xgrid = [ h.t0(1) h.t0(end) ];               % grid in dotted lines
 h.ygrid = [ 0       0         ];
 
@@ -316,13 +327,15 @@ function h = discrimination_algorithm(h)
 [kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
 
 if ~isempty(kx_frame)
+    % Feedback eps
     if 0.5 <= mean(sx_frame) && mean(sx_frame) <= 1
         h.eps = 0.1*h.eps;
     elseif mean(sx_frame) < 0.5
         h.eps = 0.01*h.eps;
     end
+    
     %   - Minimum variance algorithm -
-    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);   
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
 else
     h.warning = 1;
 end
