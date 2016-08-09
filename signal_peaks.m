@@ -1,3 +1,6 @@
+% Ivan Ny Hanitra - Master thesis
+%       -- Compute signal peaks--
+
 function [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);

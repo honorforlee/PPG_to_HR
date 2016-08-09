@@ -2,12 +2,13 @@
 %       -- Simulate integrator-based ADC: add thermal noise, integrate during t_int (share of t_sample), quantize the output --
 
 function [t,s] = integration(t0,s0,dt0,dt,t_int,quant,add_noise)
-t = t0(1):dt:t0(end);                                   % timeline with new sampling frequency
+% timeline with new sampling frequency
+t = t0(1):dt:t0(end);
 
-% Integration
+%   - Integration -
 if t_int ~=0
-    
-    for k = 2:length(t)
+    % create integration frame
+    for k = 2:length(t)                                 
         index = min (length(    [floor( (t(k-1)+ dt - t_int)/dt0 ): floor( t(k)/ dt0 ) ]    ));
     end
     index = index-1;
@@ -16,28 +17,31 @@ if t_int ~=0
         frameInteg_(:,k-1)= s0(frameInteg(:,k-1)) ;
     end
     
-    if add_noise == 1                               % add Gaussian noise before integration
-        % Noise
+    % add Gaussian noise before integration
+    if add_noise == 1
+        
         for k = 1:length(t)-1
             frameNoise (:,k) = [ floor(t(k)/dt0) :  floor(t(k)/dt0) + floor(dt/dt0) ];
         end
-        noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));                     % Gaussian distribution (model thermal noise of finite BW)
-        
+        noise= random('Normal',mean(s0(frameNoise)),std(s0(frameNoise)),1,length(frameNoise));
         frameInteg_ = vertcat(frameInteg_,noise);
     elseif add_noise == 0
         frameInteg_ = frameInteg_;
     end
     
+    % sampled signal = average of Nint last values + noise %during dt
     s(1) = s0(1);
     for k = 2:length(t)
-        s(k) = mean(frameInteg_(:,k-1));           % sampled signal = average of Nint last values + noise during dt
+        s(k) = mean(frameInteg_(:,k-1));
     end
     
 else
     s = zeros(1,length(t));
 end
 
-s = quant * floor( s / quant );                % quantization: quant = LSB
+% quantisation: quant = LSB_ADC
+s = quant * floor( s / quant );
+
 
 %   - with time subdivided in indexes -
 % subels = (1:round(dt/interval):length(t));
