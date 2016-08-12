@@ -776,7 +776,7 @@ if h.t_int > 0
             
             data(1:base_array(i,h.kmax),i) = h.clust_tx{i,h.kmax};
             figure(3);
-            tx_disp(i) = plot(base,data(:,i),'.');
+            tx_disp(i) = plot(base,data(:,i),'.','MarkerSize',20);
             hold on
         end
         
@@ -787,9 +787,9 @@ if h.t_int > 0
         end
         legend(Legend);
         
-        title('Linear regression of t_{x,k}');
-        xlabel('k');
-        ylabel('t_{x,k}, s');
+        title('\bf Linear regression of t_{x,k}','Fontsize',30);
+        xlabel('\bf k','Fontsize',30);
+        ylabel('\bf t_{x,k}, s','Fontsize',30);
         hold off
         
     elseif h.kmax == 1
@@ -802,13 +802,13 @@ if h.t_int > 0
         
         figure(3);
         base = [1:length(h.tx)];
-        plot(base,h.tx,'.');
+        plot(base,h.tx,'.','MarkerSize',15);
         Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
         legend(Legend);
         
-        title('Linear regression of t_{x,k}');
-        xlabel('k');
-        ylabel('t_{x,k}, s');
+        title('Linear regression of t_{x,k}','Fontsize',20);
+        xlabel('k','Fontsize',15);
+        ylabel('t_{x,k}, s','Fontsize',15);
     end
 end
 
