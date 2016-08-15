@@ -12,12 +12,45 @@ dt = 1/10;                           % sampling time: dt >> dt0
 t_int = dt * (1/3);                  % integration time: dt0 <= t_int < dt
 quant = 0.1;                         % LSB: vertical step
 
-[t,s] = integration(t0,s0,dt0,dt,t_int,quant,0);
+[t_,s_] = integration(t0,s0,dt0,dt,t_int,quant,0);
+ 
+frame_init = 5; frame_end = 10;
 
-[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
+index = find(t_ >= frame_init & t_ <= frame_end);
+t = t_(index);
+s = s_(index);
 
 
-periodicity(tx);
+%%
+%   - Derivative -
+d = s(2:end) -  s(1:end-1);
+td = t(2:end);
+
+kx = d > 0;
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
+
+sx = s(kx+1);                          % local maxima
+tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+
+kx_n = d < 0;                               % search for local minima
+kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
+
+    for k = 1:length(kx)                    % compute minima
+        kx_index(k) = max( find( kx_n < kx(k) ) );
+    end
+sx_N = s(kx_n( kx_index ) + 1);
+    
+%   - Peaks notation -
+note_1 = sx;
+for k = 2:length(kx)-1
+    note_1(k) = sx(k) - ( sx(k+1) + sx(k-1) )/2;                                % average peak value
+end
+
+note_3 = sx - sx_N;
+
+note_x = 0.2*note_1 + 0.8*note_3;
+
+
 
 
 %%

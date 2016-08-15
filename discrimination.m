@@ -222,6 +222,7 @@ if h.t_int ~= 0
         h = process_sig(h);
         
         if h.warning == 0
+            h.value_hr.String = floor(60 * (1/h.T));                               % extrapolated BPM
             plot_(h);
         else
             uiwait(msgbox('No peaks detected.','Warning','warn'));

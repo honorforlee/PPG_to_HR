@@ -1,7 +1,38 @@
 % Ivan NY HANITRA - Master thesis
-%       -- Clustering according to minimum variance of note_x  --
+%       -- Global algorithm for events detection and discrimination  --
 
-function [kx_major,tx_major,sx_major, T, warning] = min_variance(kx,tx,sx, note_x, eps)
+%       - Events detection -
+
+%   - Derivative -
+d = s(2:end) -  s(1:end-1);
+td = t(2:end);
+
+kx = d > 0;
+kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
+
+sx = s(kx+1);                          % local maxima
+tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
+
+kx_n = d < 0;                               % search for local minima
+kx_n = find(kx_n(1:end-1) & ~kx_n(2:end));
+
+    for k = 1:length(kx)                    % compute minima
+        kx_index(k) = max( find( kx_n < kx(k) ) );
+    end
+sx_N = s(kx_n( kx_index ) + 1);
+    
+%   - Peaks notation -
+note_1 = sx;
+for k = 2:length(kx)-1
+    note_1(k) = sx(k) - ( sx(k+1) + sx(k-1) )/2;                                % average peak value
+end
+
+note_3 = sx - sx_N;
+
+note_x = 0.2*note_1 + 0.8*note_3;
+
+%       - Events discrimination -
+eps = 0.1;
 kx_ = kx;
 
 %   - Clustering according to minimum variance of note_x -
@@ -96,7 +127,7 @@ for k = 1:L(2)
     end
 end
 
-tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','VariableNames',{'Cluster','Size','T','eps','R','Note_x','Cluster_note'});
+%tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','VariableNames',{'Cluster','Size','T','eps','R','Note_x','Cluster_note'});
 
 %   - Select major cluster + merge sub-major clusters -
 Nrows = max(cellfun(@numel,clust_cell));
@@ -209,75 +240,20 @@ else                                              % one cluster only
 end
 
 if length(kx_major) >= 2
-    warning = 0;
-    
+        
     %   - Major peaks -
     kx_major = unique(kx_major);
     idxs = arrayfun(@(x)find(kx==x,1),kx_major);
     tx_major = tx(idxs);
-    sx_major = sx(idxs);
-    T = mean(delta_tx(tx_major));
-    
+        
     clearvars idxs;
     
-    %       -- Add peaks to major cluster considering peaks periodicity --
-    
-    %   - Periodic peaks in row -
-    tx_rect = delta_tx(tx);
-    T_rect = mean(tx_rect);
-    
-    kx_major_ = nan(1,length(kx)+length(kx_major));
-    kx_major_(1:length(kx_major)) = kx_major;        % length(kx_major) < length(kx)
-    
-    for k = 1:length(tx_rect)
-        if similarity(T_rect,tx_rect(k), 'relative') < 0.2
-            if similarity(note_x(k), note_x(k+1), 'relative') < 0.5 && (  ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+1)) )           % similar note_x and kx not present in kx_major
-                kx_major_(length(kx_major)+k) = kx(k);
-                kx_major_(length(kx_major)+k+1) = kx(k+1);
-            end
-        end
-    end
-    
-    kx_major_(isnan(kx_major_))=[];
-    kx_major = unique(kx_major_);
-    
-    idxs = arrayfun(@(x)find(kx==x,1),kx_major);
-    tx_major = tx(idxs);
-    sx_major = sx(idxs);
-    T = mean(delta_tx(tx_major));
-    
-    clearvars idxs;
-    
-    %   - Periodic peaks separated by minor peak -
-    tx_rect2 = delta_tx(tx,2);
-    T_rect2 = mean(tx_rect2);
-    
-    kx_major_ = nan(1,length(kx)+length(kx_major));
-    kx_major_(1:length(kx_major)) = kx_major;        % length(kx_major) < length(kx)
-    
-    for k = 1:length(tx_rect2)
-        if similarity(T_rect2, tx_rect2(k), 'relative') < 0.2
-            if similarity(note_x(k), note_x(k+2), 'relative') < 0.2  && sx(k) > sx(k+1) && sx(k+2) > sx(k+1) && ( ~any(kx_major == kx(k)) || ~any(kx_major == kx(k+2)) )
-                kx_major_(length(kx_major)+k) = kx(k);
-                kx_major_(length(kx_major)+k+1) = kx(k+2);
-            end
-        end
-    end
-    
-    kx_major_(isnan(kx_major_))=[];
-    kx_major = unique(kx_major_);
-    
-    idxs = arrayfun(@(x)find(kx==x,1),kx_major);
-    tx_major = tx(idxs);
-    sx_major = sx(idxs);
-    T = mean(delta_tx(tx_major));
-    
-    clearvars idxs;
-    
+    %       -- Refine major cluster considering peaks periodicity --
+               
     %   - Add/Remove peaks -
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
     interval = delta_tx(tx_major);
-    T_med = median(interval);
+    T = median(interval);
     
     loop = 0;
     loop_ = length(interval);
@@ -287,23 +263,22 @@ if length(kx_major) >= 2
         
         for k = i:length(interval)
             
-            if interval(k) >= (1.5)*T_med || interval(k) > 1/0.33           % add peak
+            if interval(k) >= (1.5)*T || interval(k) > 1/0.33           % add peak
                 kx_major = insert(kx_major(k),  kx_major,   k);
-                tx_major = insert(tx_major(k) + T_med,  tx_major,   k);
-                sx_major = insert(sx_major(k),  sx_major,   k);
-                
+                tx_major = insert(tx_major(k) + T,  tx_major,   k);
+                                
                 interval = delta_tx(tx_major);
-                T_med = median(interval);
+                T = median(interval);
                 i = k;
                 break
                 
-            elseif interval(k) <= 0.5*T_med          % remove peak
+            elseif interval(k) <= 0.5*T          % remove peak
                 j = k+1;
                 tx_sum = 0;
                 done = 0;
                 
                 while  done == 0 && j <= length(interval)
-                    if ~(0.8*T_med <= tx_sum && tx_sum <= 1.2*T_med )
+                    if ~(0.8*T <= tx_sum && tx_sum <= 1.2*T )
                         tx_sum = sum(interval(k:j));
                         j = j+1;
                     else
@@ -320,11 +295,10 @@ if length(kx_major) >= 2
                         if l ~= keep && 1 <= k+l-1 && k+l-1 <= length(kx_major)
                             kx_major(k+l -1) = [];
                             tx_major(k+l -1) = [];
-                            sx_major(k+l -1) = [];
                         end
                     end
                     interval = delta_tx(tx_major);
-                    T_med = median(interval);
+                    T = median(interval);
                     i = k;
                     
                     break
@@ -334,15 +308,13 @@ if length(kx_major) >= 2
                         if note_x(kx==kx_major(k)) > note_x(kx==kx_major(k+1))
                             kx_major(k+1) = [];
                             tx_major(k+1) = [];
-                            sx_major(k+1) = [];
-                        else
+                         else
                             kx_major(k) = [];
                             tx_major(k) = [];
-                            sx_major(k) = [];
-                        end
+                         end
                     end
                     interval = delta_tx(tx_major);
-                    T_med = median(interval);
+                    T = median(interval);
                     i = k;
                     
                     clearvars keep tx_sum idx_init idx_end j;
@@ -354,11 +326,9 @@ if length(kx_major) >= 2
         end
         loop = loop +1;
     end
-    T = mean(delta_tx(tx_major));
+    
 else
-    warning = 1;
     tx_major = nan;
-    sx_major = nan;
     T = nan;
     display('No peaks detected')
 end
