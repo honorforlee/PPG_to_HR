@@ -60,7 +60,12 @@ for k = 1:L(2)
     clust_cell_temp{k,1} = idx_;            % kx
     clust_cell_temp{k,2} = per_;            % tx
     clust_cell_temp{k,3} = note_;           % note_x
+    
+    if clust_cell_temp{k,3} ~= 0            % case note_x = 0
     NOTE_mean(k) = mean(clust_cell_temp{k,3});
+    else 
+        NOTE_mean(k)=0;
+    end    
     
     clear NAN_ NAN_idx NAN_per NAN_note idx_ per_ note_
 end

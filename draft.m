@@ -1,4 +1,4 @@
-Name = 'meas2_test1-0.6';
+Name = '3916979m (3)';
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid); fgetl(fid); fgetl(fid);
@@ -19,7 +19,7 @@ fclose(fid);
 if meas == 0
     val(isnan(val)) = [];
     t0 = (1:length(val)) * dt0;            % timeline
-    s0 = val(meas,1:length(val));
+    s0 = val(ppg,1:length(val));
     
 else
     Vout(isnan(Vout)) = [];
@@ -30,7 +30,7 @@ end
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
-dt = 1/10;                           % sampling time: dt >> dt0
+dt = 1/20;                           % sampling time: dt >> dt0
 t_int = dt * (1/3);                  % integration time: dt0 <= t_int < dt
 quant = 0.1;                         % LSB: vertical step
 
@@ -39,7 +39,7 @@ quant = 0.1;                         % LSB: vertical step
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
 
-frame_init = 5; frame_end = 10;
+frame_init =14; frame_end = 21;
 
 index_x = find(tx >= frame_init & tx <= frame_end);
 sx_N_frame = sx_N(index_x);
@@ -58,8 +58,9 @@ s_frame = s(index);
 
 kx = kx_frame; tx = tx_frame; sx = sx_frame; note_x = note_x_frame;
 
-eps = 0.001;
+%[kx_major,tx_major,sx_major, T,warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, 0.1);
 kx_ = kx;
+eps = 0.1;
 
 %   - Clustering according to minimum variance of note_x -
 for i = 1:length(kx)
@@ -117,7 +118,12 @@ for k = 1:L(2)
     clust_cell_temp{k,1} = idx_;            % kx
     clust_cell_temp{k,2} = per_;            % tx
     clust_cell_temp{k,3} = note_;           % note_x
+    
+    if clust_cell_temp{k,3} ~= 0            % case note_x = 0
     NOTE_mean(k) = mean(clust_cell_temp{k,3});
+    else 
+        NOTE_mean(k)=0;
+    end    
     
     clear NAN_ NAN_idx NAN_per NAN_note idx_ per_ note_
 end
@@ -334,7 +340,7 @@ if length(kx_major) >= 2
     %   - Add/Remove peaks -
     insert = @(a, x, n)cat(2,  x(1:n), a, x(n+1:end));      % insert(element inserted,array,position)
     interval = delta_tx(tx_major);
-    T = median(interval);
+    T_med = median(interval);
     
     loop = 0;
     loop_ = length(interval);
@@ -344,23 +350,23 @@ if length(kx_major) >= 2
         
         for k = i:length(interval)
             
-            if interval(k) >= (1.5)*T || interval(k) > 1/0.33           % add peak
+            if interval(k) >= (1.5)*T_med || interval(k) > 1/0.33           % add peak
                 kx_major = insert(kx_major(k),  kx_major,   k);
-                tx_major = insert(tx_major(k) + T,  tx_major,   k);
+                tx_major = insert(tx_major(k) + T_med,  tx_major,   k);
                 sx_major = insert(sx_major(k),  sx_major,   k);
                 
                 interval = delta_tx(tx_major);
-                T = median(interval);
+                T_med = median(interval);
                 i = k;
                 break
                 
-            elseif interval(k) <= 0.5*T          % remove peak
+            elseif interval(k) <= 0.5*T_med          % remove peak
                 j = k+1;
                 tx_sum = 0;
                 done = 0;
                 
                 while  done == 0 && j <= length(interval)
-                    if ~(0.8*T <= tx_sum && tx_sum <= 1.2*T )
+                    if ~(0.8*T_med <= tx_sum && tx_sum <= 1.2*T_med )
                         tx_sum = sum(interval(k:j));
                         j = j+1;
                     else
@@ -381,7 +387,7 @@ if length(kx_major) >= 2
                         end
                     end
                     interval = delta_tx(tx_major);
-                    T = median(interval);
+                    T_med = median(interval);
                     i = k;
                     
                     break
@@ -399,7 +405,7 @@ if length(kx_major) >= 2
                         end
                     end
                     interval = delta_tx(tx_major);
-                    T = median(interval);
+                    T_med = median(interval);
                     i = k;
                     
                     clearvars keep tx_sum idx_init idx_end j;
@@ -411,7 +417,7 @@ if length(kx_major) >= 2
         end
         loop = loop +1;
     end
-    
+    T = mean(delta_tx(tx_major));
 else
     warning = 1;
     tx_major = nan;

@@ -1,7 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Plot signal --
 
-Name = 'test1-1';
+Name = 'a02m';
 load(strcat(Name, '.mat'));
 
 dt0 = 0.59e-3;
@@ -27,8 +27,7 @@ quant = 0.01;                         % LSB: vertical step
 [tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t_,s_,kx);
 
 %   - Minimum variance algorithm -
-[kx_major,tx_major,sx_major, T] = min_variance(t_,s_, td,d, kx,tx,sx,note_x, 0.1);
-
+[kx_major,tx_major,sx_major, T, warning] = min_variance(kx,tx,sx, note_x, 0.1);
 %   - Plots -
 
 plot( tx , sx   , 'dr','MarkerSize',12);
