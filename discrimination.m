@@ -1,13 +1,13 @@
 % Ivan Ny Hanitra - Master thesis
 %       -- Algorithm to discriminate PPG/ECG signal peaks and recover HR --
- 
+
 % Requirements
 %   - discriminate peaks in function of notes
 %       note 1(pentagram): peak amplitude of sampled signal (smax)
 %       note 2 (triangles): local maxima/minima around smax
 %   - discriminate peaks in function of timing
 %       selected peaks have the same frequency (HR)
- 
+
 %   - Init. - DO NOT EDIT -
 function varargout = discrimination(varargin)
 gui_Singleton = 1;
@@ -25,18 +25,18 @@ if nargout
 else
     gui_mainfcn(gui_State, varargin{:});
 end
- 
+
 %   - Executes just before discrimination is made visible -
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
 scrsz = get(groot,'ScreenSize');
 set(gcf,'Units','pixels','Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]);
 set(0,'ScreenPixelsPerInch', 95);
 set(gcf,'Color',[0.94,0.94,0.94])   % set GUI color
- 
+
 % scrsz = get(groot,'ScreenSize');
 % set(gcf,'Units','pixels','Position',[1 .5 scrsz(3)*0.8 scrsz(4)*0.9]);
 % set(0,'ScreenPixelsPerInch', 70);
- 
+
 fl_ecg   = {}; ppg_ecg   = {}; ecg_ecg   = {}; dt0_ecg   = {};
 fl_noecg = {}; ppg_noecg = {}; ecg_noecg = {}; dt0_noecg = {};
 fl_meas = {}; ppg_meas = {}; dt0_meas = {};
@@ -77,29 +77,29 @@ for f = fl.mat'
         end
     end
 end
- 
- 
+
+
 h.f_list_database    = [fl_ecg  fl_noecg];
 h.f_ppg_row = [ppg_ecg ppg_noecg];
 h.f_ecg_row = [ecg_ecg ecg_noecg ];
 h.f_dt0_database     = [dt0_ecg dt0_noecg];
 h.nf_ecg    = length(fl_ecg);
- 
+
 h.f_list_meas = [fl_meas];
 h.f_dt0_meas = [dt0_meas];
 h.nf_meas = length(fl_meas);
- 
+
 update_filelist(h);
 h.popupmenu_files.Value = 1;
 h.ft = []; h.ft_ = []; h.fs = []; h.fs_ = [];
 h.output = hObject;
 h = update_infile(h);
 guidata(hObject, h);
- 
+
 %   - Outputs from this function are returned to the command line -
 function varargout = discrimination_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
- 
+
 function file_chgd = update_filelist(h)
 file_chgd = 0;
 if h.checkbox_ecg.Value && ~h.checkbox_ppg_meas.Value
@@ -121,7 +121,7 @@ elseif ~h.checkbox_ppg_meas.Value && ~h.checkbox_ecg.Value
 else
     uiwait(msgbox('Select only one database or none by default','Warning','warn'));
 end
- 
+
 function h = update_infile(h)
 n = h.popupmenu_files.Value;
 % Read data
@@ -149,63 +149,63 @@ else
     end
     
 end
- 
+
 if isempty(h.edit_f_sample.String)
     uiwait(msgbox('Fill f_sample.','Warning','warn'));
 else
     h.dt = 1/str2double(h.edit_f_sample.String);                   % t_sample
 end
- 
+
 h.t_int = h.dt * h.slider_t_int.Value;                             % t_int
- 
+
 if isempty(h.edit_dNdS.String)
     uiwait(msgbox('Fill dN/dS.','Warning','warn'));
 else
     h.dNdS = str2double(h.edit_dNdS.String);                         % LSB
 end
- 
+
 h = quantize_input(h);
 guidata(h.output, h);
- 
- 
+
+
 %   - Timeline, noise, integration, quantization -
 function h = quantize_input(h)
 % Define timeline
 h.t0 = (1:length(h.s0)) * h.dt0;
- 
+
 % Integration
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
- 
+
 % Frame definition to apply discrimination_algorithm
 if isempty(h.edit_frame_length.String)
     uiwait(msgbox('Fill Frame length.','Warning','warn'));
 else
     h.frame_length = str2double(h.edit_frame_length.String);
 end
- 
+
 h.slider_frame.Min = 1;
 h.slider_frame.Max = round( h.t0(end)/h.frame_length );
 h.slider_frame.SliderStep = [1/(h.slider_frame.Max - h.slider_frame.Min) 1/(h.slider_frame.Max - h.slider_frame.Min)];
- 
+
 if h.slider_frame.Value > h.slider_frame.Max
     h.slider_frame.Value =  h.slider_frame.Max;
 end
- 
+
 k = h.slider_frame.Value;
- 
+
 h.frame_init =  (k-1) * h.frame_length;
 h.frame_end =  k * h.frame_length;
- 
+
 index0 = find(h.t0 >= h.frame_init & h.t0 <= h.frame_end);
 h.t0_frame = h.t0(index0);
 h.s0_frame = h.s0(index0);
- 
+
 h = algorithm_output(h);
- 
+
 function h = algorithm_output(h)
 % Display grids on GUI
 h = grids(h);
- 
+
 % algorithm output
 if h.t_int ~= 0
     if h.checkbox_clustering.Value
@@ -226,7 +226,7 @@ if h.t_int ~= 0
             h.value_hr.String = floor(60 * (1/h.T));                       % extrapolated BPM
             
             % Feedback values
-            h.fb_fsample.String = 1/h.dt;                                           
+            h.fb_fsample.String = 1/h.dt;
             h.fb_tint.String = 1000*h.t_int;
             h.fb_dNdS.String = h.dNdS;
             h.fb_eps.String = h.eps;
@@ -235,36 +235,49 @@ if h.t_int ~= 0
         else
             % Feedback f_sample
             if h.dt > 20e-3                                                % f_samp,max = 50 Hz
-                h.dt = (1 + 10*h.dt)/h.dt;                                 %f_samp + 10 Hz 
-              
+                h.dt = h.dt/(1 + 10*h.dt);                                 %f_samp + 10 Hz
+                
+                % Integration
                 [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
                 h = algorithm_output(h);
+                
             else
                 uiwait(msgbox('No peaks detected.','Warning','warn'));
-            
-            % Feedback values
-            h.fb_fsample.String = 1/h.dt;                                           
-            h.fb_tint.String = 1000*h.t_int;
-            h.fb_dNdS.String = h.dNdS;
-            h.fb_eps.String = h.eps;
+                
+                % Feedback values
+                h.fb_fsample.String = 1/h.dt;
+                h.fb_tint.String = 1000*h.t_int;
+                h.fb_dNdS.String = h.dNdS;
+                h.fb_eps.String = h.eps;
             end
         end
         
         % Feedback f_sample
         if length(h.kx_major) >= floor( h.frame_length / 0.35)             % Max BPM = 171
-            h.dt = h.dt * 2;
-            [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
-            h = algorithm_output(h);
+            if h.dt > 20e-3
+                h.dt = h.dt/(1 + 10*h.dt);                                     % f_sample + 10 Hz
+                
+                [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
+                h = algorithm_output(h);
+            else
+                uiwait(msgbox('No peaks detected.','Warning','warn'));
+                
+                % Feedback values
+                h.fb_fsample.String = 1/h.dt;
+                h.fb_tint.String = 1000*h.t_int;
+                h.fb_dNdS.String = h.dNdS;
+                h.fb_eps.String = h.eps;
+            end
         end
         
     end
 else
     plot_(h);
 end
- 
+
 function [t,s] = integration(t0,s0,dt0,dt,t_int,quant,add_noise)
 t = t0(1):dt:t0(end);                                   % timeline with new sampling frequency
- 
+
 % Integration
 if t_int ~=0
     
@@ -298,9 +311,10 @@ if t_int ~=0
 else
     s = zeros(1,length(t));
 end
- 
+
 s = quant * floor( s / quant );                % quantization
- 
+
+
 function h = grids(h)
 % Timeline grids
 if h.toggle_FF.Value == 0
@@ -311,10 +325,10 @@ elseif h.toggle_FF.Value == 1
     h.axes.XLim = [h.t0(1) h.t0(end)];
     h.axes.YLim = [min(h.s0) max(h.s0)];
 end
- 
+
 h.xgrid = [ h.t0(1) h.t0(end) ];               % grid in dotted lines
 h.ygrid = [ 0       0         ];
- 
+
 if h.checkbox_f_sample.Value
     h.xgrid = [ h.xgrid  nan  kron(h.t,[1 1 1]) ];
     h.ygrid = [ h.ygrid  nan  repmat(10*[h.axes.YLim nan],1,length(h.t)) ];
@@ -324,7 +338,7 @@ if h.checkbox_dNdS.Value
     h.xgrid = [ h.xgrid  nan  repmat([min(h.t) max(h.t) nan],1,length(y)) ];
     h.ygrid = [ h.ygrid  nan  kron(y,[1 1 1]) ];
 end
- 
+
 function [ft,fs] = apply_filter_(t,s,f)
 f = str2num(f); %#ok<ST2NM>
 if length(f) > 0
@@ -333,23 +347,23 @@ if length(f) > 0
 else
     fs = []; ft = [];
 end
- 
+
 function [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);
 %td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
 td = t(2:end);
- 
+
 kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
- 
+
 %   - Local maxima sx, maximum slope around sx -
 [tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
- 
+
 function h = discrimination_algorithm(h)
 %   - Select events in the frame -
 [kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
- 
+
 if ~isempty(kx_frame)
     % Feedback eps
     if 0.5 <= mean(note_x_frame) && mean(note_x_frame) <= 1
@@ -363,10 +377,10 @@ if ~isempty(kx_frame)
 else
     h.warning = 1;
 end
- 
+
 function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
- 
+
 if isempty(h.ft)
     
     %   - Peaks identification -
@@ -388,8 +402,8 @@ if isempty(h.ft_)
 else
     [h.ky,h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ky_n,h.ty_N,h.sy_N,~] = signal_peaks(h.ft_, h.fs_);
 end
- 
- 
+
+
 function h = process_clustering(h)
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
@@ -405,29 +419,29 @@ if isempty(h.ft_)
 else
     [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~,~] = events_clustering(h.ft_, h.fs_);
 end
- 
+
 %   - Hierarchical clustering (agglomerative) -
 function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust_note_x, clust_tx, clust_periodicity, kmax, tx_major,sx_major ] = events_clustering(t,s)
 %   - Derivative -
 d = s(2:end) -  s(1:end-1);
 %td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
 td = t(2:end);
- 
+
 kx = d > 0;
 kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
- 
+
 %   - Local maxima sx, maximum slope around sx -
 [tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
- 
+
 % Initialization
 kmax_init = 6;
 [clust_index,  ~,~,  ~,~,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
- 
+
 % Remove oultiers
 kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
- 
+
 [tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
- 
+
 if diff(2,2) >= 1    % EMPIRICAL: no clustering if 2-clustering clusters are too close
     
     % Initialization with outliers removed
@@ -455,11 +469,11 @@ else
     tx_major = tx;
     sx_major = sx;
 end
- 
+
 function plot_(h)
 xl = h.axes.XLim; yl = h.axes.YLim;
 hold off
- 
+
 if h.t_int == 0
     plot( h.axes ...
         , h.t , h.s , '-k','LineWidth',.5);
@@ -502,19 +516,19 @@ else
                         ,h.t0 , h.s0 , '--k','LineWidth',.1);
                     hold on
                     plot( h.t  , h.s  , 'og','MarkerSize',10);
-                    %plot( h.td , h.d , 'x:b');
-                    %plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
+                    plot( h.td , h.d , 'x:b');
+                    plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
                     plot( h.tx , h.sx   , 'dc','MarkerSize',10);
                     plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
                     plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
                     plot(h.tx_major,h.sx_major, 'pr','MarkerSize',25);
                     
-                    %plot( h.tx , h.dhi  , '^b');
-                    %plot( h.tx , h.dlo  , 'vb');
+                    plot( h.tx , h.dhi  , '^b');
+                    plot( h.tx , h.dlo  , 'vb');
                     
                     plot(h.xgrid,h.ygrid , ':k');
-                    %legend({'Signal','Sampled signal','First derivative','Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
-                    legend({'Signal','Sampled signal','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
+                    legend({'Signal','Sampled signal','First derivative','Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
+                    %legend({'Signal','Sampled signal','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
                     hold off
                     
                 end
@@ -635,11 +649,11 @@ else
     end
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
- 
+
 function plot_cluster(h)
 xl = h.axes.XLim; yl = h.axes.YLim;
 hold off
- 
+
 if isempty(h.ft)
     if isempty(h.ft_)
         if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
@@ -761,8 +775,8 @@ else
     end
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
- 
- 
+
+
 function plot_cluster_distribution(h)
 if h.t_int > 0
     if h.kmax >= 2
@@ -837,12 +851,12 @@ if h.t_int > 0
         ylabel('t_{x,k}, s','Fontsize',15);
     end
 end
- 
- 
+
+
 function callback_infile(h)  %#ok<DEFNU>
 h = update_infile(h);
 guidata(h.output, h);
- 
+
 function callback_grids(h) %#ok<DEFNU>
 if h.checkbox_clustering.Value
     h = grids(h);
@@ -853,21 +867,21 @@ else
     plot_(h);
     guidata(h.output, h);
 end
- 
+
 function callback_sampling(h) %#ok<DEFNU>
 h = update_infile(h);
 guidata(h.output, h);
- 
+
 function callback_t_int(h) %#ok<DEFNU>
 h = update_infile(h);
 h.value_t_int.String = h.slider_t_int.Value;
 guidata(h.output, h);
- 
+
 function callback_frame(h) %#ok<DEFNU>
 h = update_infile(h);
 h.value_frame.String = floor(h.slider_frame.Value);
 guidata(h.output, h);
- 
+
 function callback_filters(h) %#ok<DEFNU>
 if h.checkbox_clustering.Value
     h = process_clustering(h);
@@ -878,14 +892,14 @@ else
     plot_(h);
     guidata(h.output, h);
 end
- 
+
 function callback_detect(h) %#ok<DEFNU>
 if h.checkbox_clustering.Value
     plot_cluster(h);
 else
     plot_(h);
 end
- 
+
 function callback_clustering(h)
 if h.checkbox_clustering.Value
     h = process_clustering(h);
@@ -893,21 +907,21 @@ if h.checkbox_clustering.Value
     plot_cluster_distribution(h);
     guidata(h.output, h);
 end
- 
- 
+
+
 function callback_PPG_meas(h) %#ok<DEFNU>
 if update_filelist(h)
     h = update_infile(h);
     guidata(h.output, h);
 end
- 
+
 function callback_ECG(h) %#ok<DEFNU>
 if update_filelist(h)
     h = update_infile(h);
     guidata(h.output, h);
 end
- 
- 
+
+
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
 d2 =   d(2:end) -   d(1:end-1);  td2 = (  td(2:end) +  td(1:end-1) ) / 2;                   % second derivative
@@ -934,7 +948,7 @@ plot( h.axes ...
     , kron(ty,[1 1 1]) , kron(d2lo,[1 0 nan]) + kron(d2hi,[0 1 nan]) , '-r' ...
     );
 legend({'Signal','Sampled','D1','D2'});
- 
+
 function ECG_analysis(h)
 %     if sum(h.ecg .^ 3) < 0; h.ecg = -h.ecg; end
 %     [tx,sx, dhi, dlo] = signal_peaks(h.t0,h.ecg);
@@ -969,7 +983,7 @@ l = sort(sx); [~,k] = max( l(2:end) - l(1:end-1) ); l = (l(k)+l(k+1))/2;
 k = find(sx > l);
 hold off
 %     plot( sort(sx) ,'x'); return
- 
+
 plot( h.axes ...
     , h.t0 , secg*h.ecg , 'x-k' ...
     , thf , ecg_hf, '-r' ...
