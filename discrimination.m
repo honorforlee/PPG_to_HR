@@ -161,7 +161,7 @@ h.t_int = h.dt * h.slider_t_int.Value;                             % t_int
 if isempty(h.edit_dNdS.String)
     uiwait(msgbox('Fill dN/dS.','Warning','warn'));
 else
-    h.dNds = str2double(h.edit_dNdS.String);                         % LSB
+    h.dNdS = str2double(h.edit_dNdS.String);                         % LSB
 end
 
 h = quantize_input(h);
@@ -174,7 +174,7 @@ function h = quantize_input(h)
 h.t0 = (1:length(h.s0)) * h.dt0;
 
 % Integration
-[h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNds,0);
+[h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
 
 % Frame definition to apply discrimination_algorithm
 if isempty(h.edit_frame_length.String)
@@ -223,13 +223,27 @@ if h.t_int ~= 0
         h = process_sig(h);
         
         if h.warning == 0
-            h.value_hr.String = floor(60 * (1/h.T));                               % extrapolated BPM
+            h.value_hr.String = floor(60 * (1/h.T));                       % extrapolated BPM
+            
+            % Feedback values
+            h.fb_fsample.String = 1/h.dt;                                           
+            h.fb_tint.String = h.t_int;
+            h.fb_dNdS.String = h.dNdS;
+            h.fb_eps.String = h.eps;
+            
             plot_(h);
         else
-            uiwait(msgbox('No peaks detected.','Warning','warn'));
+            % Feedback f_sample
+            if h.dt < 20e-3                                                % f_samp,max = 50 Hz
+                h.dt = (1 + 10*h.dt)/h.dt;                                 %f_samp + 10 Hz 
+                
+            else
+                uiwait(msgbox('No peaks detected.','Warning','warn'));
+            end
         end
-        % Feedback t_sample
-        if length(h.kx_major) >= floor( h.frame_length / 0.35)               % Max BPM = 171
+        
+        % Feedback f_sample
+        if length(h.kx_major) >= floor( h.frame_length / 0.35)             % Max BPM = 171
             h.dt = h.dt * 2;
             [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNds,0);
             h = algorithm_output(h);
@@ -479,7 +493,7 @@ else
                     plot( h.axes ...
                         ,h.t0 , h.s0 , '--k','LineWidth',.1);
                     hold on
-                    plot( h.t  , h.s  , 'om','MarkerSize',10);
+                    plot( h.t  , h.s  , 'og','MarkerSize',10);
                     %plot( h.td , h.d , 'x:b');
                     %plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
                     plot( h.tx , h.sx   , 'dc','MarkerSize',10);
@@ -525,7 +539,7 @@ else
                     
                 elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
                     plot( h.axes ...
-                        ,h.t  , h.s  , 'om','MarkerSize',10);
+                        ,h.t  , h.s  , 'og','MarkerSize',10);
                     hold on
                     %plot( h.td , h.d , 'x:b');
                     %plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
