@@ -227,18 +227,24 @@ if h.t_int ~= 0
             
             % Feedback values
             h.fb_fsample.String = 1/h.dt;                                           
-            h.fb_tint.String = h.t_int;
+            h.fb_tint.String = 1000*h.t_int;
             h.fb_dNdS.String = h.dNdS;
             h.fb_eps.String = h.eps;
             
             plot_(h);
         else
             % Feedback f_sample
-            if h.dt < 20e-3                                                % f_samp,max = 50 Hz
+            if h.dt > 20e-3                                                % f_samp,max = 50 Hz
                 h.dt = (1 + 10*h.dt)/h.dt;                                 %f_samp + 10 Hz 
                 
             else
                 uiwait(msgbox('No peaks detected.','Warning','warn'));
+            
+            % Feedback values
+            h.fb_fsample.String = 1/h.dt;                                           
+            h.fb_tint.String = 1000*h.t_int;
+            h.fb_dNdS.String = h.dNdS;
+            h.fb_eps.String = h.eps;
             end
         end
         
