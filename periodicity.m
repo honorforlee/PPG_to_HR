@@ -8,13 +8,13 @@ function [T,eps,R_sq,plot_reg] = periodicity(tx)
 % T_est = mdl.Coefficients(2);    % period estimate
 % RMSE_est = mdl.RMSE;            % Square root of the mean squared error, which estimates the standard deviation of the error distribution.
 
-%   - with covariance matrix - 
-j = [1:length(tx)];
-A_matrix = cov(j,tx,1);                                          % output is normalized by the number of observations length(tx)
-T_matrix = A_matrix(3)/A_matrix(1);                              % peaks eriodicity
-T_0_matrix = mean(tx) - T_matrix * mean(j); 
-
-R_2_matrix  = ( A_matrix(3) / sqrt(A_matrix(1)*A_matrix(4)))^2;  % coefficient of determination
+% %   - with covariance matrix- 
+% j = [1:length(tx)];
+% A_matrix = cov(j,tx,1);                                          % output is normalized by the number of observations length(tx)
+% T_matrix = A_matrix(3)/A_matrix(1);                              % peaks eriodicity
+% T_0_matrix = mean(tx) - T_matrix * mean(j); 
+% 
+% R_2_matrix  = ( A_matrix(3) / sqrt(A_matrix(1)*A_matrix(4)))^2;  % coefficient of determination
 
 %   - with loops -
 for k = 1:length(tx)
@@ -34,10 +34,10 @@ for k = 1:length(tx)
    D(k) = (tx(k) - mean(tx))^2;
 end
 sum_B = cumsum(B);                                              % Mean Squared Error
-sum_C = cumsum(C); sum_D = cumsum(D);                                             
+sum_C = cumsum(C); sum_D = cumsum(D);                           % coefficient of determination R^2 - optional                   
     
 eps = sum_B(length(tx)) / (length(tx)*T^2);                     % MSE normalized with respect to #samples and period
-R_sq = sum_C(length(tx)) / sum_D(length(tx));                   % coefficient of determination R^2
+R_sq = sum_C(length(tx)) / sum_D(length(tx));                   % coefficient of determination R^2 - optional  
 
 % %  - plot -
 % plot_reg=plot(j,tx,'r.', j,t_reg,'b-');

@@ -171,6 +171,8 @@ tbl_complexity = table(comp',mult',add',div',abs',sort_count',sort_length',isnan
 
 %   - Select major cluster + merge sub-major clusters -
 Nrows = max(cellfun(@numel,clust_cell));
+comp = comp + length(Nrows)- 1;
+
 X = nan(Nrows(1),L(2));
 for iCol = 1:L(2)
     X(1:numel(clust_cell{iCol}),iCol) = clust_cell{iCol};       % copy idx values of each cluster into X
