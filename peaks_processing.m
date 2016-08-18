@@ -1,12 +1,7 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Local maxima sx, maximum slope around sx --
 
-function [tx,sx, dhi,dlo, kx_n,tx_N,sx_N, note_x] = peaks_processing(t,s,kx)
-
-d = s(2:end) -  s(1:end-1);
-%td = (  t(2:end) +  t(1:end-1) ) / 2;    % shift derivative timeline of t_spl/2
-td = t(2:end);
-
+function [tx,sx, dhi,dlo, kx_n,tx_N,sx_N,note_1,note_2, note_3] = peaks_processing(t,s,td,d,kx)
 sx = s(kx+1);                          % local maxima
 tx = td(kx) + (td(kx+1)-td(kx)) .* d(kx)./(d(kx)-d(kx+1));      % linear interpolation of dhi and dho to get tx (@zero crossing)
 
@@ -65,10 +60,9 @@ note_3 = delta;
 
 for k = 2:length(kx)-1
     note_1(k) = sx(k) - ( sx(k+1) + sx(k-1) )/2;                                % average peak value
-    note_3(k) = delta(k) - ( delta(k+1) + delta(k-1) )/2;                       % average peak to peak value
+    %note_3(k) = delta(k) - ( delta(k+1) + delta(k-1) )/2;                      % average peak to peak value
 end
 
-note_x = 0.1*note_1 + 0.1*note_2 + 0.8*delta;
 
 
 % %   - Peaks notation (normalization) -
