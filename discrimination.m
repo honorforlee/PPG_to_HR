@@ -161,7 +161,7 @@ h.t_int = h.dt * h.slider_t_int.Value;                             % t_int
 if isempty(h.edit_dNdS.String)
     uiwait(msgbox('Fill dN/dS.','Warning','warn'));
 else
-    h.dNdS = str2double(h.edit_dNdS.String);                         % LSB
+    h.dNdS = str2double(h.edit_dNdS.String);                       % LSB
 end
 
 h = quantize_input(h);
@@ -252,10 +252,10 @@ if h.t_int ~= 0
             end
         end
         
-        % Feedback f_sample
+        % Feedback t_int
         if length(h.kx_major) >= floor( h.frame_length / 0.35)             % Max BPM = 171
-            if h.dt > 20e-3
-                h.dt = h.dt/(1 + 10*h.dt);                                     % f_sample + 10 Hz
+            if h.t_int < 0.5*h.dt
+                h.t_int = h.t_int + 10e-3;                                 % t_int + 10 ms
                 
                 [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
                 h = algorithm_output(h);
