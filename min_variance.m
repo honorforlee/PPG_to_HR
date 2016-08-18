@@ -4,18 +4,9 @@
 function [kx_major,tx_major,sx_major, T, warning] = min_variance(kx,tx,sx, note_x, eps)
 kx_ = kx;
 
-add = 0;
-mult = 0;
-div = 0;
-comp = 0;
-abs = 0;
-
 %   - Clustering according to minimum variance of note_x -
 for i = 1:length(kx)
-    comp = comp + 1;
-    
     if kx_(i) ~= 0
-        comp = comp + 1;
         
         idx(1,i) = kx(i);
         per(1,i) = tx(i);
@@ -23,10 +14,8 @@ for i = 1:length(kx)
         j = 2;
         
         for k = i + 1 : length(kx)
-            comp = comp + 1;
             
             if  similarity(note_x(i),note_x(k),'variance') < eps;
-                comp = comp +1;
                 
                 idx(j,i) = kx(k);
                 per(j,i) = tx(k);
@@ -35,19 +24,16 @@ for i = 1:length(kx)
                 kx_(k) = 0;
                 j = j+1;
             else
-                comp = comp + 1;
-                
                 idx(j,i)=nan;
                 per(j,i)=nan;
                 note(j,i)=nan;
                 
                 j = j+1;
             end
+            
         end
-        comp = comp + 1;
     end
 end
-comp = comp +1;
 
 %   - Remove columns -
 zero = find(~idx(1,:));
