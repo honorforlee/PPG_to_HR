@@ -2,7 +2,9 @@
 %       -- Clustering according to minimum variance of note_x  --
 
 function [kx_major,tx_major,sx_major, T, warning] = min_variance(kx,tx,sx, note_x, eps)
+eps = 0.1;
 kx_ = kx;
+
 
 add = 0;
 mult = 0;
@@ -11,6 +13,10 @@ comp = 0;
 isnan_comp = 0;
 abs = 0;
 
+sort_length = 0;
+sort_count = 0;
+
+periodicity_count = 0;
 
 %   - Clustering according to minimum variance of note_x -
 for i = 1:length(kx)
@@ -103,39 +109,65 @@ for k = 1:L(2)
     
     clear NAN_ NAN_idx NAN_per NAN_note idx_ per_ note_
 end
+comp = comp + 1;
 
 % Sort clusters by NOTE
 NOTE = sort(NOTE_mean,'descend');                               % average of cluster note_x sorted
+sort_length = sort_length + length(NOTE_mean);
+sort_count = sort_count + 1;
 
 for k = 1:L(2)
+    comp = comp + 1;
     
     clust_cell{k,1} = clust_cell_temp{NOTE_mean == NOTE(k),1};      % kx sorted
     clust_cell{k,2} = clust_cell_temp{NOTE_mean == NOTE(k),2};      % tx sorted
     clust_cell{k,3} = clust_cell_temp{NOTE_mean == NOTE(k),3};      % note_x sorted
     
 end
+comp = comp + 1;
 
 %   - Cluster notation: size, tx periodicity, note_x -
 for k = 1:L(2)
+    comp = comp + 1;
     if length(clust_cell{k,1}) > 2
+        comp = comp +1;
         
         SIZE(k) = length(clust_cell{k,1});                                 % size
         [PER_T(k),PER_eps(k), PER_R(k)] = periodicity(clust_cell{k,2});    % tx periodicity
         
+        periodicity_count = periodicity_count + 1 ;
+        comp = comp + 2*(length(clust_cell{k,2})+1);
+        mult = mult + length(clust_cell{k,2}) + 8;
+        add = add + 3*length(clust_cell{k,2}) + 4;
+        div = div +5;
+        
         if PER_eps(k) <= 0.1            % best periodicity note set to 0.1 otherwise increase too much the cluster note
+            comp = comp + 1;
+            
             PER_eps(k) = 0.1;
         end
+        comp = comp + 1;
+        
         clust_note(k) = (0.7 * NOTE(k) + 0.2 * SIZE(k)) / (PER_eps(k)/0.1);          % cluster note EMPIRICAL
+        mult = mult + 3; 
+        div = div + 3;
+        add = add + 1;
         
     else
+        comp = comp + 1;
+        
         SIZE(k) = length(clust_cell{k,1});
         PER_T(k) = 0; PER_eps(k) = 0; PER_R(k) = 0;
         clust_note(k) = 0;
         
     end
 end
+comp = comp + 1;
 
 tbl_note = table([1:L(2)]', SIZE', PER_T',PER_eps', PER_R', NOTE', clust_note','VariableNames',{'Cluster','Size','T','eps','R','Note_x','Cluster_note'});
+
+tbl_complexity = table(comp',mult',add',div',abs',sort_count',sort_length',isnan_comp',periodicity_count','VariableNames',{'comp','mult','add','div','abs','sort_c','sort_l','isnan_comp','periodicity_count'});
+
 
 %   - Select major cluster + merge sub-major clusters -
 Nrows = max(cellfun(@numel,clust_cell));
