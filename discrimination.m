@@ -366,7 +366,7 @@ if nargin == 2
     
 else
     if signal == 'ecg'
-        note_x = note_2;
+        note_x = 0.7*note_2+0.3*note_3;
     end
 end
 
@@ -388,6 +388,17 @@ else
     h.warning = 1;
 end
 
+function h = discrimination_ecg(h)
+%   - Select events in the frame -
+[kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
+
+if ~isempty(kx_frame)
+    %   - Minimum variance algorithm -
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance_ecg(kx_frame,tx_frame,sx_frame, note_x_frame,3);
+else
+    h.warning = 1;
+end
+
 
 function h = process_sig(h) %#ok<DEFNU>
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
@@ -397,10 +408,11 @@ if isempty(h.ft)
     if ~h.checkbox_ecg.Value
     %   - PPG algorithm -
     [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t,h.s);
-                h = discrimination_algorithm(h);
+    h = discrimination_algorithm(h);
     else
         % - ECG algorithm -
-        [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t,h.s,'ecg');
+        [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t0,h.s0,'ecg');
+        h = discrimination_ecg(h);
     end
     
 else

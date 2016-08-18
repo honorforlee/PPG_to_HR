@@ -19,6 +19,6 @@ if nargin == 2
     
 else
     if signal == 'ecg'
-        note_x = note_2;
+        note_x = 0.5*note_2+0.5*note_3;
     end
 end
