@@ -1,10 +1,9 @@
 % Ivan NY HANITRA - Master thesis
 %       -- Clustering according to minimum variance of note_x  --
 
-function [kx_major,tx_major,sx_major, T, warning] = min_variance(kx,tx,sx, note_x, eps)
-kx_ = kx;
-
+function [kx_major,tx_major,sx_major, T, warning] = min_variance_ecg(kx,tx,sx, note_x, eps)
 %   - Clustering according to minimum variance of note_x -
+kx_ = kx;
 for i = 1:length(kx)
     if kx_(i) ~= 0
         

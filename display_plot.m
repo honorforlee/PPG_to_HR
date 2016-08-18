@@ -58,6 +58,9 @@ s_frame = s(index);
 
 kx = kx_frame; tx = tx_frame; sx = sx_frame; note_x = note_x_frame;
 
+
+eps = 0.1;
+
 %   - Initialise counters -
 add = 0;
 mult = 0;
@@ -76,11 +79,8 @@ find_first_in = 0;
 
 periodicity_count = 0;
 
-
-eps = 0.1;
-kx_ = kx;
-
 %   - Clustering according to minimum variance of note_x -
+kx_ = kx;
 for i = 1:length(kx)
     comp = comp + 1;
     

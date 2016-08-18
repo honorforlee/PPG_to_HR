@@ -229,9 +229,13 @@ if h.t_int ~= 0
             h.fb_fsample.String = 1/h.dt;
             h.fb_tint.String = 1000*h.t_int;
             h.fb_dNdS.String = h.dNdS;
-            h.fb_eps.String = h.eps;
+            h.fb_eps.String = h.eps;                     
             
-            plot_(h);
+            compl = h.tbl_complexity;
+            vars = {'comp','mult','add','div','isnan_comp','sort_'};
+            tbl = compl{1,vars}
+           
+           plot_(h);
         else
             % Feedback f_sample
             if h.dt > 20e-3                                                % f_samp,max = 50 Hz
@@ -383,7 +387,9 @@ if ~isempty(kx_frame)
     end
     
     %   - Minimum variance algorithm -
-    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+    %[h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning,h.tbl_complexity] = min_variance_complexity(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+    
 else
     h.warning = 1;
 end
