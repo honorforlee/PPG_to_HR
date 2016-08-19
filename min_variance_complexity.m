@@ -679,5 +679,6 @@ else
     T = nan;
     display('No peaks detected')
 end
-sort_ = sort_length + unique_length; 
-tbl_complexity = table(comp',mult',add',div',abs_count',sort_',sort_count',sort_length',unique_count',unique_length',find_first_in',isnan_comp',periodicity_count','VariableNames',{'comp','mult','add','div','abs','sort_','sort_c','sort_l','unique_c','unique_l','fing_first','isnan_comp','per_c'});
+sort_l = sort_length + unique_length;
+sort_c = sort_count + unique_count;
+tbl_complexity = table(comp',mult',add',div',abs_count',sort_l',sort_c',find_first_in',isnan_comp',periodicity_count','VariableNames',{'comp','mult','add','div','abs','sort_l','sort_c','find_first','isnan_comp','per_c'});

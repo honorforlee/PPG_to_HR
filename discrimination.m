@@ -231,8 +231,9 @@ if h.t_int ~= 0
             h.fb_dNdS.String = h.dNdS;
             h.fb_eps.String = h.eps;                     
             
+            % tag_complexity
             compl = h.tbl_complexity;
-            vars = {'comp','mult','add','div','isnan_comp','sort_'};
+            vars = {'add','mult','div','comp','isnan_comp','sort_c','sort_l'};
             tbl = compl{1,vars}
            
            plot_(h);
@@ -941,6 +942,45 @@ if update_filelist(h)
     guidata(h.output, h);
 end
 
+% --- Executes on button press in tag_complexity.
+function callback_complexity(h)
+global n_add;global n_mult;global n_div; global n_comp;global n_isnan;global n_sort_c;global n_sort_l;global loop;
+if h.tag_complexity.Value == 1
+n_add = n_add + h.tbl_complexity.add;
+n_mult = n_mult + comp.mult;
+n_div = n_div + comp.div;
+n_comp = n_comp + comp.comp;
+n_isnan = n_isnan + comp.isnan_comp;
+n_sort_c = n_sort_c + comp.sort_c;
+n_sort_l = n_sort_l + comp.sort_l;
+loop = loop + 1;
+end
+
+if h.tag_mean.Value == 1
+n_add = n_add/loop;
+n_mult = n_mult/loop;
+n_div = n_div/loop;
+n_comp = n_comp/loop;
+n_isnan = n_isnan/loop;
+n_sort_c = n_sort_c/loop;
+n_sort_l = n_sort_l/loop;
+end
+
+if h.tag_reset.Value == 1
+n_add = 0;
+n_mult = 0;
+n_div = 0;
+n_comp = 0;
+n_isnan = 0;
+n_sort_c = 0;
+n_sort_l = 0;
+loop = 0;
+end
+
+guidata(h.output, h);
+
+
+
 
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative
@@ -1011,5 +1051,8 @@ plot( h.axes ...
     , [h.t0(1) h.t0(end)], [1 1]*l, '-b' ...
     , [h.t0(1) h.t0(end)], [1 1]*sqrt(var(sx)), '--b' ...
     );
+
+
+
 
 
