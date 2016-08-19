@@ -231,10 +231,10 @@ if h.t_int ~= 0
             h.fb_dNdS.String = h.dNdS;
             h.fb_eps.String = h.eps;                     
             
-            % tag_complexity
-            compl = h.tbl_complexity;
-            vars = {'add','mult','div','comp','isnan_comp','sort_c','sort_l'};
-            tbl = compl{1,vars}
+            % Display complexity
+%             compl = h.tbl_complexity;
+%             vars = {'add','mult','div','comp','isnan_comp','sort_c','sort_l'};
+%             tbl = compl{1,vars};
            
            plot_(h);
         else
@@ -377,9 +377,9 @@ end
 
 function h = discrimination_algorithm(h)
 %   - Select events in the frame -
-[kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
+[h.kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
 
-if ~isempty(kx_frame)
+if ~isempty(h.kx_frame)
     % Feedback eps
     if 0.5 <= mean(note_x_frame) && mean(note_x_frame) <= 1
         h.eps = 0.1*h.eps;
@@ -388,8 +388,19 @@ if ~isempty(kx_frame)
     end
     
     %   - Minimum variance algorithm -
-    %[h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
-    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning,h.tbl_complexity] = min_variance_complexity(kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(h.kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+
+    if h.warning == 0 % COMPLEXITY COMPUTATION
+               
+        [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t,h.s);
+        [h.kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
+        if 0.5 <= mean(note_x_frame) && mean(note_x_frame) <= 1
+            h.eps = 0.1*h.eps;
+        elseif mean(note_x_frame) < 0.5
+            h.eps = 0.01*h.eps;
+        end
+        [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning,h.tbl_complexity] = min_variance_complexity(h.kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+   end
     
 else
     h.warning = 1;
@@ -397,11 +408,11 @@ end
 
 function h = discrimination_ecg(h)
 %   - Select events in the frame -
-[kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
+[h.kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
 
-if ~isempty(kx_frame)
+if ~isempty(h.kx_frame)
     %   - Minimum variance algorithm -
-    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance_ecg(kx_frame,tx_frame,sx_frame, note_x_frame,3);
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance_ecg(h.kx_frame,tx_frame,sx_frame, note_x_frame,3);
 else
     h.warning = 1;
 end
@@ -944,26 +955,32 @@ end
 
 % --- Executes on button press in tag_complexity.
 function callback_complexity(h)
-global n_add;global n_mult;global n_div; global n_comp;global n_isnan;global n_sort_c;global n_sort_l;global loop;
+global n_add;global n_mult;global n_div; global n_comp;global n_isnan;global n_sort_c;global n_sort_l;global loop;global BPM;global n_events;global n_op;
 if h.tag_complexity.Value == 1
 n_add = n_add + h.tbl_complexity.add;
-n_mult = n_mult + comp.mult;
-n_div = n_div + comp.div;
-n_comp = n_comp + comp.comp;
-n_isnan = n_isnan + comp.isnan_comp;
-n_sort_c = n_sort_c + comp.sort_c;
-n_sort_l = n_sort_l + comp.sort_l;
+n_mult = n_mult + h.tbl_complexity.mult;
+n_div = n_div + h.tbl_complexity.div;
+n_comp = n_comp + h.tbl_complexity.comp;
+n_isnan = n_isnan + h.tbl_complexity.isnan_comp;
+n_sort_c = n_sort_c + h.tbl_complexity.sort_c;
+n_sort_l = n_sort_l + h.tbl_complexity.sort_l;
+BPM = BPM + floor(60 * (1/h.T));
+n_events = n_events + length(h.kx_frame);
 loop = loop + 1;
 end
 
 if h.tag_mean.Value == 1
-n_add = n_add/loop;
-n_mult = n_mult/loop;
-n_div = n_div/loop;
-n_comp = n_comp/loop;
-n_isnan = n_isnan/loop;
-n_sort_c = n_sort_c/loop;
-n_sort_l = n_sort_l/loop;
+n_add = round(n_add/loop);
+n_mult = round(n_mult/loop);
+n_div = round(n_div/loop);
+n_comp = round(n_comp/loop);
+n_isnan = round(n_isnan/loop);
+n_sort_c = round(n_sort_c/loop);
+n_sort_l = round(n_sort_l/loop);
+BPM = round(BPM/loop);
+n_events = round(n_events/loop);
+
+n_op = n_add + n_mult + n_div + n_comp + n_isnan + n_sort_c;
 end
 
 if h.tag_reset.Value == 1
@@ -974,13 +991,13 @@ n_comp = 0;
 n_isnan = 0;
 n_sort_c = 0;
 n_sort_l = 0;
+BPM = 0;
+n_events = 0;
+n_op = 0;
 loop = 0;
 end
 
 guidata(h.output, h);
-
-
-
 
 function detect_points(h) %#ok<DEFNU>
 d  = h.s(2:end) - h.s(1:end-1);  td  = ( h.t(2:end) + h.t(1:end-1) ) / 2;                   % first derivative

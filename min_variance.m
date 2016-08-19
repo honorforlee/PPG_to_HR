@@ -364,5 +364,5 @@ else
     tx_major = nan;
     sx_major = nan;
     T = nan;
-    display('No peaks detected')
+    %display('No peaks detected');
 end
