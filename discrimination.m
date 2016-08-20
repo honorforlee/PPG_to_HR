@@ -387,21 +387,9 @@ if ~isempty(h.kx_frame)
         h.eps = 0.01*h.eps;
     end
     
-    %   - Minimum variance algorithm -
-    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance(h.kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
+    %   - Minimum variance algorithm with complexity computation -
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning,h.tbl_complexity] = min_variance_complexity(h.kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
 
-    if h.warning == 0 % COMPLEXITY COMPUTATION
-               
-        [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t,h.s);
-        [h.kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
-        if 0.5 <= mean(note_x_frame) && mean(note_x_frame) <= 1
-            h.eps = 0.1*h.eps;
-        elseif mean(note_x_frame) < 0.5
-            h.eps = 0.01*h.eps;
-        end
-        [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning,h.tbl_complexity] = min_variance_complexity(h.kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
-   end
-    
 else
     h.warning = 1;
 end
