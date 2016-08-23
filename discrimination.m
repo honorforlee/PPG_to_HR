@@ -143,7 +143,11 @@ else
         h.ecg = val(h.f_ecg_row{n}, :);
         h.ecg = h.ecg(1:end);
         h.ecg = (h.ecg - mean(h.ecg))/sqrt(var(h.ecg));
+        if max(h.ecg) > abs(min(h.ecg)) 
         h.s0 = h.ecg;
+        else 
+            h.s0 = -h.ecg;
+        end
     else
         h.ecg = [];
     end
@@ -173,8 +177,12 @@ function h = quantize_input(h)
 % Define timeline
 h.t0 = (1:length(h.s0)) * h.dt0;
 
+if h.checkbox_ecg.Value
+    h.t = h.t0; h.s = h.s0;
+else
 % Integration
 [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
+end
 
 % Frame definition to apply discrimination_algorithm
 if isempty(h.edit_frame_length.String)
@@ -371,7 +379,7 @@ if nargin == 2
     
 else
     if signal == 'ecg'
-        note_x = 0.7*note_2+0.3*note_3;
+        note_x = 0.5*note_2+0.5*note_1;
     end
 end
 
@@ -400,7 +408,8 @@ function h = discrimination_ecg(h)
 
 if ~isempty(h.kx_frame)
     %   - Minimum variance algorithm -
-    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance_ecg(h.kx_frame,tx_frame,sx_frame, note_x_frame,3);
+    h.eps = 2;
+    [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning] = min_variance_ecg(h.kx_frame,tx_frame,sx_frame, note_x_frame,h.eps);
 else
     h.warning = 1;
 end
