@@ -514,14 +514,23 @@ else
             if h.checkbox_signal.Value
                 if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
                     
-                    plot( h.axes ...
-                        ,h.t0 , h.s0 , '--k','LineWidth',.1);
+                                        plot( h.axes ...
+                        ,h.t0 , h.s0 , '-k','LineWidth',.1);
                     hold on
-                    plot( h.t  , h.s  , 'og','MarkerSize',10);
-                    plot( h.td , h.d , 'x:b');
+                    %plot( h.t  , h.s  , 'og','MarkerSize',10);
+                    %plot( h.td , h.d , 'x:b');
                     
                     plot(h.xgrid,h.ygrid , ':k');
-                    legend({'Signal','Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
+                    legend({'Signal'},'FontSize',8,'Orientation','Horizontal');
+
+%                     plot( h.axes ...
+%                         ,h.t0 , h.s0 , '--k','LineWidth',.1);
+%                     hold on
+%                     plot( h.t  , h.s  , 'og','MarkerSize',10);
+%                     plot( h.td , h.d , 'x:b');
+%                     
+%                     plot(h.xgrid,h.ygrid , ':k');
+%                     legend({'Signal','Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
                     hold off
                     
                 elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
