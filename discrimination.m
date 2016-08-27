@@ -28,14 +28,14 @@ end
 
 %   - Executes just before discrimination is made visible -
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
-scrsz = get(groot,'ScreenSize');
-set(gcf,'Units','pixels','Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]);
-set(0,'ScreenPixelsPerInch', 95);
-set(gcf,'Color',[0.94,0.94,0.94])   % set GUI color
-
 % scrsz = get(groot,'ScreenSize');
-% set(gcf,'Units','pixels','Position',[1 .5 scrsz(3)*0.8 scrsz(4)*0.9]);
-% set(0,'ScreenPixelsPerInch', 70);
+% set(gcf,'Units','pixels','Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]);
+% set(0,'ScreenPixelsPerInch', 95);
+% set(gcf,'Color',[0.94,0.94,0.94])   % set GUI color
+
+scrsz = get(groot,'ScreenSize');
+set(gcf,'Units','pixels','Position',[1 .5 scrsz(3)*0.8 scrsz(4)*0.9]);
+set(0,'ScreenPixelsPerInch', 70);
 
 fl_ecg   = {}; ppg_ecg   = {}; ecg_ecg   = {}; dt0_ecg   = {};
 fl_noecg = {}; ppg_noecg = {}; ecg_noecg = {}; dt0_noecg = {};
@@ -576,27 +576,44 @@ else
                     plot( h.axes ...
                         ,h.t  , h.s  , 'og','MarkerSize',10);
                     hold on
-                    plot( h.td , h.d , 'x:b');
+                    %plot( h.td , h.d , 'x:b');
                     plot(h.xgrid,h.ygrid , ':k');
-                    legend({'Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
+                    %legend({'Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
+                    legend({'Sampled signal'},'FontSize',8,'Orientation','Horizontal');
                     hold off
                     
                 elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
-                    plot( h.axes ...
-                        ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
-                    hold on
-                    plot( h.tx , h.sx   , 'dc','MarkerSize',10);
-                    plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
-                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
-                    plot(h.tx_major,h.sx_major, 'pr','MarkerSize',20);
+%                     plot( h.axes ...
+%                         ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
+%                     hold on
+%                     plot( h.tx , h.sx   , 'dc','MarkerSize',10);
+%                     plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
+%                     plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
+%                     plot(h.tx_major,h.sx_major, 'pr','MarkerSize',20);
+%                     
+%                     plot( h.tx , h.dhi  , '^b');
+%                     plot( h.tx , h.dlo  , 'vb');
+%                     
+%                     plot(h.xgrid,h.ygrid , ':k');
+%                     legend({'Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
+%                     hold off
                     
-                    plot( h.tx , h.dhi  , '^b');
-                    plot( h.tx , h.dlo  , 'vb');
-                    
-                    plot(h.xgrid,h.ygrid , ':k');
-                    legend({'Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
-                    hold off
-                    
+plot( h.axes ...
+    ,h.tx , h.sx   , 'dc','MarkerSize',10);
+hold on
+plot( h.tx , h.sx   , 'dc','MarkerSize',10);
+plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
+plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
+plot(h.tx_major,h.sx_major, 'pr','MarkerSize',20);
+
+%plot( h.tx , h.dhi  , '^b');
+%plot( h.tx , h.dlo  , 'vb');
+
+%plot(h.xgrid,h.ygrid , ':k');
+%legend({'Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
+hold off
+                                                      
+                                        
                 elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
                     plot( h.axes ...
                         ,h.t  , h.s  , 'og','MarkerSize',10);
