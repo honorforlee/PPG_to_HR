@@ -878,9 +878,10 @@ if h.t_int > 0
         Legend=cell(h.kmax,1);
         
         for iter=1:h.kmax
-            Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
+           % Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
+             Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)));
         end
-        legend(Legend);
+        legend(Legend,'FontSize',15,'Location','NorthWest');
         
         title('\bf Linear regression of t_{x,k}','Fontsize',30);
         xlabel('\bf k','Fontsize',30);
@@ -899,7 +900,7 @@ if h.t_int > 0
         base = [1:length(h.tx)];
         plot(base,h.tx,'.','MarkerSize',15);
         Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
-        legend(Legend);
+        legend(Legend,'FontSize',15,'Location','NorthWest');
         
         title('Linear regression of t_{x,k}','Fontsize',20);
         xlabel('k','Fontsize',15);

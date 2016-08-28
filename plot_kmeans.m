@@ -82,10 +82,10 @@ X = [note_x(:)];
      'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output 
 %%
 hold on
-xlim([-1,5]);ylim([-.2,2])
+xlim([-1,5]);ylim([0,2])
 
 %arrow
-[arrowX,arrowY]=dsxy2figxy([-1,5],[0,0]);
+[arrowX,arrowY]=dsxy2figxy([-1,4],[0.02,0.02]);
 annotation('arrow',arrowX,arrowY)
 
 %crosses
@@ -119,6 +119,9 @@ plot(t_frame,s_frame,'og');
 hold on
 plot(t0_frame,s0_frame,'--k');
 plot(tx_major,sx_major,'pr','MarkerSize',25);
+plot(tx_frame,sx_frame,'dc','Markersize',15);
+plot(tx_frame,sx_N_frame,'dc','Markersize',15);
+plot(kron(tx_frame,[1 1 1]), kron(sx_N_frame,[1 0 nan]) + kron(sx_frame,[0 1 nan]),'-c');
 
  
 %%
