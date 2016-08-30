@@ -1,4 +1,4 @@
-Name = '3899985_0005m';
+Name = '3919370m (1)';
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid); fgetl(fid); fgetl(fid);
@@ -30,7 +30,7 @@ end
 s0  = (s0  - mean(s0 ))/sqrt(var(s0));        % rescale s on 0 (standard score of signal)
 
 %   - Timeline, noise, integration, quantization -
-dt = 1/20;                           % sampling time: dt >> dt0
+dt = 1/10;                           % sampling time: dt >> dt0
 t_int = dt * (1/3);                  % integration time: dt0 <= t_int < dt
 quant = 0.1;                         % LSB: vertical step
 
@@ -39,7 +39,7 @@ quant = 0.1;                         % LSB: vertical step
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
 
-frame_init =45; frame_end = 50;
+frame_init =1; frame_end = 60;
 
 index_x = find(tx >= frame_init & tx <= frame_end);
 sx_N_frame = sx_N(index_x);
@@ -78,23 +78,35 @@ kx = kx_frame; tx = tx_frame; sx = sx_frame; note_x = note_x_frame;
 % hold off
 
 X = [note_x(:)];
-[idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
+[idx,C] = kmeans(X,3,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
      'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output 
+
+one = max(X(idx==1)); one_ = min(X(idx==1)); 
+two = max(X(idx==2)); two_ = min(X(idx==2));
+three = max(X(idx==3)); three_ = min(X(idx==3));
+
+[~,red]=max([one,two,three]);
+[~,blue]=min([one_,two_,three_]);
+med=median([one,two,three]);
+purple = find([one,two,three] == med, 1, 'first');
 %%
 hold on
 xlim([-1,5]);ylim([0,2])
 
 %arrow
-[arrowX,arrowY]=dsxy2figxy([-1,4],[0.02,0.02]);
+[arrowX,arrowY]=dsxy2figxy([-.1,4.5],[0,0]);
 annotation('arrow',arrowX,arrowY)
 
 %crosses
 
-plot(X(idx==1),0,'or','markersize',10);
+%plot(X,0,'o','Color',[0,0.5,0.5],'MarkerSize',10);
+plot(X(idx==red),0,'or','MarkerSize',10);
 hold on
-plot(X(idx==2),0,'ob','markersize',10);
-plot(C,0,'kx','MarkerSize',20,'LineWidth',3);
-xlabel ('note_x','FontSize',25,'FontWeight','Bold');
+plot(X(idx==blue),0,'ob','MarkerSize',10);
+plot(X(idx==purple),0,'o','Color',[.5,0,1],'MarkerSize',10);
+plot(C,0,'xk','MarkerSize',20,'LineWidth',3);
+xlabel ('note_x','FontSize',20,'FontWeight','Bold');
+set(gca,'FontSize',15);
 
 %pipes
 p=[0.5,0.65];
