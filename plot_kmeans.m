@@ -1,4 +1,4 @@
-Name = '3919370m (1)';
+Name = '3900497m';
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid); fgetl(fid); fgetl(fid);
@@ -39,7 +39,7 @@ quant = 0.1;                         % LSB: vertical step
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
 
-frame_init =1; frame_end = 60;
+frame_init =10; frame_end = 15;
 
 index_x = find(tx >= frame_init & tx <= frame_end);
 sx_N_frame = sx_N(index_x);
@@ -78,35 +78,38 @@ kx = kx_frame; tx = tx_frame; sx = sx_frame; note_x = note_x_frame;
 % hold off
 
 X = [note_x(:)];
-[idx,C] = kmeans(X,3,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
+[idx,C] = kmeans(X,2,'Distance','cityblock',...     % 2 clusters created: minor/major peaks
      'Replicates',5,'Start','plus','Options',statset('Display','final'));  % initialize the replicates 5 times, separately using k-means++ algorithm, choose best arrangement and display final output 
 
-one = max(X(idx==1)); one_ = min(X(idx==1)); 
-two = max(X(idx==2)); two_ = min(X(idx==2));
-three = max(X(idx==3)); three_ = min(X(idx==3));
+% one = max(X(idx==1)); one_ = min(X(idx==1)); 
+% two = max(X(idx==2)); two_ = min(X(idx==2));
+% % three = max(X(idx==3)); three_ = min(X(idx==3));
+% 
+% [~,red]=max([one,two]);
+% [~,blue]=min([one_,two_]);
+% med=median([one,two,three]);
+% purple = find([one,two,three] == med, 1, 'first');
 
-[~,red]=max([one,two,three]);
-[~,blue]=min([one_,two_,three_]);
-med=median([one,two,three]);
-purple = find([one,two,three] == med, 1, 'first');
 %%
 hold on
-xlim([-1,5]);ylim([0,2])
+xlim([1.5,3.5]);ylim([0,2])
 
 %arrow
-[arrowX,arrowY]=dsxy2figxy([-.1,4.5],[0,0]);
+[arrowX,arrowY]=dsxy2figxy([1.5,3.5],[0,0]);
 annotation('arrow',arrowX,arrowY)
 
 %crosses
 
-%plot(X,0,'o','Color',[0,0.5,0.5],'MarkerSize',10);
+%plot(X,0,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',1);
 plot(X(idx==red),0,'or','MarkerSize',10);
 hold on
 plot(X(idx==blue),0,'ob','MarkerSize',10);
 plot(X(idx==purple),0,'o','Color',[.5,0,1],'MarkerSize',10);
-plot(C,0,'xk','MarkerSize',20,'LineWidth',3);
+%plot(C,0,'xk','MarkerSize',20,'LineWidth',3);
+plot(C_n,0,'x','MarkerSize',20,'Color',[0.5,0.25,0.25],'LineWidth',3);
 xlabel ('note_x','FontSize',20,'FontWeight','Bold');
 set(gca,'FontSize',15);
+set(gca,'ytick',[]);
 
 %pipes
 p=[0.5,0.65];
@@ -127,17 +130,26 @@ end
 
 tx_major = tx(major_index);
 sx_major = sx(major_index);
-plot(t_frame,s_frame,'og');
+note_major = note_x(major_index);
+null = zeros(1,length(tx_frame));
+grid = zeros(1,length(t0_frame));
+
+plot(tx_frame,note_x_frame,'pk','MarkerSize',25,'LineWidth',2);
 hold on
-plot(t0_frame,s0_frame,'--k');
-plot(tx_major,sx_major,'pr','MarkerSize',25);
-plot(tx_frame,sx_frame,'dc','Markersize',15);
-plot(tx_frame,sx_N_frame,'dc','Markersize',15);
-plot(kron(tx_frame,[1 1 1]), kron(sx_N_frame,[1 0 nan]) + kron(sx_frame,[0 1 nan]),'-c');
+plot(tx_major,note_major,'pr','MarkerSize',25,'LineWidth',2);
+plot(t_frame,s_frame,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',2);
+plot(t0_frame,s0_frame,'--','Color',[0,0,0],'LineWidth',1);
 
- 
+plot(kron(tx_frame,[1 1 1]), kron(null,[1 0 nan]) + kron(note_x_frame,[0 1 nan]),'-k','LineWidth',2);
+
+plot(t0_frame,grid,'--k');
+set(gca,'xtick',[]);
+set(gca,'ytick',[]);
+
+a = legend({'Events rating','Discriminated events'},'Orientation','Horizontal');
+set(a,'FontSize',20);
 %%
-
+figure(3)
 plot(X(idx==1,1),X(idx==1,2),X(idx==1,3),'r.','MarkerSize',15)  % cluster 1 correspoding sx,delta_note2 (minor)
 hold on
 plot(X(idx==2,1),X(idx==2,2),X(idx==2,3),'b.','MarkerSize',15)  % cluster 2 correspoding sx,delta_note2 (major)

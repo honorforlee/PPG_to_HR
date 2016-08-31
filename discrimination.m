@@ -574,12 +574,12 @@ else
                 if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
                     
                     plot( h.axes ...
-                        ,h.t  , h.s  , 'og','MarkerSize',10);
+                        ,h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',2);
                     hold on
                     %plot( h.td , h.d , 'x:b');
                     plot(h.xgrid,h.ygrid , ':k');
                     %legend({'Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
-                    legend({'Sampled signal'},'FontSize',8,'Orientation','Horizontal');
+                    legend({'Sampled signal'},'FontSize',10,'Orientation','Horizontal');
                     hold off
                     
                 elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
