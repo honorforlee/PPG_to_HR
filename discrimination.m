@@ -28,14 +28,14 @@ end
 
 %   - Executes just before discrimination is made visible -
 function discrimination_OpeningFcn(hObject, ~, h, varargin)
-scrsz = get(groot,'ScreenSize');
-set(gcf,'Units','pixels','Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]);
-set(0,'ScreenPixelsPerInch', 95);
-set(gcf,'Color',[0.94,0.94,0.94])   % set GUI color
-
 % scrsz = get(groot,'ScreenSize');
-% set(gcf,'Units','pixels','Position',[1 .5 scrsz(3)*0.8 scrsz(4)*0.9]);
-% set(0,'ScreenPixelsPerInch', 70);
+% set(gcf,'Units','pixels','Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]);
+% set(0,'ScreenPixelsPerInch', 95);
+% set(gcf,'Color',[0.94,0.94,0.94])   % set GUI color
+
+scrsz = get(groot,'ScreenSize');
+set(gcf,'Units','pixels','Position',[1 .5 scrsz(3)*0.8 scrsz(4)*0.9]);
+set(0,'ScreenPixelsPerInch', 70);
 
 fl_ecg   = {}; ppg_ecg   = {}; ecg_ecg   = {}; dt0_ecg   = {};
 fl_noecg = {}; ppg_noecg = {}; ecg_noecg = {}; dt0_noecg = {};
@@ -515,58 +515,48 @@ else
                 if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
                     
                                         plot( h.axes ...
-                        ,h.t0 , h.s0 , '-k','LineWidth',.1);
+                        ,h.t0 , h.s0 , '--k','LineWidth',2);
                     hold on
-                    %plot( h.t  , h.s  , 'og','MarkerSize',10);
+                    plot( h.t  , h.s  ,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',3);
                     %plot( h.td , h.d , 'x:b');
                     
                     plot(h.xgrid,h.ygrid , ':k');
-                    legend({'Signal'},'FontSize',8,'Orientation','Horizontal');
-
-%                     plot( h.axes ...
-%                         ,h.t0 , h.s0 , '--k','LineWidth',.1);
-%                     hold on
-%                     plot( h.t  , h.s  , 'og','MarkerSize',10);
-%                     plot( h.td , h.d , 'x:b');
-%                     
-%                     plot(h.xgrid,h.ygrid , ':k');
-%                     legend({'Signal','Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
+                    legend({'Actual signal','Quantised signal'},'FontSize',12,'Orientation','Horizontal');
                     hold off
                     
                 elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
                     plot( h.axes ...
-                        ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
+                        ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2); 
                     hold on
-                    plot( h.tx , h.sx   , 'dc','MarkerSize',10);
-                    plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
-                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
-                    plot(h.tx_major,h.sx_major, 'pr','MarkerSize',20);
+                    plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
+                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
+                    plot(h.tx_major,h.sx_major, 'pk','MarkerSize',25,'LineWidth',2);
                     
-                    plot( h.tx , h.dhi  , '^b');
-                    plot( h.tx , h.dlo  , 'vb');
+                    plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
                     
                     plot(h.xgrid,h.ygrid , ':k');
-                    legend({'Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
+                    legend({'Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
                     hold off
                     
                 elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
                     plot( h.axes ...
-                        ,h.t0 , h.s0 , '--k','LineWidth',.1);
+                        ,h.t0 , h.s0 , '--k','LineWidth',1);
                     hold on
-                    plot( h.t  , h.s  , 'og','MarkerSize',10);
+                    plot( h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2);
                     %plot( h.td , h.d , 'x:b');
-                    plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
-                    plot( h.tx , h.sx   , 'dc','MarkerSize',10);
-                    plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
-                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
-                    plot(h.tx_major,h.sx_major, 'pr','MarkerSize',25);
+                    plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
+                    plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
+                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
+                    plot(h.tx_major,h.sx_major, 'p','Color',[0,0,0],'MarkerSize',25,'LineWidth',2);
                     
-                    plot( h.tx , h.dhi  , '^b');
-                    plot( h.tx , h.dlo  , 'vb');
+                    plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
                     
                     plot(h.xgrid,h.ygrid , ':k');
-                    %legend({'Signal','Sampled signal','First derivative','Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
-                    legend({'Signal','Sampled signal','Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
+                    legend({'Actual signal','Quantised signal','Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
                     hold off
                     
                 end
@@ -574,63 +564,48 @@ else
                 if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
                     
                     plot( h.axes ...
-                        ,h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',2);
+                        ,h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',3);
                     hold on
                     %plot( h.td , h.d , 'x:b');
                     plot(h.xgrid,h.ygrid , ':k');
-                    %legend({'Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
-                    legend({'Sampled signal'},'FontSize',10,'Orientation','Horizontal');
+                    legend({'Quantised signal'},'FontSize',12,'Orientation','Horizontal');
                     hold off
                     
                 elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
-%                     plot( h.axes ...
-%                         ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
-%                     hold on
-%                     plot( h.tx , h.sx   , 'dc','MarkerSize',10);
-%                     plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
-%                     plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
-%                     plot(h.tx_major,h.sx_major, 'pr','MarkerSize',20);
-%                     
-%                     plot( h.tx , h.dhi  , '^b');
-%                     plot( h.tx , h.dlo  , 'vb');
-%                     
-%                     plot(h.xgrid,h.ygrid , ':k');
-%                     legend({'Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
-%                     hold off
+                    plot( h.axes ...
+                        ,h.t0 , h.s0 , '--k','LineWidth',1);
+                    hold on
+                    plot( h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2);
+                    %plot( h.td , h.d , 'x:b');
+                    plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
+                    plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
+                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
+                    plot(h.tx_major,h.sx_major, 'pk','MarkerSize',25,'LineWidth',2);
                     
-plot( h.axes ...
-    ,h.tx , h.sx   , 'dc','MarkerSize',10);
-hold on
-plot( h.tx , h.sx   , 'dc','MarkerSize',10);
-plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
-plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
-plot(h.tx_major,h.sx_major, 'pr','MarkerSize',20);
-
-%plot( h.tx , h.dhi  , '^b');
-%plot( h.tx , h.dlo  , 'vb');
-
-%plot(h.xgrid,h.ygrid , ':k');
-%legend({'Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
-hold off
-                                                      
+                    plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
+                    
+                    plot(h.xgrid,h.ygrid , ':k');
+                    legend({'Actual signal','Quantised signal','Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
+                    hold off                                      
                                         
                 elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
                     plot( h.axes ...
-                        ,h.t  , h.s  , 'og','MarkerSize',10);
+                       ,h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2); 
                     hold on
                     %plot( h.td , h.d , 'x:b');
-                    plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b');
-                    plot( h.tx , h.sx   , 'dc','MarkerSize',10);
-                    plot( h.tx,h.sx_N, 'dc','MarkerSize',10);
-                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-c');
-                    plot(h.tx_major,h.sx_major, 'pr','MarkerSize',20);
+                    plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
+                    plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
+                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
+                    plot(h.tx_major,h.sx_major, 'pk','MarkerSize',25,'LineWidth',2);
                     
-                    plot( h.tx , h.dhi  , '^b');
-                    plot( h.tx , h.dlo  , 'vb');
+                    plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
                     
                     plot(h.xgrid,h.ygrid , ':k');
-                    %legend({'Sampled signal','First derivative','Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
-                    legend({'Sampled signal','Maximum slope difference','Maxima','Minima','Peak to peak amplitude','Major peaks'},'FontSize',8,'Orientation','Horizontal');
+                    legend({'Quantised signal','Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
                     hold off
                     
                 end
@@ -711,59 +686,55 @@ hold off
 
 if isempty(h.ft)
     if isempty(h.ft_)
-        if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
-            plot( h.axes ...
-                ,h.t0 , h.s0 , '-k','LineWidth',.5);
-            hold on
-            plot( h.t  , h.s  , 'ok');
-            plot( h.td , h.d , 'x:b');
-            legend({'Signal','Sampled signal','First derivative'},'FontSize',8,'Orientation','Horizontal');
-            hold off
-            
-        elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0  % plot events
-            
-            plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
-            hold on
-            plot( h.tx_major , h.sx_major   , 'pk','MarkerSize',15);
-            plot( h.tx , h.sx   , 'dr','MarkerSize',12);
-            %plot( h.tx_N, h.sx_N , 'dm','MarkerSize',8);
-            plot( h.tx,h.sx_N, 'dr','MarkerSize',12);
-            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
-            
-            
-            plot( h.tx , h.dhi  , '^c');
-            plot( h.tx , h.dlo  , 'vc');
-            
-            plot(h.xgrid,h.ygrid , ':k');
-            legend({'Maximum slope difference','Major peaks','Maxima','Minima','Peak to peak amplitude'},'FontSize',8,'Orientation','Horizontal');
-            hold off
-            
-        elseif h.checkbox_detect_.Value == 1                                % plot signal + events
-            
-            plot( h.axes ...
-                ,h.t0 , h.s0 , '-k','LineWidth',.5);
-            hold on
-            plot( h.t  , h.s  , 'ok');
-            plot( h.td , h.d , 'x:b');
-            plot( kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-c');       % link note_2
-            
-            plot( h.tx_major , h.sx_major   , 'pk','MarkerSize',15);
-            
-            plot( h.tx , h.sx   , 'dr','MarkerSize',12);
-            %plot( h.tx_N, h.sx_N , 'dm','MarkerSize',8);
-            plot( h.tx,h.sx_N, 'dr','MarkerSize',12);
-            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'r-');
-            
-            plot( h.tx , h.dhi  , '^c');
-            plot( h.tx , h.dlo  , 'vc');
-            
-            plot(h.xgrid,h.ygrid , ':k');
-            
-            legend({'Signal','Sampled signal','First derivative','Maximum slope difference','Major peaks','Maxima','Minima','Peak to peak amplitude'},'FontSize',8,'Orientation','Horizontal');
-            hold off
-            
-        end
-        
+         if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
+                    
+                                        plot( h.axes ...
+                        ,h.t0 , h.s0 , '--k','LineWidth',2);
+                    hold on
+                    plot( h.t  , h.s  ,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',3);
+                    %plot( h.td , h.d , 'x:b');
+                    
+                    plot(h.xgrid,h.ygrid , ':k');
+                    legend({'Actual signal','Quantised signal'},'FontSize',12,'Orientation','Horizontal');
+                    hold off
+                    
+                elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
+                    plot( h.axes ...
+                        ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2); 
+                    hold on
+                    plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
+                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
+                    plot(h.tx_major,h.sx_major, 'pk','MarkerSize',25,'LineWidth',2);
+                    
+                    plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
+                    
+                    plot(h.xgrid,h.ygrid , ':k');
+                    legend({'Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
+                    hold off
+                    
+                elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
+                    plot( h.axes ...
+                        ,h.t0 , h.s0 , '--k','LineWidth',1);
+                    hold on
+                    plot( h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2);
+                    %plot( h.td , h.d , 'x:b');
+                    plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
+                    plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
+                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
+                    plot(h.tx_major,h.sx_major, 'p','Color',[0,0,0],'MarkerSize',25,'LineWidth',2);
+                    
+                    plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
+                    plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
+                    
+                    plot(h.xgrid,h.ygrid , ':k');
+                    legend({'Actual signal','Quantised signal','Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
+                    hold off
+                    
+                end
+                        
     else
         plot( h.axes ...
             ,h.t0 , h.s0 , '-k' ...  %TODO  %
@@ -840,25 +811,25 @@ if h.t_int > 0
         for i = 1 : h.kmax
             figure(2);
             subplot(2,1,1);
-            plot(h.clust_note_x{i,h.kmax} , '.');
+            plot(h.clust_note_x{i,h.kmax} , '.','MarkerSize',20);
             hold on
         end
         Legend=cell(h.kmax,1);
         for iter=1:h.kmax
             Legend{iter}=strcat('cluster ', num2str(iter));
         end
-        legend(Legend);
-        title('Global note clustering');
-        xlabel('k');
-        ylabel('note_{x,k}, a.u');
+        legend(Legend,'FontSize',15);
+        title('\bf Global note clustering','FontSize',30);
+        xlabel('\bf k','FontSize',30);
+        ylabel('\bf note_{x,k}, a.u','FontSize',30);
         
         hold off
         subplot(2,1,2);
-        plot( h.note_x, '.');
+        plot( h.note_x, '.','MarkerSize',20);
         
-        title('Global note distribution');
-        xlabel('k');
-        ylabel('note_{x,k}, a.u');
+        title('\bf Global note distribution','FontSize',30);
+        xlabel('\bf k','FontSize',30);
+        ylabel('note_{x,k}, a.u','FontSize',30);
         
         % plot clust_periodicity
         base_array = cellfun(@length,h.clust_tx);
@@ -890,11 +861,11 @@ if h.t_int > 0
         
     elseif h.kmax == 1
         figure(4);
-        plot( h.note_x, '.');
+        plot( h.note_x, '.','MarkerSize',20);
         
-        title('Global note distribution');
-        xlabel('k');
-        ylabel('note_{x,k}, a.u');
+        title('\bf Global note distribution','Fontsize',30);
+        xlabel('\bf k','Fontsize',30);
+        ylabel('\bf note_{x,k}, a.u','Fontsize',30);
         
         figure(3);
         base = [1:length(h.tx)];
@@ -902,9 +873,9 @@ if h.t_int > 0
         Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
         legend(Legend,'FontSize',15,'Location','NorthWest');
         
-        title('Linear regression of t_{x,k}','Fontsize',20);
-        xlabel('k','Fontsize',15);
-        ylabel('t_{x,k}, s','Fontsize',15);
+        title('\bf Linear regression of t_{x,k}','Fontsize',30);
+        xlabel('\bf k','Fontsize',30);
+        ylabel('\bf t_{x,k}, s','Fontsize',30);
     end
 end
 
