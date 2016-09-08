@@ -1,7 +1,7 @@
 % Ivan Ny Hanitra - Master thesis
 %       -- Linear regression of tx (3 methods) - output period, normalized Mean Squared Error, coefficient of determination - regression plot --
 
-function [T,eps,R_sq,plot_reg] = periodicity(tx)
+function [T,eps,R_sq,t_reg] = periodicity(tx)
 %   - with linear regression function -
 % tbl = table([1:length(tx)]', tx','VariableNames',{'k','tx'});
 % mdl = fitlm(tbl,'tx~k');
@@ -26,6 +26,7 @@ cov_xy = (sum_A(length(tx)) / length(tx)) - mean([1:length(tx)])*mean(tx);
 cov_xx = (length(tx)^2 -1)/12;
 
 T = cov_xy/cov_xx;                                              % peaks eriodicity
+j = [1:length(tx)];
 t_reg = mean(tx) - T*mean(j) + j*T;
 
 for k = 1:length(tx)
@@ -38,6 +39,8 @@ sum_C = cumsum(C); sum_D = cumsum(D);                           % coefficient of
     
 eps = sum_B(length(tx)) / (length(tx)*T^2);                     % MSE normalized with respect to #samples and period
 R_sq = sum_C(length(tx)) / sum_D(length(tx));                   % coefficient of determination R^2 - optional  
+
+
 
 % %  - plot -
 % plot_reg=plot(j,tx,'r.', j,t_reg,'b-');

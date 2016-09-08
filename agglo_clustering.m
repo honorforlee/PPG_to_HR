@@ -24,6 +24,7 @@ for k = 2:kmax
         mean_clust(i,k) = mean(clust_note_x{i,k});       % cluster average note_x
         [clust_periodicity{i,k}(1),clust_periodicity{i,k}(2),clust_periodicity{i,k}(3)]=periodicity(clust_tx{i,k}); % cluster peiodicity output T,eps,R_sq
         
+        % optional
         n = cellfun(@length,clust_note_x);
         
         num_F_(i) =( n(i,k) * (distance(mean(clust_note_x{i,k}), mean(note_x), 2))^2 ) / (k - 1);              % distance INTER - clust

@@ -1,5 +1,5 @@
 % Ivan NY HANITRA - Master thesis
-% -- Compute distance between tx --
+        % -- Compute distance between tx --
 
 function delta = delta_tx(tx,step,varargin)
 if nargin == 1  % default value of step = 1

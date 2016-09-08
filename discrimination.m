@@ -1,12 +1,6 @@
 % Ivan Ny Hanitra - Master thesis
-%       -- Algorithm to discriminate PPG/ECG signal peaks and recover HR --
+%       -- Algorithm to discriminate PPG/ECG signal peaks and compute HR --
 
-% Requirements
-%   - discriminate peaks in function of notes
-%       note 1(pentagram): peak amplitude of sampled signal (smax)
-%       note 2 (triangles): local maxima/minima around smax
-%   - discriminate peaks in function of timing
-%       selected peaks have the same frequency (HR)
 
 %   - Init. - DO NOT EDIT -
 function varargout = discrimination(varargin)
@@ -445,31 +439,32 @@ end
 function h = process_clustering(h)
 [h.ft ,h.fs ] = apply_filter_( h.t  , h.s , h.edit_F1.String );
 if isempty(h.ft)
+    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t,h.s);
+    [h.kx_frame,h.tx_frame,h.sx_frame,h.note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
     
-    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust_note_x, h.clust_tx, h.clust_periodicity, h.kmax, h.tx_major, h.sx_major] = events_clustering(h.t, h.s);
+    [h.clust_note_x, h.clust_tx, h.clust_periodicity, h.kmax, h.tx_major, h.sx_major] = events_clustering(h.kx_frame,h.tx_frame, h.sx_frame,h.note_x_frame);
 else
-    [h.tx,h.sx, h.dhi,h.dlo, h.td, h.d, h.tx_N,h.sx_N, h.note_x, h.clust_note_x, h.clust_tx, h.clust_periodicity, h.kmax, h.tx_major, h.sx_major] =  events_clustering(h.ft, h.fs);      %   filter applied before derivative
+    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.ft,h.fs);
+    %[h.kx_frame,tx_frame,sx_frame,note_x_frame, h.t_frame,h.s_frame] = frame_select_clustering(h.kx,h.tx,h.sx,h.note_x, h.ft,h.fs, h.frame_init,h.frame_end);
+    
+    %[h.clust_note_x, h.clust_tx, h.clust_periodicity, h.kmax, h.tx_major, h.sx_major] = events_clustering(h.t_frame, h.s_frame, h.kx_frame,h.tx_frame, h.note_x_frame);     %   filter applied before derivative
 end
+
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
-if isempty(h.ft_)
-    
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~,~] = events_clustering(h.td, h.d  );
+if isempty(h.ft_)  
+    [h.ky,h.ty,h.sy, h.d2hi,h.d2lo, h.td2,h.d2, h.ky_n,h.ty_N,h.sy_N, h.note_y] = signal_peaks(h.td,h.d);
 else
-    [h.ty,h.sy,h.d2hi,h.d2lo,h.td2,h.d2,h.ty_N,h.sy_N,~,~,~,~,~,~,~] = events_clustering(h.ft_, h.fs_);
+    [h.ky,h.ty,h.sy, h.d2hi,h.d2lo, h.td2,h.d2, h.ky_n,h.ty_N,h.sy_N, h.note_y] = signal_peaks(h.ft_,h.fs_);
 end
 
 %   - Hierarchical clustering (agglomerative) -
-function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust_note_x, clust_tx, clust_periodicity, kmax, tx_major,sx_major ] = events_clustering(t,s)
-[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
-
+function [clust_note_x, clust_tx, clust_periodicity, kmax, tx_major,sx_major ] = events_clustering(kx,tx,sx,note_x)
 % Initialization
 kmax_init = 6;
 [clust_index,  ~,~,  ~,~,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
 
 % Remove oultiers
-kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
-
-[kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
+[kx,tx,sx,note_x] = outlier(kx,tx,sx,note_x, clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
 
 if diff(2,2) >= 1    % EMPIRICAL: no clustering if 2-clustering clusters are too close
     
@@ -814,6 +809,7 @@ if h.t_int > 0
             plot(h.clust_note_x{i,h.kmax} , '.','MarkerSize',20);
             hold on
         end
+        axis([0,length(h.kx_frame),0,5]);
         Legend=cell(h.kmax,1);
         for iter=1:h.kmax
             Legend{iter}=strcat('cluster ', num2str(iter));
@@ -825,8 +821,8 @@ if h.t_int > 0
         
         hold off
         subplot(2,1,2);
-        plot( h.note_x, '.','MarkerSize',20);
-        
+        plot( h.note_x_frame, '.','MarkerSize',20);
+        axis([0,length(h.kx_frame),0,5]);
         title('\bf Global note distribution','FontSize',30);
         xlabel('\bf k','FontSize',30);
         ylabel('note_{x,k}, a.u','FontSize',30);
@@ -836,14 +832,20 @@ if h.t_int > 0
         base_max = max (base_array(:,h.kmax));
         base = [1:base_max];
         
+        T_clust = nan(1,h.kmax);
         data = nan(base_max,h.kmax);
+        t_reg = nan(base_max,h.kmax);
         
         for i = 1 : h.kmax
             
             data(1:base_array(i,h.kmax),i) = h.clust_tx{i,h.kmax};
+            T_clust(i) = h.clust_periodicity{i,h.kmax}(1);
+%             t_reg(1:base_array(i,h.kmax),i) = mean(data(:,i)) - T_clust(i)*mean(base) + base*T_clust(i);
+            
             figure(3);
-            tx_disp(i) = plot(base,data(:,i),'.','MarkerSize',20);
+            tx_disp(i) = plot(base,data(:,i),'x','MarkerSize',20);
             hold on
+%             t_reg_disp(i) = plot(base,t_reg(:,i),'--','LineWidth',1);
         end
         
         Legend=cell(h.kmax,1);
@@ -861,21 +863,28 @@ if h.t_int > 0
         
     elseif h.kmax == 1
         figure(4);
-        plot( h.note_x, '.','MarkerSize',20);
+        plot( h.note_x_frame, '.','MarkerSize',20);
+        axis([0,length(h.kx_frame),0,5]);
         
         title('\bf Global note distribution','Fontsize',30);
         xlabel('\bf k','Fontsize',30);
         ylabel('\bf note_{x,k}, a.u','Fontsize',30);
         
         figure(3);
-        base = [1:length(h.tx)];
-        plot(base,h.tx,'.','MarkerSize',15);
+        base = [1:length(h.tx_frame)];
+        T = h.clust_periodicity(1);
+        t_reg = mean(h.tx_frame) - T*mean(base) + base*T;
+        
+        plot(base,h.tx_frame,'x','MarkerSize',20);
+        hold on 
+        plot(base,t_reg,'--','LineWidth',1);
         Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
-        legend(Legend,'FontSize',15,'Location','NorthWest');
+        legend(Legend,'Linear regression','FontSize',15,'Location','NorthWest');
         
         title('\bf Linear regression of t_{x,k}','Fontsize',30);
         xlabel('\bf k','Fontsize',30);
         ylabel('\bf t_{x,k}, s','Fontsize',30);
+        hold off
     end
 end
 

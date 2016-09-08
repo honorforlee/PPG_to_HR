@@ -1,4 +1,4 @@
-Name = '3900497m';
+Name = '3801060_0007m';
 load(strcat(Name, '.mat'));
 fid = fopen(strcat(Name, '.info'), 'rt');
 fgetl(fid); fgetl(fid); fgetl(fid);
@@ -39,7 +39,7 @@ quant = 0.1;                         % LSB: vertical step
 %  - Peaks identification -
 [kx,tx,sx, dhi,dlo, td,d, kx_n,tx_N,sx_N, note_x] = signal_peaks(t,s);
 
-frame_init =0; frame_end = 5;
+frame_init =25; frame_end = 30;
 
 index_x = find(tx >= frame_init & tx <= frame_end);
 sx_N_frame = sx_N(index_x);
@@ -131,10 +131,10 @@ tick_m = -0.1*ones(1,length(tx_));
 
 %% Plot events detection
 %   - Plots -
-figure(2);
-plot(t0_,s0_,'--','Color',[0,0,0],'LineWidth',2);
-hold on
-plot(t_,s_,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',2);
+% figure(2);
+% plot(t0_,s0_,'--','Color',[0,0,0],'LineWidth',2);
+% hold on
+% plot(t_,s_,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',2);
  
 % plot(kron(tx_,[1 1 1]), kron(sx_N_,[1 0 nan]) + kron(sx_,[0 1 nan]),'-r','LineWidth',2);
 % plot( tx_ , sx_ , '^r','MarkerSize',20,'LineWidth',2);
@@ -143,21 +143,22 @@ plot(t_,s_,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',2);
 % plot(tx_,note_,'p','Color',[1,0.5,0],'MarkerSize',25,'LineWidth',2);
 % plot(kron(tx_,[1 1 1]), kron(null,[1 0 nan]) + kron(note_,[0 1 nan]),'-k','LineWidth',2);
 
-% plot( kron(tx_,[1 1 1]) , kron(dlo_,[1 0 nan]) + kron(dhi_,[0 1 nan]), '-b','LineWidth',2);       % link note_2
-% plot(tx_, dhi_,'^b','MarkerSize',15,'LineWidth',2);
-% plot(tx_, dlo_,'vb','MarkerSize',15,'LineWidth',2);
+plot(td_,d_,'--s','Color',[0.2,0.1,0.9],'LineWidth',2,'MarkerSize',10);
+hold on
+plot( kron(tx_,[1 1 1]) , kron(dlo_,[1 0 nan]) + kron(dhi_,[0 1 nan]), '-b','LineWidth',2);       % link note_2
+plot(tx_, dhi_,'^b','MarkerSize',15,'LineWidth',2);
+plot(tx_, dlo_,'vb','MarkerSize',15,'LineWidth',2);
 
-plot(tx_,sx_avg,'*r','MarkerSize',20,'LineWidth',2);
-plot(kron(tx_,[1 1 1]), kron(null,[1 0 nan]) + kron(sx_avg,[0 1 nan]),'--r','LineWidth',2);
+% plot(tx_,sx_avg,'*r','MarkerSize',20,'LineWidth',2);
+% plot(kron(tx_,[1 1 1]), kron(null,[1 0 nan]) + kron(sx_avg,[0 1 nan]),'--r','LineWidth',2);
 
-%plot(td_,d_,'-s','Color',[0.2,0.1,0.9],'LineWidth',2,'MarkerSize',10);
 %plot( tx_ , sx_ , '*r','MarkerSize',20,'LineWidth',2);
 % plot( tx_N_ , sx_N_ , '*','Color',[0.5,0.25,0.25],'MarkerSize',20,'LineWidth',2);
 % plot(kron(tx_N_,[1 1 1]), kron(null,[1 0 nan]) + kron(sx_N_,[0 1 nan]),'--','Color',[0.5,0.25,0.25],'LineWidth',2);
  
 plot(t0_,grid,'--k');
 
-legend({'Actual signal','Quantised signal','note_1: peak'},'FontSize',15,'Location','NW');  
+legend({'Derivative','note_2: slope variation'},'FontSize',15,'Location','NW');  
 %legend({'Actual signal','Sampled signal','note_x = 0.1 Note_1 + 0.1 Note_2 + 0.8 Note_3'},'FontSize',15,'Location','NW');  
 set(gca,'xtick',[])
 
