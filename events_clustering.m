@@ -1,24 +1,13 @@
-%   - Hierarchical clustering (agglomerative) -
-function [tx,sx, dhi,dlo, td,d, tx_N,sx_N, note_x, clust_note_x, clust_tx, clust_periodicity, kmax, tx_major,sx_major ] = events_clustering(t,s)
-%   - Derivative -
-d = s(2:end) -  s(1:end-1);
-%td = (  t(2:end) +  t(1:end-1) ) / 2;      % timeline of derivative shifted by t_sample/2
-td = t(2:end);
+% Ivan Ny Hanitra - Master thesis
+%       -- Algorithm for clustering the events through in an agglomerative way --
 
-kx = d > 0;
-kx = find(kx(1:end-1) & ~kx(2:end));       % k_{x}:index where d > 0; d( k_{x} + 1 ) <= 0
-
-%   - Local maxima sx, maximum slope around sx -
-[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
-
+function [clust_note_x, clust_tx, clust_periodicity, kmax, tx_major,sx_major ] = events_clustering(kx,tx,sx,note_x)
 % Initialization
 kmax_init = 6;
 [clust_index,  ~,~,  ~,~,  kmax, diff] = agglo_clustering(note_x, tx, kmax_init);
 
 % Remove oultiers
-kx = outlier(kx,clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
-
-[tx,sx, dhi,dlo, tx_N,sx_N, note_x] = peaks_processing(t,s,kx);
+[kx,tx,sx,note_x] = outlier(kx,tx,sx,note_x, clust_index, floor (0.05*length(kx)));      % remove cluster containing population <= 5% length(kx)
 
 if diff(2,2) >= 1    % EMPIRICAL: no clustering if 2-clustering clusters are too close
     
