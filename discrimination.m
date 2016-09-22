@@ -377,7 +377,7 @@ else
     end
 end
 
-function h = discrimination_algorithm(h)
+function h = apply_algorithm(h)
 %   - Select events in the frame -
 [h.kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, h.frame_init,h.frame_end);
 
@@ -394,6 +394,87 @@ if ~isempty(h.kx_frame)
 
 else
     h.warning = 1;
+end
+
+function h = discrimination_algorithm(h)
+
+if h.toggle_FF.Value == 0
+    h = apply_algorithm(h);
+
+elseif h.toggle_FF.Value == 1           % sweep the minimum variance algorithm
+    
+n_add_ = 0;
+n_mult_ = 0;
+n_div_ = 0;
+n_comp_ = 0;
+n_isnan_ = 0;
+n_sort_c_ = 0;
+n_sort_l_ = 0;
+BPM_ =0;
+n_events_ = 0;
+loop_ = 0;
+        
+    for frame_start = 0:h.frame_length:(h.slider_frame.Max - 1)*h.frame_length
+     
+     eps = h.eps;
+    [kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, frame_start,frame_start+h.frame_length);
+
+if ~isempty(kx_frame)
+    % Feedback eps
+    if 0.5 <= mean(note_x_frame) && mean(note_x_frame) <= 1
+        eps = 0.1*eps;
+    elseif mean(note_x_frame) < 0.5
+        eps = 0.01*eps;
+    end
+    
+    %   - Minimum variance algorithm with complexity computation -
+    [kx_major,tx_major,sx_major, T, warning,tbl_complexity] = min_variance_complexity(kx_frame,tx_frame,sx_frame, note_x_frame, eps);
+
+else
+    warning = 1;
+end
+
+if warning == 0
+    
+    major{loop_+1,1} = kx_major; 
+    major{loop_+1,2} = tx_major; 
+    major{loop_+1,3} = sx_major; 
+    
+n_add_ = n_add_ + tbl_complexity.add;
+n_mult_ = n_mult_ + tbl_complexity.mult;
+n_div_ = n_div_ + tbl_complexity.div;
+n_comp_ = n_comp_ + tbl_complexity.comp;
+n_isnan_ = n_isnan_ + tbl_complexity.isnan_comp;
+n_sort_c_ = n_sort_c_ + tbl_complexity.sort_c;
+n_sort_l_ = n_sort_l_ + tbl_complexity.sort_l;
+BPM_ = BPM_ + floor(60 * (1/T));
+n_events_ = n_events_ + length(kx_frame);
+loop_ = loop_ + 1;
+
+clearvars kx_frame tx_frame sx_frame note_x_frame kx_major tx_major sx_major T tbl_complexity;
+
+else 
+    clearvars kx_frame tx_frame sx_frame note_x_frame;
+end
+    end
+
+    % final output
+    global n_add;global n_mult;global n_div; global n_comp;global n_isnan;global n_sort_c;global n_sort_l;global loop;global BPM;global n_events;global n_op;
+n_add = round(n_add_/loop_);
+n_mult = round(n_mult_/loop_);
+n_div = round(n_div_/loop_);
+n_comp = round(n_comp_/loop_);
+n_isnan = round(n_isnan_/loop_);
+n_sort_c = round(n_sort_c_/loop_);
+n_sort_l = round(n_sort_l_/loop_);
+BPM = round(BPM_/loop_);
+n_events = round(n_events_/loop_);
+
+n_op = n_add + n_mult + n_div + n_comp + n_isnan + n_sort_c;
+    
+h.kx_major = 
+
+
 end
 
 function h = discrimination_ecg(h)
