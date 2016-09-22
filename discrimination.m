@@ -137,9 +137,9 @@ else
         h.ecg = val(h.f_ecg_row{n}, :);
         h.ecg = h.ecg(1:end);
         h.ecg = (h.ecg - mean(h.ecg))/sqrt(var(h.ecg));
-        if max(h.ecg) > abs(min(h.ecg)) 
-        h.s0 = h.ecg;
-        else 
+        if max(h.ecg) > abs(min(h.ecg))
+            h.s0 = h.ecg;
+        else
             h.s0 = -h.ecg;
         end
     else
@@ -174,8 +174,8 @@ h.t0 = (1:length(h.s0)) * h.dt0;
 if h.checkbox_ecg.Value
     h.t = h.t0; h.s = h.s0;
 else
-% Integration
-[h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
+    % Integration
+    [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
 end
 
 % Frame definition to apply discrimination_algorithm
@@ -224,59 +224,72 @@ if h.t_int ~= 0
         
         h = process_sig(h);
         
-        if h.warning == 0
-            h.value_hr.String = floor(60 * (1/h.T));                       % extrapolated BPM
+        if h.toggle_FF.Value == 0
+            if h.warning == 0
+                h.value_hr.String = floor(60 * (1/h.T));                       % extrapolated BPM
+                
+                % Feedback values
+                h.fb_fsample.String = 1/h.dt;
+                h.fb_tint.String = 1000*h.t_int;
+                h.fb_dNdS.String = h.dNdS;
+                h.fb_eps.String = h.eps;
+                
+                % Display complexity
+                %             compl = h.tbl_complexity;
+                %             vars = {'add','mult','div','comp','isnan_comp','sort_c','sort_l'};
+                %             tbl = compl{1,vars};
+                
+                plot_(h);
+            else
+                % Feedback f_sample
+                if h.dt > 20e-3                                                % f_samp,max = 50 Hz
+                    h.dt = h.dt/(1 + 10*h.dt);                                 %f_samp + 10 Hz
+                    
+                    % Integration
+                    [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
+                    h = algorithm_output(h);
+                    
+                else
+                    uiwait(msgbox('No peaks detected.','Warning','warn'));
+                    
+                    % Feedback values
+                    h.fb_fsample.String = 1/h.dt;
+                    h.fb_tint.String = 1000*h.t_int;
+                    h.fb_dNdS.String = h.dNdS;
+                    h.fb_eps.String = h.eps;
+                end
+            end
+            
+            % Feedback t_int
+            if length(h.kx_major) >= floor( h.frame_length / 0.35)             % Max BPM = 171
+                if h.t_int < 0.5*h.dt
+                    h.t_int = h.t_int + 10e-3;                                 % t_int + 10ms
+                    
+                    [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
+                    h = algorithm_output(h);
+                else
+                    uiwait(msgbox('No peaks detected.','Warning','warn'));
+                    
+                    % Feedback values
+                    h.fb_fsample.String = 1/h.dt;
+                    h.fb_tint.String = 1000*h.t_int;
+                    h.fb_dNdS.String = h.dNdS;
+                    h.fb_eps.String = h.eps;
+                end
+            end
+            
+        else
+            h.value_hr.String = h.BPM;                       % extrapolated BPM
             
             % Feedback values
             h.fb_fsample.String = 1/h.dt;
             h.fb_tint.String = 1000*h.t_int;
             h.fb_dNdS.String = h.dNdS;
-            h.fb_eps.String = h.eps;                     
+            h.fb_eps.String = h.eps;
+                      
+            plot_FF(h);
             
-            % Display complexity
-%             compl = h.tbl_complexity;
-%             vars = {'add','mult','div','comp','isnan_comp','sort_c','sort_l'};
-%             tbl = compl{1,vars};
-           
-           plot_(h);
-        else
-            % Feedback f_sample
-            if h.dt > 20e-3                                                % f_samp,max = 50 Hz
-                h.dt = h.dt/(1 + 10*h.dt);                                 %f_samp + 10 Hz
-                
-                % Integration
-                [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
-                h = algorithm_output(h);
-                
-            else
-                uiwait(msgbox('No peaks detected.','Warning','warn'));
-                
-                % Feedback values
-                h.fb_fsample.String = 1/h.dt;
-                h.fb_tint.String = 1000*h.t_int;
-                h.fb_dNdS.String = h.dNdS;
-                h.fb_eps.String = h.eps;
-            end
         end
-        
-        % Feedback t_int
-        if length(h.kx_major) >= floor( h.frame_length / 0.35)             % Max BPM = 171
-            if h.t_int < 0.5*h.dt
-                h.t_int = h.t_int + 10e-3;                                 % t_int + 10ms
-                
-                [h.t,h.s] = integration(h.t0,h.s0,h.dt0, h.dt,h.t_int,h.dNdS,0);
-                h = algorithm_output(h);
-            else
-                uiwait(msgbox('No peaks detected.','Warning','warn'));
-                
-                % Feedback values
-                h.fb_fsample.String = 1/h.dt;
-                h.fb_tint.String = 1000*h.t_int;
-                h.fb_dNdS.String = h.dNdS;
-                h.fb_eps.String = h.eps;
-            end
-        end
-        
     end
 else
     plot_(h);
@@ -391,7 +404,7 @@ if ~isempty(h.kx_frame)
     
     %   - Minimum variance algorithm with complexity computation -
     [h.kx_major,h.tx_major,h.sx_major, h.T, h.warning,h.tbl_complexity] = min_variance_complexity(h.kx_frame,tx_frame,sx_frame, note_x_frame, h.eps);
-
+    
 else
     h.warning = 1;
 end
@@ -400,81 +413,89 @@ function h = discrimination_algorithm(h)
 
 if h.toggle_FF.Value == 0
     h = apply_algorithm(h);
-
+    
 elseif h.toggle_FF.Value == 1           % sweep the minimum variance algorithm
     
-n_add_ = 0;
-n_mult_ = 0;
-n_div_ = 0;
-n_comp_ = 0;
-n_isnan_ = 0;
-n_sort_c_ = 0;
-n_sort_l_ = 0;
-BPM_ =0;
-n_events_ = 0;
-loop_ = 0;
-        
+    n_add_ = 0;
+    n_mult_ = 0;
+    n_div_ = 0;
+    n_comp_ = 0;
+    n_isnan_ = 0;
+    n_sort_c_ = 0;
+    n_sort_l_ = 0;
+    BPM_ =0;
+    n_events_ = 0;
+    loop_ = 0;
+    
     for frame_start = 0:h.frame_length:(h.slider_frame.Max - 1)*h.frame_length
-     
-     eps = h.eps;
-    [kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, frame_start,frame_start+h.frame_length);
-
-if ~isempty(kx_frame)
-    % Feedback eps
-    if 0.5 <= mean(note_x_frame) && mean(note_x_frame) <= 1
-        eps = 0.1*eps;
-    elseif mean(note_x_frame) < 0.5
-        eps = 0.01*eps;
+        
+        eps = h.eps;
+        [kx_frame,tx_frame,sx_frame,note_x_frame] = frame_select(h.kx,h.tx,h.sx,h.note_x, frame_start,frame_start+h.frame_length);
+        
+        if ~isempty(kx_frame)
+            % Feedback eps
+            if 0.5 <= mean(note_x_frame) && mean(note_x_frame) <= 1
+                eps = 0.1*eps;
+            elseif mean(note_x_frame) < 0.5
+                eps = 0.01*eps;
+            end
+            
+            %   - Minimum variance algorithm with complexity computation -
+            [kx_major,tx_major,sx_major, T, warning,tbl_complexity] = min_variance_complexity(kx_frame,tx_frame,sx_frame, note_x_frame, eps);
+            
+        else
+            warning = 1;
+        end
+        
+        if warning == 0
+            
+            major{loop_+1,1} = kx_major;
+            major{loop_+1,2} = tx_major;
+            major{loop_+1,3} = sx_major;
+            
+            n_add_ = n_add_ + tbl_complexity.add;
+            n_mult_ = n_mult_ + tbl_complexity.mult;
+            n_div_ = n_div_ + tbl_complexity.div;
+            n_comp_ = n_comp_ + tbl_complexity.comp;
+            n_isnan_ = n_isnan_ + tbl_complexity.isnan_comp;
+            n_sort_c_ = n_sort_c_ + tbl_complexity.sort_c;
+            n_sort_l_ = n_sort_l_ + tbl_complexity.sort_l;
+            BPM_ = BPM_ + floor(60 * (1/T));
+            n_events_ = n_events_ + length(kx_frame);
+            loop_ = loop_ + 1;
+            
+            clearvars kx_frame tx_frame sx_frame note_x_frame kx_major tx_major sx_major T tbl_complexity;
+            
+        else
+            clearvars kx_frame tx_frame sx_frame note_x_frame;
+        end
     end
     
-    %   - Minimum variance algorithm with complexity computation -
-    [kx_major,tx_major,sx_major, T, warning,tbl_complexity] = min_variance_complexity(kx_frame,tx_frame,sx_frame, note_x_frame, eps);
-
-else
-    warning = 1;
-end
-
-if warning == 0
-    
-    major{loop_+1,1} = kx_major; 
-    major{loop_+1,2} = tx_major; 
-    major{loop_+1,3} = sx_major; 
-    
-n_add_ = n_add_ + tbl_complexity.add;
-n_mult_ = n_mult_ + tbl_complexity.mult;
-n_div_ = n_div_ + tbl_complexity.div;
-n_comp_ = n_comp_ + tbl_complexity.comp;
-n_isnan_ = n_isnan_ + tbl_complexity.isnan_comp;
-n_sort_c_ = n_sort_c_ + tbl_complexity.sort_c;
-n_sort_l_ = n_sort_l_ + tbl_complexity.sort_l;
-BPM_ = BPM_ + floor(60 * (1/T));
-n_events_ = n_events_ + length(kx_frame);
-loop_ = loop_ + 1;
-
-clearvars kx_frame tx_frame sx_frame note_x_frame kx_major tx_major sx_major T tbl_complexity;
-
-else 
-    clearvars kx_frame tx_frame sx_frame note_x_frame;
-end
-    end
-
     % final output
     global n_add;global n_mult;global n_div; global n_comp;global n_isnan;global n_sort_c;global n_sort_l;global loop;global BPM;global n_events;global n_op;
-n_add = round(n_add_/loop_);
-n_mult = round(n_mult_/loop_);
-n_div = round(n_div_/loop_);
-n_comp = round(n_comp_/loop_);
-n_isnan = round(n_isnan_/loop_);
-n_sort_c = round(n_sort_c_/loop_);
-n_sort_l = round(n_sort_l_/loop_);
-BPM = round(BPM_/loop_);
-n_events = round(n_events_/loop_);
-
-n_op = n_add + n_mult + n_div + n_comp + n_isnan + n_sort_c;
+    n_add = round(n_add_/loop_);
+    n_mult = round(n_mult_/loop_);
+    n_div = round(n_div_/loop_);
+    n_comp = round(n_comp_/loop_);
+    n_isnan = round(n_isnan_/loop_);
+    n_sort_c = round(n_sort_c_/loop_);
+    n_sort_l = round(n_sort_l_/loop_);
+    BPM = round(BPM_/loop_);
+    n_events = round(n_events_/loop_);
     
-h.kx_major = 
-
-
+    n_op = n_add + n_mult + n_div + n_comp + n_isnan + n_sort_c;
+    
+    h.kx_major = horzcat(major{:,1});
+    h.tx_major = horzcat(major{:,2});
+    h.sx_major = horzcat(major{:,3});
+   
+    h.note_x_major = zeros(1,length(h.kx_major));
+    for k = 1:length(h.kx_major)
+        h.note_x_major(k) = h.note_x(h.kx==h.kx_major(k));
+    end
+    
+   h.BPM = round(BPM_/loop_);
+    
 end
 
 function h = discrimination_ecg(h)
@@ -496,9 +517,9 @@ function h = process_sig(h) %#ok<DEFNU>
 if isempty(h.ft)
     
     if ~h.checkbox_ecg.Value
-    %   - PPG algorithm -
-    [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t,h.s);
-    h = discrimination_algorithm(h);
+        %   - PPG algorithm -
+        [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t,h.s);
+        h = discrimination_algorithm(h);
     else
         % - ECG algorithm -
         [h.kx,h.tx,h.sx, h.dhi,h.dlo, h.td,h.d, h.kx_n,h.tx_N,h.sx_N, h.note_x] = signal_peaks(h.t0,h.s0,'ecg');
@@ -532,7 +553,7 @@ else
 end
 
 [h.ft_,h.fs_] = apply_filter_( h.td , h.d , h.edit_F2.String );
-if isempty(h.ft_)  
+if isempty(h.ft_)
     [h.ky,h.ty,h.sy, h.d2hi,h.d2lo, h.td2,h.d2, h.ky_n,h.ty_N,h.sy_N, h.note_y] = signal_peaks(h.td,h.d);
 else
     [h.ky,h.ty,h.sy, h.d2hi,h.d2lo, h.td2,h.d2, h.ky_n,h.ty_N,h.sy_N, h.note_y] = signal_peaks(h.ft_,h.fs_);
@@ -584,13 +605,12 @@ if h.t_int == 0
         , h.t , h.s , '-k','LineWidth',.5);
     legend('Signal');
 else
-    
     if isempty(h.ft)
         if isempty(h.ft_)
             if h.checkbox_signal.Value
                 if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
                     
-                                        plot( h.axes ...
+                    plot( h.axes ...
                         ,h.t0 , h.s0 , '--k','LineWidth',2);
                     hold on
                     plot( h.t  , h.s  ,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',3);
@@ -602,7 +622,7 @@ else
                     
                 elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
                     plot( h.axes ...
-                        ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2); 
+                        ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
                     hold on
                     plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
                     plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
@@ -664,11 +684,11 @@ else
                     
                     plot(h.xgrid,h.ygrid , ':k');
                     legend({'Actual signal','Quantised signal','Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
-                    hold off                                      
-                                        
+                    hold off
+                    
                 elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
                     plot( h.axes ...
-                       ,h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2); 
+                        ,h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2);
                     hold on
                     %plot( h.td , h.d , 'x:b');
                     plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
@@ -756,61 +776,166 @@ else
 end
 h.axes.XLim = xl; h.axes.YLim = yl;
 
+function plot_FF(h)
+xl = h.axes.XLim; yl = h.axes.YLim;
+yl_2 = [0 max(h.note_x)];
+yl_3 = [min(h.s0) max(h.note_x)];
+
+hold off
+
+if h.t_int == 0
+    plot( h.axes ...
+        , h.t , h.s , '-k','LineWidth',.5);
+    legend('Signal');
+    h.axes.XLim = xl; h.axes.YLim = yl;
+else
+    if h.checkbox_signal.Value
+        if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
+            
+            plot( h.axes ...
+                ,h.t0 , h.s0 , '--k','LineWidth',2);
+            hold on
+            plot( h.t  , h.s  ,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',3);
+            
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Actual signal','Quantised signal'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+            h.axes.XLim = xl; h.axes.YLim = yl;
+            
+        elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
+            null = zeros(1,length(h.tx));
+            
+            plot( h.axes ...
+                ,h.tx,h.note_x,'p','Color',[1,0.5,0],'MarkerSize',15,'LineWidth',2);
+            hold on
+            plot(h.tx_major,h.note_x_major, 'pk','MarkerSize',25,'LineWidth',2);
+            plot(kron(h.tx,[1 1 1]), kron(null,[1 0 nan]) + kron(h.note_x,[0 1 nan]),'--k','LineWidth',1);
+            
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Ratings','Major events'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+            h.axes.XLim = xl; h.axes.YLim = yl_2;
+            
+        elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
+            null = zeros(1,length(h.tx));
+            
+            plot( h.axes ...
+                ,h.t0 , h.s0 , '--k','LineWidth',1);
+            hold on
+            plot( h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2);
+            plot(h.tx,h.note_x,'p','Color',[1,0.5,0],'MarkerSize',15,'LineWidth',2);
+            plot(h.tx_major,h.note_x_major, 'p','Color',[0,0,0],'MarkerSize',25,'LineWidth',2);
+            plot(kron(h.tx,[1 1 1]), kron(null,[1 0 nan]) + kron(h.note_x,[0 1 nan]),'--k','LineWidth',1);
+            
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Actual signal','Quantised signal','Ratings','Major events'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+            h.axes.XLim = xl; h.axes.YLim = yl_3;
+        end
+    else
+        if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
+            
+            plot( h.axes ...
+                ,h.t  , h.s  , '--o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',3);
+            hold on
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Quantised signal'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+            h.axes.XLim = xl; h.axes.YLim = yl;
+        elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
+            null = zeros(1,length(h.tx));
+            
+            plot( h.axes ...
+                ,h.tx,h.note_x,'p','Color',[1,0.5,0],'MarkerSize',15,'LineWidth',2);
+            hold on
+            plot(h.tx_major,h.note_x_major, 'pk','MarkerSize',25,'LineWidth',2);
+            plot(kron(h.tx,[1 1 1]), kron(null,[1 0 nan]) + kron(h.note_x,[0 1 nan]),'--k','LineWidth',1);
+            
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Ratings','Major events'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+            h.axes.XLim = xl; h.axes.YLim = yl_2;
+        elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
+            null = zeros(1,length(h.tx));
+            
+            plot( h.axes ...
+                , h.t  , h.s  , '--o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2);
+            hold on
+            plot(h.tx,h.note_x,'p','Color',[1,0.5,0],'MarkerSize',15,'LineWidth',2);
+            plot(h.tx_major,h.note_x_major, 'p','Color',[0,0,0],'MarkerSize',25,'LineWidth',2);
+            plot(kron(h.tx,[1 1 1]), kron(null,[1 0 nan]) + kron(h.note_x,[0 1 nan]),'--k','LineWidth',1);
+            
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Quantised signal','Ratings','Major events'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+            h.axes.XLim = xl; h.axes.YLim = yl_2;
+        end
+        
+    end
+end
+
+
 function plot_cluster(h)
 xl = h.axes.XLim; yl = h.axes.YLim;
 hold off
 
 if isempty(h.ft)
     if isempty(h.ft_)
-         if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
-                    
-                                        plot( h.axes ...
-                        ,h.t0 , h.s0 , '--k','LineWidth',2);
-                    hold on
-                    plot( h.t  , h.s  ,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',3);
-                    %plot( h.td , h.d , 'x:b');
-                    
-                    plot(h.xgrid,h.ygrid , ':k');
-                    legend({'Actual signal','Quantised signal'},'FontSize',12,'Orientation','Horizontal');
-                    hold off
-                    
-                elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
-                    plot( h.axes ...
-                        ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2); 
-                    hold on
-                    plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
-                    plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
-                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
-                    plot(h.tx_major,h.sx_major, 'pk','MarkerSize',25,'LineWidth',2);
-                    
-                    plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
-                    plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
-                    
-                    plot(h.xgrid,h.ygrid , ':k');
-                    legend({'Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
-                    hold off
-                    
-                elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
-                    plot( h.axes ...
-                        ,h.t0 , h.s0 , '--k','LineWidth',1);
-                    hold on
-                    plot( h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2);
-                    %plot( h.td , h.d , 'x:b');
-                    plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
-                    plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
-                    plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
-                    plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
-                    plot(h.tx_major,h.sx_major, 'p','Color',[0,0,0],'MarkerSize',25,'LineWidth',2);
-                    
-                    plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
-                    plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
-                    
-                    plot(h.xgrid,h.ygrid , ':k');
-                    legend({'Actual signal','Quantised signal','Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
-                    hold off
-                    
-                end
-                        
+        if h.checkbox_detect.Value == 0 && h.checkbox_detect_.Value == 0        % plot signal
+            
+            plot( h.axes ...
+                ,h.t0 , h.s0 , '--k','LineWidth',2);
+            hold on
+            plot( h.t  , h.s  ,'o','Color',[0,0.5,0.5],'MarkerSize',15,'LineWidth',3);
+            %plot( h.td , h.d , 'x:b');
+            
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Actual signal','Quantised signal'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+        elseif h.checkbox_detect.Value == 1 && h.checkbox_detect_.Value == 0        % plot events
+            plot( h.axes ...
+                ,kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
+            hold on
+            plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
+            plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
+            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
+            plot(h.tx_major,h.sx_major, 'pk','MarkerSize',25,'LineWidth',2);
+            
+            plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
+            plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
+            
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+        elseif h.checkbox_detect_.Value == 1                                        % plot signal + events
+            plot( h.axes ...
+                ,h.t0 , h.s0 , '--k','LineWidth',1);
+            hold on
+            plot( h.t  , h.s  , 'o','Color',[0,0.5,0.5],'MarkerSize',10,'LineWidth',2);
+            %plot( h.td , h.d , 'x:b');
+            plot(kron(h.tx,[1 1 1]) , kron(h.dlo,[1 0 nan]) + kron(h.dhi,[0 1 nan]), '-b','LineWidth',2);
+            plot( h.tx , h.sx   , '^r','MarkerSize',10,'LineWidth',2);
+            plot( h.tx,h.sx_N, 'vr','MarkerSize',10,'LineWidth',2);
+            plot(kron(h.tx,[1 1 1]), kron(h.sx_N,[1 0 nan]) + kron(h.sx,[0 1 nan]),'-r','LineWidth',2);
+            plot(h.tx_major,h.sx_major, 'p','Color',[0,0,0],'MarkerSize',25,'LineWidth',2);
+            
+            plot( h.tx , h.dhi  , '^b','MarkerSize',10,'LineWidth',2);
+            plot( h.tx , h.dlo  , 'vb','MarkerSize',10,'LineWidth',2);
+            
+            plot(h.xgrid,h.ygrid , ':k');
+            legend({'Actual signal','Quantised signal','Slope difference','Maxima','Minima','Foot-to-peak','Major events'},'FontSize',12,'Orientation','Horizontal');
+            hold off
+            
+        end
+        
     else
         plot( h.axes ...
             ,h.t0 , h.s0 , '-k' ...  %TODO  %
@@ -921,19 +1046,19 @@ if h.t_int > 0
             
             data(1:base_array(i,h.kmax),i) = h.clust_tx{i,h.kmax};
             T_clust(i) = h.clust_periodicity{i,h.kmax}(1);
-%             t_reg(1:base_array(i,h.kmax),i) = mean(data(:,i)) - T_clust(i)*mean(base) + base*T_clust(i);
+            %             t_reg(1:base_array(i,h.kmax),i) = mean(data(:,i)) - T_clust(i)*mean(base) + base*T_clust(i);
             
             figure(3);
             tx_disp(i) = plot(base,data(:,i),'x','MarkerSize',20);
             hold on
-%             t_reg_disp(i) = plot(base,t_reg(:,i),'--','LineWidth',1);
+            %             t_reg_disp(i) = plot(base,t_reg(:,i),'--','LineWidth',1);
         end
         
         Legend=cell(h.kmax,1);
         
         for iter=1:h.kmax
-           % Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
-             Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)));
+            % Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)), '; R = ', num2str(h.clust_periodicity{iter,h.kmax}(3)));
+            Legend{iter}=strcat('cluster ', num2str(iter),': T = ', num2str(h.clust_periodicity{iter,h.kmax}(1)), '; eps = ', num2str(h.clust_periodicity{iter,h.kmax}(2)));
         end
         legend(Legend,'FontSize',15,'Location','NorthWest');
         
@@ -957,7 +1082,7 @@ if h.t_int > 0
         t_reg = mean(h.tx_frame) - T*mean(base) + base*T;
         
         plot(base,h.tx_frame,'x','MarkerSize',20);
-        hold on 
+        hold on
         plot(base,t_reg,'--','LineWidth',1);
         Legend = strcat('T = ', num2str(h.clust_periodicity(1)), '; eps = ', num2str(h.clust_periodicity(2)), '; R = ', num2str(h.clust_periodicity(3)));
         legend(Legend,'Linear regression','FontSize',15,'Location','NorthWest');
@@ -1042,44 +1167,44 @@ end
 function callback_complexity(h)
 global n_add;global n_mult;global n_div; global n_comp;global n_isnan;global n_sort_c;global n_sort_l;global loop;global BPM;global n_events;global n_op;
 if h.tag_complexity.Value == 1
-n_add = n_add + h.tbl_complexity.add;
-n_mult = n_mult + h.tbl_complexity.mult;
-n_div = n_div + h.tbl_complexity.div;
-n_comp = n_comp + h.tbl_complexity.comp;
-n_isnan = n_isnan + h.tbl_complexity.isnan_comp;
-n_sort_c = n_sort_c + h.tbl_complexity.sort_c;
-n_sort_l = n_sort_l + h.tbl_complexity.sort_l;
-BPM = BPM + floor(60 * (1/h.T));
-n_events = n_events + length(h.kx_frame);
-loop = loop + 1;
+    n_add = n_add + h.tbl_complexity.add;
+    n_mult = n_mult + h.tbl_complexity.mult;
+    n_div = n_div + h.tbl_complexity.div;
+    n_comp = n_comp + h.tbl_complexity.comp;
+    n_isnan = n_isnan + h.tbl_complexity.isnan_comp;
+    n_sort_c = n_sort_c + h.tbl_complexity.sort_c;
+    n_sort_l = n_sort_l + h.tbl_complexity.sort_l;
+    BPM = BPM + floor(60 * (1/h.T));
+    n_events = n_events + length(h.kx_frame);
+    loop = loop + 1;
 end
 
 if h.tag_mean.Value == 1
-n_add = round(n_add/loop);
-n_mult = round(n_mult/loop);
-n_div = round(n_div/loop);
-n_comp = round(n_comp/loop);
-n_isnan = round(n_isnan/loop);
-n_sort_c = round(n_sort_c/loop);
-n_sort_l = round(n_sort_l/loop);
-BPM = round(BPM/loop);
-n_events = round(n_events/loop);
-
-n_op = n_add + n_mult + n_div + n_comp + n_isnan + n_sort_c;
+    n_add = round(n_add/loop);
+    n_mult = round(n_mult/loop);
+    n_div = round(n_div/loop);
+    n_comp = round(n_comp/loop);
+    n_isnan = round(n_isnan/loop);
+    n_sort_c = round(n_sort_c/loop);
+    n_sort_l = round(n_sort_l/loop);
+    BPM = round(BPM/loop);
+    n_events = round(n_events/loop);
+    
+    n_op = n_add + n_mult + n_div + n_comp + n_isnan + n_sort_c;
 end
 
 if h.tag_reset.Value == 1
-n_add = 0;
-n_mult = 0;
-n_div = 0;
-n_comp = 0;
-n_isnan = 0;
-n_sort_c = 0;
-n_sort_l = 0;
-BPM = 0;
-n_events = 0;
-n_op = 0;
-loop = 0;
+    n_add = 0;
+    n_mult = 0;
+    n_div = 0;
+    n_comp = 0;
+    n_isnan = 0;
+    n_sort_c = 0;
+    n_sort_l = 0;
+    BPM = 0;
+    n_events = 0;
+    n_op = 0;
+    loop = 0;
 end
 
 guidata(h.output, h);
